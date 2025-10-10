@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(cp:*)",
+      "Bash(git branch:*)",
+      "Bash(git stash:*)",
+      "WebFetch(domain:docs.unity3d.com)",
+      "WebSearch",
+      "Bash(git remote add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

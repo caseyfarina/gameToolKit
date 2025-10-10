@@ -1,0 +1,254 @@
+CHECKPOINT SYSTEM - USAGE GUIDE
+================================
+
+The checkpoint system allows students to create save points in their games that survive scene reloads.
+This guide covers setup, workflows, and examples for different game genres.
+
+## COMPONENTS OVERVIEW
+
+1. **GameCheckpointPersistence** (Game/singleton)
+   - Persistent singleton that survives scene reloads
+   - Stores checkpoint position and optional game data
+   - Automatically restores player on scene load
+
+2. **InputCheckpointZone** (Input/trigger)
+   - Trigger zone that activates checkpoints
+   - Visual feedback when activated
+   - One-time or reusable options
+
+3. **ActionRespawnPlayer** (Action/respawn)
+   - Respawns player to last checkpoint
+   - Optional delay and visual effects
+   - Works without scene reload
+
+4. **Enhanced Managers**
+   - GameCollectionManager: Added GetCurrentValue() and SetValue()
+   - GameHealthManager: Already has CurrentHealth and SetHealth()
+
+## BASIC SETUP (Position-Only Checkpoints)
+
+### Step 1: Add Persistence Manager
+1. Create empty GameObject named "CheckpointSystem"
+2. Add component: GameCheckpointPersistence
+3. Configure:
+   - Persist Across Scenes: ✓ (enabled)
+   - Restore Delay: 0.1 seconds
+   - Save Score: ✗ (disabled for basic setup)
+   - Save Health: ✗ (disabled for basic setup)
+
+### Step 2: Create Checkpoint Zones
+1. Create GameObject (e.g., Cube or Trigger volume)
+2. Add component: InputCheckpointZone
+3. Configure collider as Trigger
+4. Configure:
+   - Trigger Object Tag: "Player"
+   - One Time Use: ✓ (typical for platformers)
+   - Save Full State: ✗ (position only)
+
+### Step 3: Connect Death/Restart
+Option A: Scene Reload (automatic checkpoint restore)
+- Keep existing ActionRestartScene on death
+- Checkpoint automatically restores on scene load
+
+Option B: In-Scene Respawn (no reload)
+1. Add ActionRespawnPlayer to scene
+2. Wire health manager: onDeath → RespawnToCheckpoint()
+3. Configure respawn delay for death animation
+
+## ADVANCED SETUP (Save Score/Health)
+
+### Step 1: Enable Data Persistence
+1. On GameCheckpointPersistence:
+   - Save Score: ✓
+   - Score Manager: [drag GameCollectionManager]
+   - Save Health: ✓
+   - Health Manager: [drag GameHealthManager]
+
+### Step 2: Configure Checkpoint Zones
+1. On InputCheckpointZone:
+   - Save Full State: ✓ (saves position + data)
+
+### Step 3: Test
+- Player hits checkpoint → saves position, score, health
+- Player dies → scene reloads → restores all data
+
+## GENRE-SPECIFIC WORKFLOWS
+
+### PLATFORMER (Mario-style)
+**Goal**: Sequential checkpoints, respawn without losing progress
+
+Setup:
+1. GameCheckpointPersistence with position + score
+2. InputCheckpointZone at each checkpoint (one-time use)
+3. ActionRestartScene on death → scene reloads → checkpoint restores
+
+Event Wiring:
+- InputCheckpointZone → onCheckpointActivated → Audio effect
+- GameHealthManager → onDeath → ActionRestartScene.RestartScene()
+
+Result:
+- Player hits checkpoint, saves position and score
+- Player dies, scene reloads, player starts at checkpoint with saved score
+
+---
+
+### RACING GAME (Lap Checkpoints)
+**Goal**: Sequential checkpoint validation for lap completion
+
+Setup:
+1. GameCheckpointPersistence (position only)
+2. InputCheckpointZone at each lap marker (reusable, not one-time)
+3. GameCollectionManager for lap counter
+
+Event Wiring:
+- Checkpoint 1 → onActivated → LapCounter.Increment()
+- Checkpoint 2 → onActivated → LapCounter.Increment()
+- Checkpoint 3 → onActivated → LapCounter.Increment()
+- LapCounter → onThresholdReached (3 laps) → Victory screen
+
+Result:
+- Player must pass all checkpoints in sequence
+- Lap counter increments at each checkpoint
+- Victory triggered after completing all laps
+
+---
+
+### ADVENTURE GAME (Save Points)
+**Goal**: Named save points that preserve all progress
+
+Setup:
+1. GameCheckpointPersistence with full state (position + score + health + inventory)
+2. InputCheckpointZone at save point locations (reusable)
+3. GameInventorySlot for item collection
+
+Event Wiring:
+- Checkpoint Zone → onActivated → Save particle effect
+- Checkpoint Zone → onActivated → Audio "checkpoint saved" sound
+- Death → ActionRespawnPlayer.RespawnToCheckpoint() (no scene reload)
+
+Result:
+- Player activates checkpoint, saves all game state
+- Player dies, respawns at checkpoint with all items/health
+- No scene reload keeps enemies/world state
+
+---
+
+### PUZZLE GAME (Undo Points)
+**Goal**: Checkpoint before each puzzle section for undo/reset
+
+Setup:
+1. GameCheckpointPersistence (position only)
+2. InputCheckpointZone before each puzzle (one-time per puzzle)
+3. ActionRespawnPlayer for "undo" button
+
+Event Wiring:
+- Auto checkpoint on puzzle entry
+- UI Button "Undo" → ActionRespawnPlayer.RespawnToCheckpoint()
+- Puzzle completion → Next checkpoint activates
+
+Result:
+- Player can undo puzzle mistakes
+- Returns to checkpoint at puzzle start
+- Progress saved between puzzle sections
+
+## COMMON EVENT WIRING PATTERNS
+
+### Pattern 1: Checkpoint with Audio Feedback
+InputCheckpointZone
+  → onCheckpointActivated → GameAudioManager.PlaySound("checkpoint")
+  → onCheckpointActivated → Visual effect (particle system)
+
+### Pattern 2: Death Respawn (Scene Reload)
+GameHealthManager
+  → onDeath → Wait 2 seconds (optional animation)
+  → onDeath → ActionRestartScene.RestartScene()
+  (Checkpoint automatically restores on scene load)
+
+### Pattern 3: Death Respawn (No Reload)
+GameHealthManager
+  → onDeath → ActionRespawnPlayer.RespawnToCheckpoint()
+  → ActionRespawnPlayer → onRespawnCompleted → HealthManager.FullHeal()
+
+### Pattern 4: Fall Zone Recovery
+InputTriggerZone (fall zone)
+  → onTriggerEnter → ActionRespawnPlayer.RespawnToCheckpoint()
+
+### Pattern 5: Progressive Checkpoints
+Checkpoint 1 → onActivated → Disable previous checkpoint visual
+Checkpoint 2 → onActivated → Disable checkpoint 1 visual
+Checkpoint 3 → onActivated → Disable checkpoint 2 visual
+
+### Pattern 6: Checkpoint Counter (Show Progress)
+InputCheckpointZone
+  → onCheckpointActivated → GameCollectionManager.Increment()
+  → GameUIManager updates "Checkpoints: 3/10"
+
+## TROUBLESHOOTING
+
+### Player doesn't respawn at checkpoint
+- Ensure GameCheckpointPersistence has "Persist Across Scenes" enabled
+- Check that checkpoint zone was triggered (debug log appears)
+- Verify player has "Player" tag
+- Check Restore Delay isn't too short
+
+### Checkpoint doesn't activate
+- Verify collider is set to "Is Trigger"
+- Check Trigger Object Tag matches player tag
+- Ensure checkpoint hasn't been deactivated (if one-time use)
+
+### Score/Health not saving
+- Enable "Save Score" or "Save Health" on GameCheckpointPersistence
+- Assign manager references in inspector
+- Set "Save Full State" on InputCheckpointZone
+
+### Checkpoint data lost on scene reload
+- Verify "Persist Across Scenes" is enabled
+- Check that GameCheckpointPersistence is in DontDestroyOnLoad
+- Don't have multiple GameCheckpointPersistence in scene
+
+## INSPECTOR REFERENCE
+
+### GameCheckpointPersistence Settings
+- Player Object: Auto-finds by "Player" tag if empty
+- Persist Across Scenes: Survives scene reload (usually enabled)
+- Restore Delay: Time before restoring position (0.1s recommended)
+- Save Score: Enable to save GameCollectionManager value
+- Save Health: Enable to save GameHealthManager value
+- Score Manager: Drag GameCollectionManager reference
+- Health Manager: Drag GameHealthManager reference
+
+### InputCheckpointZone Settings
+- Trigger Object Tag: "Player" (or custom tag)
+- One Time Use: Disable trigger after activation
+- Save Full State: Save position + score + health
+- Checkpoint Persistence: Auto-finds if empty
+- Visual Effect: GameObject to disable on activation
+- Checkpoint Renderer: Renderer to change material
+- Activated Material: Material to apply when activated
+
+### ActionRespawnPlayer Settings
+- Respawn Delay: Delay before respawn (allows death animation)
+- Restore Full State: Restore score/health on respawn
+- Fallback Spawn Point: Used if no checkpoint exists
+- Checkpoint Persistence: Auto-finds if empty
+- Player Object: Auto-finds by "Player" tag if empty
+- Respawn Effect: Particle effect at respawn location
+- Effect Duration: How long effect stays alive
+
+## BEST PRACTICES
+
+1. **One GameCheckpointPersistence per scene**: Don't duplicate the singleton
+2. **Tag your player**: Ensure player GameObject has "Player" tag
+3. **Test checkpoint activation**: Look for debug logs confirming save
+4. **Visual feedback**: Always give players confirmation checkpoint activated
+5. **Fallback spawn**: Set fallback spawn point in ActionRespawnPlayer
+6. **Match your genre**: Use scene reload for simple games, in-scene respawn for complex ones
+
+## LEARNING OUTCOMES FOR STUDENTS
+
+- Understanding persistent data across scene loads
+- Learning singleton pattern through practical use
+- Grasping trigger-based event systems
+- Combining multiple systems (health, score, checkpoints)
+- Event-driven architecture for game state management
+- Visual feedback importance for player communication

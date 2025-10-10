@@ -1,0 +1,220 @@
+GAME TIMER MANAGER - EXAMPLE SCENE SETUP GUIDE
+==============================================
+
+This guide shows how to create a complete example scene demonstrating the GameTimerManager
+with multiple thresholds, periodic events, and integration with other game systems.
+
+SCENE OVERVIEW:
+--------------
+A 2-minute survival challenge where:
+- Player collects items for points
+- Enemies spawn periodically (every 10 seconds)
+- Difficulty increases at specific time thresholds
+- Victory achieved by surviving the full 2 minutes
+
+SCENE SETUP STEPS:
+==================
+
+1. CREATE NEW SCENE
+------------------
+- File → New Scene → Basic (Built-in)
+- Save as "TimerExample.unity"
+
+2. ENVIRONMENT SETUP
+-------------------
+Ground:
+- Create → 3D Object → Plane
+- Name: "Ground"
+- Scale: (2, 1, 2)
+- Position: (0, 0, 0)
+
+Walls (Optional):
+- Create → 3D Object → Cube
+- Scale to create boundary walls
+- Position around the play area
+
+3. PLAYER SETUP
+--------------
+Player Ball:
+- Create → 3D Object → Sphere
+- Name: "Player"
+- Position: (0, 1, 0)
+- Add Component: Rigidbody
+- Add Component: PhysicsPlayerController (from your toolkit)
+
+Camera:
+- Position Main Camera at (0, 5, -8)
+- Rotation: (25, 0, 0)
+- Or use Cinemachine camera following player
+
+4. GAME MANAGERS SETUP
+---------------------
+Game State Manager:
+- Create Empty GameObject: "GameStateManager"
+- Add Component: GameStateManager
+- Configure:
+  * Pause Key: P
+  * Auto Pause Timers: ✓
+
+Game Timer Manager:
+- Create Empty GameObject: "GameTimerManager"
+- Add Component: GameTimerManager
+- Configure:
+  * Count Up: ✓
+  * Start Time: 0
+  * Start Automatically: ✓
+  * Display Format: MinutesSeconds
+  * Periodic Interval: 10 (every 10 seconds)
+  * Enable Periodic Events: ✓
+
+5. UI SETUP
+----------
+Canvas:
+- Create → UI → Canvas
+- Name: "GameUI"
+
+Timer Display:
+- Right-click Canvas → UI → Text - TextMeshPro
+- Name: "TimerText"
+- Position: Top-center of screen
+- Text: "Time: 00:00"
+- Font Size: 36
+- Drag to GameTimerManager's Timer Display field
+
+Score Display:
+- Right-click Canvas → UI → Text - TextMeshPro
+- Name: "ScoreText"
+- Position: Top-left of screen
+- Text: "Score: 0"
+
+Pause Panel:
+- Right-click Canvas → UI → Panel
+- Name: "PausePanel"
+- Set background color with alpha
+- Set initially inactive
+
+Restart Button:
+- Right-click PausePanel → UI → Button - TextMeshPro
+- Name: "RestartButton"
+- Text: "Restart"
+- Connect GameStateManager's Pause Panel and Restart Button fields
+
+6. COLLECTIBLES SETUP
+--------------------
+Collection Manager:
+- Create Empty GameObject: "CollectionManager"
+- Add Component: GameCollectionManager
+- Configure:
+  * Current Value: 0
+  * Threshold Value: 50 (win condition)
+
+Collectible Prefab:
+- Create → 3D Object → Sphere
+- Name: "Collectible"
+- Scale: (0.5, 0.5, 0.5)
+- Add Component: Collider (Is Trigger: ✓)
+- Add Component: InputTriggerZone
+  * Trigger Object Tag: "Player"
+  * Connect onTriggerEnter → CollectionManager.Increment()
+  * Connect onTriggerEnter → Destroy self (use UnityEvent)
+- Save as Prefab, delete from scene
+
+Collectible Spawner:
+- Create Empty GameObject: "CollectibleSpawner"
+- Add Component: ActionAutoSpawner
+- Configure:
+  * Prefabs to Spawn: [Collectible prefab]
+  * Min/Max Spawn Time: 2-5 seconds
+  * Spawn Variance: (3, 0, 3)
+  * Auto Start: ✓
+
+7. ENEMY SETUP
+-------------
+Enemy Prefab:
+- Create → 3D Object → Capsule
+- Name: "Enemy"
+- Add Component: Rigidbody
+- Add Component: CapsuleCollider
+- Add Component: PhysicsEnemyController
+- Add Component: GameHealthManager (Health: 1)
+- Add child with InputTriggerZone for damage dealing
+- Save as Prefab, delete from scene
+
+Enemy Spawner:
+- Create Empty GameObject: "EnemySpawner"
+- Add Component: ActionAutoSpawner
+- Configure:
+  * Prefabs to Spawn: [Enemy prefab]
+  * Min/Max Spawn Time: 8-12 seconds
+  * Spawn Variance: (5, 0, 5)
+  * Auto Start: ✓
+
+8. TIMER THRESHOLD CONFIGURATION
+-------------------------------
+In GameTimerManager, set up Thresholds array:
+
+[0] Name: "FirstWave"
+    Time: 20
+    Event: Connect to EnemySpawner.SpawnObject()
+
+[1] Name: "IncreaseSpawning"
+    Time: 45
+    Event: Connect to custom script that reduces enemy spawn time
+
+[2] Name: "HalfwayPoint"
+    Time: 60
+    Event: Connect to UI message or sound effect
+
+[3] Name: "FinalWave"
+    Time: 90
+    Event: Connect to spawn multiple enemies
+
+[4] Name: "Victory"
+    Time: 120
+    Event: Connect to GameStateManager.Victory()
+
+9. EVENT CONNECTIONS
+-------------------
+Timer Events:
+- GameTimerManager.onPeriodicEvent → EnemySpawner.SpawnObject()
+- GameTimerManager.onTimerStarted → CollectibleSpawner.StartSpawning()
+
+Game State Events:
+- GameStateManager.onGamePaused → Show pause UI
+- GameStateManager.onVictory → Show victory screen
+
+Collection Events:
+- CollectionManager.onThresholdReached → GameStateManager.Victory()
+
+10. TESTING CHECKLIST
+---------------------
+□ Timer starts automatically and displays correctly
+□ Player can move and collect items
+□ Collectibles spawn regularly and give points
+□ Enemies spawn every 10 seconds (periodic event)
+□ Threshold events trigger at correct times
+□ Pause system works (P key)
+□ Victory triggers at 2 minutes OR when enough items collected
+□ Restart button works when paused
+
+ADVANCED FEATURES TO ADD:
+========================
+- Health system for player
+- Different enemy types at different thresholds
+- Sound effects triggered by timer events
+- Visual countdown warnings
+- Score multipliers based on time remaining
+- Difficulty scaling with timer thresholds
+
+EDUCATIONAL BENEFITS:
+====================
+Students learn:
+- Event-driven timer systems
+- Multiple threshold management
+- Periodic event patterns
+- Game state coordination
+- UI integration with game systems
+- No-code game logic through UnityEvents
+
+This example demonstrates how all the modular components work together
+to create a complete game experience driven by the timer system.

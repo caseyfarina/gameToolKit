@@ -1,0 +1,502 @@
+CHECKPOINT SYSTEM - EXAMPLE SCENE SETUP
+=========================================
+
+This document provides a complete step-by-step guide for creating a platformer-style checkpoint system
+in a Unity scene. Students can follow this to understand how all the pieces work together.
+
+## SCENE OVERVIEW
+
+This example creates a simple platformer level with:
+- Ball player controller
+- 3 sequential checkpoints
+- Collectible coins (score system)
+- Death zones (fall pits)
+- Health system with damage zones
+- Scene reload on death with checkpoint restoration
+
+## STEP-BY-STEP SETUP
+
+### PART 1: SCENE FOUNDATION
+
+1. **Create New Scene or Use Existing**
+   - File → New Scene OR use existing ballPlayer.unity
+   - Save as "CheckpointExample.unity"
+
+2. **Add Ground Platform**
+   - Create → 3D Object → Plane
+   - Name: "Ground"
+   - Scale: (10, 1, 10)
+   - Position: (0, 0, 0)
+
+3. **Add Player**
+   - Create → 3D Object → Sphere
+   - Name: "Player"
+   - Tag: "Player" (IMPORTANT!)
+   - Position: (0, 2, 0)
+   - Add Component: Rigidbody
+   - Add Component: BallController (or PhysicsPlayerController)
+
+4. **Add Main Camera**
+   - Position: (0, 10, -10)
+   - Rotation: (45, 0, 0)
+   - Or use existing Cinemachine camera setup
+
+---
+
+### PART 2: CHECKPOINT SYSTEM CORE
+
+5. **Create Checkpoint Persistence Manager**
+   - Create → Create Empty
+   - Name: "CheckpointSystem"
+   - Position: (0, 0, 0)
+   - Add Component: GameCheckpointPersistence
+
+   **Configure:**
+   - Player Object: [Leave empty - auto-finds Player tag]
+   - Persist Across Scenes: ✓ (checked)
+   - Restore Delay: 0.1
+   - Save Score: ✓ (checked)
+   - Score Manager: [Will assign in Part 3]
+   - Save Health: ✓ (checked)
+   - Health Manager: [Will assign in Part 3]
+
+6. **Create Checkpoint 1**
+   - Create → 3D Object → Cube
+   - Name: "Checkpoint_01"
+   - Position: (10, 1, 0)
+   - Scale: (2, 3, 2)
+   - **Configure Collider:**
+     - Is Trigger: ✓ (checked)
+   - Add Component: InputCheckpointZone
+
+   **Configure InputCheckpointZone:**
+   - Trigger Object Tag: "Player"
+   - One Time Use: ✓ (checked)
+   - Save Full State: ✓ (checked)
+   - Checkpoint Persistence: [Leave empty - auto-finds]
+   - Visual Effect: [Optional - see Part 7]
+   - Checkpoint Renderer: [Drag Cube's MeshRenderer]
+   - Activated Material: [Create green material - see below]
+
+   **Create Activated Material:**
+   - Right-click in Project → Create → Material
+   - Name: "CheckpointActivated_MAT"
+   - Albedo: Green (0, 255, 0)
+   - Assign to "Activated Material" field
+
+7. **Create Checkpoint 2**
+   - Duplicate Checkpoint_01 (Ctrl+D)
+   - Name: "Checkpoint_02"
+   - Position: (20, 1, 5)
+   - (Settings are already copied)
+
+8. **Create Checkpoint 3**
+   - Duplicate Checkpoint_01 (Ctrl+D)
+   - Name: "Checkpoint_03"
+   - Position: (30, 1, 0)
+   - (Settings are already copied)
+
+---
+
+### PART 3: GAME MANAGERS
+
+9. **Create Score Manager**
+   - Create → Create Empty
+   - Name: "ScoreManager"
+   - Add Component: GameCollectionManager
+
+   **Configure:**
+   - Current Value: 0
+   - Threshold: 10
+   - Display Text: [Will create UI in Part 5]
+
+   **Wire to Checkpoint System:**
+   - Select "CheckpointSystem" GameObject
+   - In GameCheckpointPersistence:
+     - Score Manager: [Drag ScoreManager]
+
+10. **Create Health Manager**
+    - Create → Create Empty
+    - Name: "HealthManager"
+    - Add Component: GameHealthManager
+
+    **Configure:**
+    - Max Health: 100
+    - Current Health: 100
+    - Low Health Threshold: 25
+    - Health Display: [Will create UI in Part 5]
+
+    **Wire to Checkpoint System:**
+    - Select "CheckpointSystem" GameObject
+    - In GameCheckpointPersistence:
+      - Health Manager: [Drag HealthManager]
+
+11. **Create Restart Scene Action**
+    - Create → Create Empty
+    - Name: "RestartManager"
+    - Add Component: ActionRestartScene
+
+    **Wire Death to Restart:**
+    - Select "HealthManager"
+    - In GameHealthManager → onDeath:
+      - Click + to add event
+      - Drag "RestartManager" to object field
+      - Select: ActionRestartScene → RestartScene()
+
+---
+
+### PART 4: COLLECTIBLES & HAZARDS
+
+12. **Create Coin Prefab**
+    - Create → 3D Object → Cylinder
+    - Name: "Coin"
+    - Scale: (0.5, 0.1, 0.5)
+    - Rotation: (0, 0, 90) - makes it vertical
+    - Add Material: Gold color (255, 215, 0)
+    - **Configure Collider:**
+      - Is Trigger: ✓ (checked)
+    - Add Component: InputTriggerZone
+
+    **Configure InputTriggerZone:**
+    - Trigger Object Tag: "Player"
+    - onTriggerEnterEvent:
+      - Click + to add event
+      - Drag "ScoreManager" to object field
+      - Select: GameCollectionManager → Increment(1)
+      - Click + to add another event
+      - Drag "Coin" itself to object field
+      - Select: GameObject → SetActive(false)
+
+    - Drag to Project folder to create prefab
+    - Delete from scene
+
+13. **Place Coins in Level**
+    - Drag Coin prefab into scene 5 times
+    - Positions:
+      - Coin_01: (5, 1, 0)
+      - Coin_02: (15, 1, 2)
+      - Coin_03: (25, 1, -2)
+      - Coin_04: (35, 1, 0)
+      - Coin_05: (40, 1, 5)
+
+14. **Create Damage Zone (Spikes)**
+    - Create → 3D Object → Cube
+    - Name: "DamageZone_Spikes"
+    - Position: (15, 0.5, -5)
+    - Scale: (3, 1, 3)
+    - Add Material: Red color (255, 0, 0)
+    - **Configure Collider:**
+      - Is Trigger: ✓ (checked)
+    - Add Component: InputTriggerZone
+
+    **Configure InputTriggerZone:**
+    - Trigger Object Tag: "Player"
+    - Enable Stay Event: ✓ (checked)
+    - Stay Interval: 1.0 (damage per second)
+    - onTriggerStayEvent:
+      - Click + to add event
+      - Drag "HealthManager" to object field
+      - Select: GameHealthManager → TakeDamage(10)
+
+15. **Create Fall Zone (Death Pit)**
+    - Create → 3D Object → Plane
+    - Name: "FallZone_DeathPlane"
+    - Position: (0, -10, 0)
+    - Scale: (20, 1, 20)
+    - Add Material: Black color (0, 0, 0)
+    - **Configure Collider:**
+      - Is Trigger: ✓ (checked)
+    - Add Component: InputTriggerZone
+
+    **Configure InputTriggerZone:**
+    - Trigger Object Tag: "Player"
+    - onTriggerEnterEvent:
+      - Click + to add event
+      - Drag "HealthManager" to object field
+      - Select: GameHealthManager → TakeDamage(100) - instant death
+
+---
+
+### PART 5: USER INTERFACE
+
+16. **Create Canvas**
+    - Right-click Hierarchy → UI → Canvas
+    - Name: "GameUI"
+    - Canvas Scaler:
+      - UI Scale Mode: Scale With Screen Size
+      - Reference Resolution: 1920 x 1080
+
+17. **Create Score Display**
+    - Right-click Canvas → UI → Text - TextMeshPro
+    - Name: "ScoreText"
+    - Anchor: Top-Left
+    - Position: (100, -50, 0)
+    - Font Size: 36
+    - Text: "Score: 0"
+    - Color: White
+
+    **Wire to Score Manager:**
+    - Select "ScoreManager"
+    - In GameCollectionManager:
+      - Display Text: [Drag ScoreText]
+
+18. **Create Health Display**
+    - Right-click Canvas → UI → Text - TextMeshPro
+    - Name: "HealthText"
+    - Anchor: Top-Left
+    - Position: (100, -100, 0)
+    - Font Size: 36
+    - Text: "Health: 100/100"
+    - Color: White
+
+    **Wire to Health Manager:**
+    - Select "HealthManager"
+    - In GameHealthManager:
+      - Health Display: [Drag HealthText]
+
+19. **Create Checkpoint Feedback Text**
+    - Right-click Canvas → UI → Text - TextMeshPro
+    - Name: "CheckpointText"
+    - Anchor: Center
+    - Position: (0, 200, 0)
+    - Font Size: 48
+    - Text: "CHECKPOINT!"
+    - Color: Yellow
+    - Enabled: ✗ (unchecked - hidden by default)
+    - Add Component: CanvasGroup
+    - Add Component: Animation (optional fade effect)
+
+---
+
+### PART 6: CHECKPOINT VISUAL FEEDBACK
+
+20. **Add Checkpoint Activation Feedback**
+    - Select "Checkpoint_01"
+    - In InputCheckpointZone → onCheckpointActivated:
+      - Click + to add event
+      - Create → Create Empty as child of Checkpoint_01
+      - Name child: "CheckpointEffect"
+      - Add Component: Particle System (default sparkles)
+      - Drag "CheckpointEffect" to event object field
+      - Select: GameObject → SetActive(false) - turns off particle after activation
+
+    **Optional: Add Sound**
+    - Add GameAudioManager to scene (if available)
+    - In onCheckpointActivated:
+      - Click + to add event
+      - Select: GameAudioManager → PlaySound("checkpoint_sound")
+
+21. **Show Checkpoint UI Feedback**
+    - Create → Create Empty
+    - Name: "CheckpointUIController"
+    - Add Component: Create new script "CheckpointUIFeedback.cs" OR use UnityEvents:
+
+    **Simple Event Wiring (No Script):**
+    - Select Checkpoint_01, 02, 03
+    - In InputCheckpointZone → onCheckpointActivated:
+      - Click + to add event
+      - Drag "CheckpointText" to object field
+      - Select: GameObject → SetActive(true)
+      - Click + to add another event
+      - Drag "CheckpointUIController" to object field
+      - Select: Invoke → (Create coroutine helper OR use animation)
+
+    **Better: Use Animation**
+    - Select CheckpointText
+    - Window → Animation → Animation
+    - Create New Clip: "CheckpointFeedback"
+    - Keyframe 0.0s: Enabled = true, Alpha = 0
+    - Keyframe 0.5s: Alpha = 1
+    - Keyframe 2.0s: Alpha = 1
+    - Keyframe 2.5s: Alpha = 0, Enabled = false
+
+    - In InputCheckpointZone → onCheckpointActivated:
+      - Drag CheckpointText
+      - Select: Animation → Play("CheckpointFeedback")
+
+---
+
+### PART 7: OPTIONAL ENHANCEMENTS
+
+22. **Add Checkpoint Particle Effects**
+    - Select Checkpoint_01
+    - Right-click → Effects → Particle System
+    - Name: "CheckpointParticles"
+    - Configure particles to float upward (gold/yellow sparkles)
+
+    **Wire to Checkpoint:**
+    - Select Checkpoint_01
+    - In InputCheckpointZone:
+      - Visual Effect: [Drag CheckpointParticles]
+    - When activated, particles will automatically disable
+
+23. **Add Platform Obstacles**
+    - Create moving platforms using existing platform scripts
+    - Create → 3D Object → Cube
+    - Add PhysicsPlatformStick component
+    - Place between checkpoints for challenge
+
+24. **Add Victory Zone**
+    - Create → 3D Object → Cube
+    - Name: "VictoryZone"
+    - Position: (45, 1, 0)
+    - Scale: (3, 5, 3)
+    - Add Material: Gold color
+    - Is Trigger: ✓
+    - Add Component: InputTriggerZone
+    - onTriggerEnterEvent:
+      - Wire to GameStateManager → TriggerVictory()
+      - OR display victory UI panel
+
+---
+
+### PART 8: TESTING WORKFLOW
+
+25. **Test Checkpoint Activation**
+    - Press Play
+    - Move player to Checkpoint_01
+    - Verify:
+      ✓ Checkpoint material turns green
+      ✓ Particle effect disappears
+      ✓ "CHECKPOINT!" UI appears
+      ✓ Console shows "Checkpoint saved at (10, 1, 0)"
+
+26. **Test Death and Respawn**
+    - Continue past Checkpoint_01
+    - Collect some coins (score increases)
+    - Reach Checkpoint_02 (saves position + score)
+    - Fall into death zone
+    - Verify:
+      ✓ Health drops to 0
+      ✓ Scene reloads
+      ✓ Player respawns at Checkpoint_02
+      ✓ Score is restored
+      ✓ Coins respawn (scene reset)
+      ✓ Checkpoint_02 is still green (still activated)
+
+27. **Test Score Persistence**
+    - Activate Checkpoint_01
+    - Collect 3 coins (score = 3)
+    - Activate Checkpoint_02 (saves score = 3)
+    - Collect 2 more coins (score = 5)
+    - Die
+    - Verify:
+      ✓ Player respawns at Checkpoint_02
+      ✓ Score shows 3 (not 5, not 0)
+      ✓ All coins are reset and collectible again
+
+28. **Test Health Persistence**
+    - Activate Checkpoint_01 (saves health = 100)
+    - Take damage from spikes (health = 60)
+    - Activate Checkpoint_02 (saves health = 60)
+    - Take more damage (health = 30)
+    - Die
+    - Verify:
+      ✓ Player respawns at Checkpoint_02
+      ✓ Health shows 60 (checkpoint value)
+
+---
+
+## COMPLETE EVENT WIRING REFERENCE
+
+### Checkpoint_01, 02, 03
+InputCheckpointZone → onCheckpointActivated:
+  1. CheckpointParticles → GameObject.SetActive(false)
+  2. CheckpointText → Animation.Play("CheckpointFeedback")
+  3. GameAudioManager → PlaySound("checkpoint") [optional]
+
+### Coin Prefab
+InputTriggerZone → onTriggerEnterEvent:
+  1. ScoreManager → GameCollectionManager.Increment(1)
+  2. Coin → GameObject.SetActive(false)
+
+### Damage Zone (Spikes)
+InputTriggerZone → onTriggerStayEvent:
+  1. HealthManager → GameHealthManager.TakeDamage(10)
+
+### Fall Zone
+InputTriggerZone → onTriggerEnterEvent:
+  1. HealthManager → GameHealthManager.TakeDamage(100)
+
+### Health Manager
+GameHealthManager → onDeath:
+  1. RestartManager → ActionRestartScene.RestartScene()
+
+### Checkpoint System (Automatic)
+GameCheckpointPersistence:
+  - Automatically saves position when checkpoint activated
+  - Automatically restores on scene load
+  - Saves score from ScoreManager
+  - Saves health from HealthManager
+
+---
+
+## HIERARCHY STRUCTURE
+
+CheckpointExample Scene
+├── CheckpointSystem (GameCheckpointPersistence)
+├── ScoreManager (GameCollectionManager)
+├── HealthManager (GameHealthManager)
+├── RestartManager (ActionRestartScene)
+├── Player (Sphere + BallController)
+├── Main Camera
+├── Ground (Plane)
+├── Checkpoint_01 (Cube + InputCheckpointZone)
+│   └── CheckpointParticles (Particle System)
+├── Checkpoint_02 (Cube + InputCheckpointZone)
+│   └── CheckpointParticles (Particle System)
+├── Checkpoint_03 (Cube + InputCheckpointZone)
+│   └── CheckpointParticles (Particle System)
+├── Coin_01 through 05 (Cylinder + InputTriggerZone)
+├── DamageZone_Spikes (Cube + InputTriggerZone)
+├── FallZone_DeathPlane (Plane + InputTriggerZone)
+├── VictoryZone (Cube + InputTriggerZone) [optional]
+└── GameUI (Canvas)
+    ├── ScoreText (TextMeshProUGUI)
+    ├── HealthText (TextMeshProUGUI)
+    └── CheckpointText (TextMeshProUGUI)
+
+---
+
+## LEARNING OUTCOMES
+
+Students will learn:
+1. **Persistent Data**: How DontDestroyOnLoad saves data across scene reloads
+2. **Event Chains**: How multiple systems connect through UnityEvents
+3. **Trigger Mechanics**: Collision detection for checkpoints, coins, hazards
+4. **State Management**: Saving and restoring game state (position, score, health)
+5. **Visual Feedback**: Materials, particles, UI to communicate checkpoint activation
+6. **Game Flow**: Death → Reload → Restore checkpoint loop
+7. **Modular Design**: Each component serves one purpose but combines for complex behavior
+
+## EXTENSIONS FOR STUDENTS
+
+Challenge students to:
+1. Add a timer that saves/restores at checkpoints
+2. Create sequential checkpoint validation (must hit in order)
+3. Add inventory items that persist through checkpoints
+4. Create checkpoint "currency" (spend coins to activate checkpoint)
+5. Add difficulty modes (checkpoints restore partial health vs full health)
+6. Create checkpoint selection UI (teleport to any activated checkpoint)
+7. Add checkpoint statistics (times died, time spent between checkpoints)
+
+---
+
+## TROUBLESHOOTING CHECKLIST
+
+- [ ] Player has "Player" tag
+- [ ] All checkpoint zones have "Is Trigger" checked
+- [ ] GameCheckpointPersistence has "Persist Across Scenes" checked
+- [ ] Score Manager assigned in CheckpointPersistence
+- [ ] Health Manager assigned in CheckpointPersistence
+- [ ] Death event wired to RestartScene
+- [ ] Checkpoint zones have "Save Full State" checked
+- [ ] CheckpointActivated material created and assigned
+- [ ] Console shows "Checkpoint saved" when entering zone
+- [ ] UI text fields assigned to managers
+
+If checkpoint doesn't restore:
+- Check Console for "Checkpoint saved" message
+- Verify DontDestroyOnLoad is working (CheckpointSystem persists)
+- Check Restore Delay isn't too short
+- Ensure scene reload is happening (not just respawn action)
