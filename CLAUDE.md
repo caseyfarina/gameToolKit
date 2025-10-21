@@ -25,10 +25,14 @@ The project features a ball physics-based game template as the foundation, with 
   - `CodebaseImprovements_GameGenres.txt` - Guide for implementing different game genres using the toolkit
   - `TimerExample_SceneSetup.txt` - Complete example scene setup demonstrating GameTimerManager
 
+## Unity Version
+
+**This project uses Unity 6** (Unity 6000.0.x or later)
+
 ## Development Commands
 
 ### Building and Running
-- Open the project in Unity Editor (Unity version determined by ProjectSettings)
+- Open the project in Unity Editor (Unity 6)
 - Build using Unity's Build Settings (Ctrl+Shift+B)
 - Play in editor using Unity's Play button or Ctrl+P
 

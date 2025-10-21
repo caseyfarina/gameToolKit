@@ -151,6 +151,9 @@ public class ActionAnimateTransform : MonoBehaviour
     private bool modifiesScale = false;
     private bool hasCachedPropertyFlags = false;
 
+    // Track if Start() has been called to avoid double-playing
+    private bool hasStarted = false;
+
     void OnValidate()
     {
         // Warn about common mistakes
@@ -179,6 +182,16 @@ public class ActionAnimateTransform : MonoBehaviour
         if (!hasEnabledMapping && curveMappings.Length > 0)
         {
             Debug.LogWarning($"[{gameObject.name}] ActionAnimateTransform: All curve mappings are disabled. No animation will play.", this);
+        }
+    }
+
+    void OnEnable()
+    {
+        // If Start() has already been called and playOnStart is enabled,
+        // restart the animation when the GameObject is re-enabled
+        if (hasStarted && playOnStart)
+        {
+            Play();
         }
     }
 
@@ -221,6 +234,9 @@ public class ActionAnimateTransform : MonoBehaviour
 
         // Store initial transform values
         CaptureInitialValues();
+
+        // Mark that Start() has been called
+        hasStarted = true;
 
         // Auto-play if enabled
         if (playOnStart)

@@ -6,7 +6,7 @@ using UnityEngine.Events;
 /// Physics-based player controller for rolling ball movement with camera-relative controls.
 /// Common use: Rolling ball games, marble platformers, physics-based puzzles, or Katamari-style games.
 /// </summary>
-public class PhysicsPlayerController : MonoBehaviour
+public class PhysicsBallPlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float moveForce = 10f;
