@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using DG.Tweening;
 
 /// <summary>
 /// Automatically fades in from black every time the scene loads or restarts.
@@ -46,37 +47,25 @@ public class FadeInFromBlackOnRestart : MonoBehaviour
     private void Start()
     {
         // Automatically fade out on every scene load/restart
-        StartCoroutine(FadeOutFromBlack());
+        FadeOutFromBlack();
     }
 
-    private IEnumerator FadeOutFromBlack()
+    private void FadeOutFromBlack()
     {
-        // Optional delay before starting fade
-        if (fadeStartDelay > 0f)
+        // Fade from alpha 1 (black) to alpha 0 (transparent) using DOTween
+        imageComponent.DOFade(0f, fadeDuration)
+            .SetDelay(fadeStartDelay)
+            .SetUpdate(true) // Use unscaled time so it works during pause
+            .OnComplete(() => onFadeComplete?.Invoke());
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up DOTween tweens when this object is destroyed
+        if (imageComponent != null)
         {
-            yield return new WaitForSecondsRealtime(fadeStartDelay);
+            imageComponent.DOKill();
         }
-
-        float elapsedTime = 0f;
-        Color color = imageComponent.color;
-
-        // Fade from alpha 1 (black) to alpha 0 (transparent)
-        while (elapsedTime < fadeDuration)
-        {
-            elapsedTime += Time.unscaledDeltaTime; // Use unscaled time so it works during pause
-            float progress = Mathf.Clamp01(elapsedTime / fadeDuration);
-
-            color.a = Mathf.Lerp(1f, 0f, progress);
-            imageComponent.color = color;
-
-            yield return null;
-        }
-
-        // Ensure we end fully transparent
-        color.a = 0f;
-        imageComponent.color = color;
-
-        onFadeComplete?.Invoke();
     }
 
     /// <summary>

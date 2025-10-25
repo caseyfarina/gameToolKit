@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using DG.Tweening;
 
 /// <summary>
 /// Displays text messages on screen with optional fade effects and customizable duration.
@@ -13,19 +14,27 @@ public class ActionDisplayText : MonoBehaviour
     [Header("Display Settings")]
     [Tooltip("How long the text stays visible on screen (in seconds)")]
     [SerializeField] private float timeOnScreen = 3f;
-    
+
     [Header("Text Appearance")]
     [Tooltip("Font to use for displayed text")]
     [SerializeField] private TMP_FontAsset font;
-    
+
     [Tooltip("Should text fade in/out or appear instantly?")]
     [SerializeField] private bool useFading = true;
-    
+
     [Tooltip("Duration of fade in/out animations")]
     [SerializeField] private float fadeDuration = 0.5f;
+
+    [Header("Typewriter Effect")]
+    [Tooltip("Should text appear one character at a time (typewriter effect)?")]
+    [SerializeField] private bool useTypewriter = false;
+
+    [Tooltip("How many characters appear per second (typewriter speed)")]
+    [SerializeField] private float charactersPerSecond = 20f;
     
     private TextMeshProUGUI textComponent;
     private Coroutine displayCoroutine;
+    private Sequence displaySequence;
     private Color originalColor;
     
     private void Start()
@@ -68,7 +77,13 @@ public class ActionDisplayText : MonoBehaviour
         {
             StopCoroutine(displayCoroutine);
         }
-        
+
+        // Stop any currently running DOTween sequence
+        if (displaySequence != null && displaySequence.IsActive())
+        {
+            displaySequence.Kill();
+        }
+
         // Start the new display sequence
         displayCoroutine = StartCoroutine(DisplayTextSequence(message));
     }
@@ -88,57 +103,84 @@ public class ActionDisplayText : MonoBehaviour
     
     private IEnumerator DisplayTextSequence(string message)
     {
-        // Set the text content
-        textComponent.text = message;
-        
+        float typewriterDuration = 0f;
+
+        if (useTypewriter)
+        {
+            // Calculate typewriter duration
+            typewriterDuration = message.Length / charactersPerSecond;
+
+            // Set full text (invisible) to reserve space
+            textComponent.text = message;
+            textComponent.maxVisibleCharacters = 0;
+        }
+        else
+        {
+            // Set the text content normally
+            textComponent.text = message;
+        }
+
+        // Create DOTween sequence for the display animation
+        displaySequence = DOTween.Sequence();
+
         if (useFading)
         {
-            // Fade in
-            yield return StartCoroutine(FadeText(0f, originalColor.a, fadeDuration));
-            
-            // Wait for display time (minus fade durations)
-            float waitTime = Mathf.Max(0f, timeOnScreen - (fadeDuration * 2f));
-            yield return new WaitForSeconds(waitTime);
-            
-            // Fade out
-            yield return StartCoroutine(FadeText(originalColor.a, 0f, fadeDuration));
+            // Set initial alpha to 0 and fade in
+            SetTextVisibility(0f);
+            displaySequence.Append(textComponent.DOFade(originalColor.a, fadeDuration));
         }
         else
         {
             // Show instantly
             SetTextVisibility(originalColor.a);
-            
-            // Wait for display time
-            yield return new WaitForSeconds(timeOnScreen);
-            
+        }
+
+        // Typewriter effect (if enabled) - still uses coroutine as it's character-based
+        if (useTypewriter)
+        {
+            yield return StartCoroutine(TypewriterText(message));
+        }
+
+        // Wait for display time (minus fade and typewriter durations)
+        float waitTime = Mathf.Max(0f, timeOnScreen - (useFading ? fadeDuration * 2f : 0f) - typewriterDuration);
+        yield return new WaitForSeconds(waitTime);
+
+        if (useFading)
+        {
+            // Fade out using DOTween
+            textComponent.DOFade(0f, fadeDuration).OnComplete(() =>
+            {
+                // Clear the text content
+                textComponent.text = "";
+                textComponent.maxVisibleCharacters = 99999; // Reset to default
+                displaySequence = null;
+                displayCoroutine = null;
+            });
+        }
+        else
+        {
             // Hide instantly
             SetTextVisibility(0f);
+
+            // Clear the text content
+            textComponent.text = "";
+            textComponent.maxVisibleCharacters = 99999; // Reset to default
+            displaySequence = null;
+            displayCoroutine = null;
         }
-        
-        // Clear the text content
-        textComponent.text = "";
-        displayCoroutine = null;
     }
-    
-    private IEnumerator FadeText(float fromAlpha, float toAlpha, float duration)
+
+    private IEnumerator TypewriterText(string message)
     {
-        float elapsedTime = 0f;
-        
-        while (elapsedTime < duration)
+        int totalCharacters = message.Length;
+        float delay = 1f / charactersPerSecond;
+
+        for (int i = 0; i <= totalCharacters; i++)
         {
-            elapsedTime += Time.deltaTime;
-            float normalizedTime = elapsedTime / duration;
-            
-            float currentAlpha = Mathf.Lerp(fromAlpha, toAlpha, normalizedTime);
-            SetTextVisibility(currentAlpha);
-            
-            yield return null;
+            textComponent.maxVisibleCharacters = i;
+            yield return new WaitForSeconds(delay);
         }
-        
-        // Ensure we end at exactly the target alpha
-        SetTextVisibility(toAlpha);
     }
-    
     private void SetTextVisibility(float alpha)
     {
         if (textComponent != null)
@@ -159,11 +201,33 @@ public class ActionDisplayText : MonoBehaviour
             StopCoroutine(displayCoroutine);
             displayCoroutine = null;
         }
-        
+
+        if (displaySequence != null && displaySequence.IsActive())
+        {
+            displaySequence.Kill();
+            displaySequence = null;
+        }
+
+        // Kill any individual fade tweens
+        textComponent.DOKill();
+
         SetTextVisibility(0f);
         if (textComponent != null)
         {
             textComponent.text = "";
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up DOTween sequences and tweens when this object is destroyed
+        if (displaySequence != null && displaySequence.IsActive())
+        {
+            displaySequence.Kill();
+        }
+        if (textComponent != null)
+        {
+            textComponent.DOKill();
         }
     }
     
@@ -181,5 +245,21 @@ public class ActionDisplayText : MonoBehaviour
     public bool IsDisplaying()
     {
         return displayCoroutine != null;
+    }
+
+    /// <summary>
+    /// Enable or disable the typewriter effect
+    /// </summary>
+    public void SetTypewriterEffect(bool enabled)
+    {
+        useTypewriter = enabled;
+    }
+
+    /// <summary>
+    /// Set the typewriter speed (characters per second)
+    /// </summary>
+    public void SetTypewriterSpeed(float speed)
+    {
+        charactersPerSecond = Mathf.Max(1f, speed);
     }
 }

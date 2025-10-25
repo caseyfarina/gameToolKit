@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
+using DG.Tweening;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -67,7 +68,7 @@ public class PhysicsBumper : MonoBehaviour
     private Color baseEmissionColor;
     private float baseEmissionFloat;
     private bool isFloatProperty = false;
-    private Coroutine animationCoroutine;
+    private Sequence animationSequence;
     private float lastTriggerTime = -Mathf.Infinity; // Initialize to allow immediate first use
 
     private void Start()
@@ -208,11 +209,11 @@ public class PhysicsBumper : MonoBehaviour
     {
         lastTriggerTime = Time.time;
 
-        if (animationCoroutine != null)
+        if (animationSequence != null && animationSequence.IsActive())
         {
-            StopCoroutine(animationCoroutine);
+            animationSequence.Kill();
         }
-        animationCoroutine = StartCoroutine(AnimateEffects());
+        AnimateEffects();
     }
 
     /// <summary>
@@ -231,9 +232,8 @@ public class PhysicsBumper : MonoBehaviour
         cooldownDuration = Mathf.Max(0f, duration);
     }
 
-    private IEnumerator AnimateEffects()
+    private void AnimateEffects()
     {
-        float elapsedTime = 0f;
         // Calculate target scale for each axis independently
         Vector3 targetScale = new Vector3(
             originalScale.x * scaleMultiplier.x,
@@ -241,58 +241,68 @@ public class PhysicsBumper : MonoBehaviour
             originalScale.z * scaleMultiplier.z
         );
 
-        while (elapsedTime < animationDuration)
-        {
-            elapsedTime += Time.deltaTime;
-            float normalizedTime = elapsedTime / animationDuration;
-            
-            // Evaluate animation progress
-            float progress = animationCurve.Evaluate(normalizedTime);
+        // Create the animation sequence
+        animationSequence = DOTween.Sequence();
 
-            // Animate scale
-            transform.localScale = Vector3.Lerp(originalScale, targetScale, progress);
+        // Animate scale using DOTween with custom AnimationCurve
+        animationSequence.Append(
+            transform.DOScale(targetScale, animationDuration)
+                .SetEase(animationCurve) // Use the custom AnimationCurve from inspector
+        );
 
-            // Animate emission if enabled (check useEmissionAnimation every frame)
-            if (useEmissionAnimation && hasEmission && material != null)
-            {
-                if (isFloatProperty)
-                {
-                    // Animate float property (e.g., EmissionIntensity for shadergraph)
-                    // Base should already be 1, so just add the animated intensity
-                    float animatedValue = baseEmissionFloat + (emissionIntensity * progress);
-                    material.SetFloat(emissionPropertyName, animatedValue);
-                }
-                else
-                {
-                    // Animate color property (standard URP emission)
-                    Color targetEmission = emissionColor * emissionIntensity;
-                    material.SetColor(emissionPropertyName, Color.Lerp(baseEmissionColor, targetEmission, progress));
-                }
-            }
-            
-            yield return null;
-        }
-
-        // Reset to original values
-        transform.localScale = originalScale;
+        // Animate emission if enabled
         if (useEmissionAnimation && hasEmission && material != null)
         {
             if (isFloatProperty)
             {
-                // Reset to original base value (which should already be 1 for flat look)
-                material.SetFloat(emissionPropertyName, baseEmissionFloat);
+                // Animate float property (e.g., EmissionIntensity for shadergraph)
+                float targetValue = baseEmissionFloat + emissionIntensity;
+                animationSequence.Join(
+                    DOTween.To(() => material.GetFloat(emissionPropertyName),
+                              x => material.SetFloat(emissionPropertyName, x),
+                              targetValue,
+                              animationDuration)
+                        .SetEase(animationCurve)
+                );
             }
             else
             {
-                material.SetColor(emissionPropertyName, baseEmissionColor);
+                // Animate color property (standard URP emission)
+                Color targetEmission = emissionColor * emissionIntensity;
+                animationSequence.Join(
+                    material.DOColor(targetEmission, emissionPropertyName, animationDuration)
+                        .SetEase(animationCurve)
+                );
             }
         }
 
-        animationCoroutine = null;
+        // Reset to original values when complete
+        animationSequence.OnComplete(() =>
+        {
+            transform.localScale = originalScale;
+            if (useEmissionAnimation && hasEmission && material != null)
+            {
+                if (isFloatProperty)
+                {
+                    material.SetFloat(emissionPropertyName, baseEmissionFloat);
+                }
+                else
+                {
+                    material.SetColor(emissionPropertyName, baseEmissionColor);
+                }
+            }
+            animationSequence = null;
+        });
     }
 
     private void OnDestroy()
     {
+        // Clean up DOTween sequence
+        if (animationSequence != null && animationSequence.IsActive())
+        {
+            animationSequence.Kill();
+        }
+
         // Clean up material instance if we created one
         if (material != null)
         {

@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Events;
 using System.Collections;
+using DG.Tweening;
 
 /// <summary>
 /// Displays and animates UI elements including score, health bars, timers, and victory screens.
@@ -62,8 +63,8 @@ public class GameUIManager : MonoBehaviour
 
     private float gameTime;
     private bool isTimerRunning = false;
-    private Coroutine scoreAnimationCoroutine;
-    private Coroutine healthAnimationCoroutine;
+    private Tween scoreAnimationTween;
+    private Tween healthAnimationTween;
 
     public int CurrentScore => currentScore;
     public float GameTime => gameTime;
@@ -80,6 +81,19 @@ public class GameUIManager : MonoBehaviour
         if (isTimerRunning)
         {
             UpdateTimer();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up DOTween tweens when this object is destroyed
+        if (scoreAnimationTween != null && scoreAnimationTween.IsActive())
+        {
+            scoreAnimationTween.Kill();
+        }
+        if (healthAnimationTween != null && healthAnimationTween.IsActive())
+        {
+            healthAnimationTween.Kill();
         }
     }
 
@@ -150,29 +164,22 @@ public class GameUIManager : MonoBehaviour
 
     private void AnimateScoreChange()
     {
-        if (scoreText != null && scoreAnimationCoroutine == null)
+        if (scoreText != null)
         {
-            scoreAnimationCoroutine = StartCoroutine(AnimateScorePunch());
+            // Kill any existing animation
+            if (scoreAnimationTween != null && scoreAnimationTween.IsActive())
+            {
+                scoreAnimationTween.Kill();
+            }
+
+            // Use DOTween's punch scale for a nice bounce effect
+            scoreAnimationTween = scoreText.transform.DOPunchScale(
+                Vector3.one * 0.2f,         // Punch amount
+                scoreAnimationDuration,      // Duration
+                10,                          // Vibrato (elasticity)
+                1                            // Elasticity
+            ).SetUpdate(true);              // Use unscaled time
         }
-    }
-
-    private IEnumerator AnimateScorePunch()
-    {
-        Vector3 originalScale = scoreText.transform.localScale;
-        float elapsed = 0f;
-
-        while (elapsed < scoreAnimationDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float progress = elapsed / scoreAnimationDuration;
-            float scaleMultiplier = scorePunchCurve.Evaluate(progress);
-
-            scoreText.transform.localScale = originalScale * (1f + scaleMultiplier * 0.2f);
-            yield return null;
-        }
-
-        scoreText.transform.localScale = originalScale;
-        scoreAnimationCoroutine = null;
     }
 
     #endregion
@@ -209,12 +216,20 @@ public class GameUIManager : MonoBehaviour
         if (healthBar != null && maxHealth > 0)
         {
             float healthPercent = (float)currentHealth / maxHealth;
-            healthBar.value = healthPercent;
 
-            // Animate health bar change
-            if (healthAnimationCoroutine != null)
-                StopCoroutine(healthAnimationCoroutine);
-            healthAnimationCoroutine = StartCoroutine(AnimateHealthBar(healthPercent));
+            // Kill any existing animation
+            if (healthAnimationTween != null && healthAnimationTween.IsActive())
+            {
+                healthAnimationTween.Kill();
+            }
+
+            // Animate health bar change using DOTween
+            healthAnimationTween = DOTween.To(
+                () => healthBar.value,
+                x => healthBar.value = x,
+                healthPercent,
+                healthAnimationDuration
+            ).SetUpdate(true); // Use unscaled time
 
             // Update health bar color
             UpdateHealthBarColor(healthPercent);
@@ -235,24 +250,6 @@ public class GameUIManager : MonoBehaviour
 
             healthBarFill.color = targetColor;
         }
-    }
-
-    private IEnumerator AnimateHealthBar(float targetValue)
-    {
-        float startValue = healthBar.value;
-        float elapsed = 0f;
-
-        while (elapsed < healthAnimationDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float progress = elapsed / healthAnimationDuration;
-
-            healthBar.value = Mathf.Lerp(startValue, targetValue, progress);
-            yield return null;
-        }
-
-        healthBar.value = targetValue;
-        healthAnimationCoroutine = null;
     }
 
     #endregion

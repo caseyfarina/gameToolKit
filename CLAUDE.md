@@ -46,6 +46,10 @@ The project features a ball physics-based game template as the foundation, with 
 - Cinemachine (`com.unity.cinemachine`: "3.1.2") - Camera management
 - AI Navigation (`com.unity.ai.navigation`: "2.0.5") - Pathfinding
 - Adobe Substance 3D (`Assets/Adobe/Substance3DForUnity/`) - Material authoring
+- **DOTween** (`Assets/Plugins/Demigiant/DOTween/`) - Professional animation engine for smooth tweening
+  - **Note**: Project uses DOTween FREE (open-source), not DOTween Pro
+  - Used for UI animations, fades, scales, and transform animations
+  - All animation scripts are compatible with the free version
 
 ## Core Game Architecture
 
@@ -82,7 +86,25 @@ Located in `Assets/Scripts/Actions/`:
   - Multiple prefab support with random selection
   - Positional variance using insideUnitSphere
 - `ActionRestartScene.cs` - Scene restart functionality (button/event only)
-- `ActionDisplayImage.cs` - UI image display with effects and fade capabilities
+- `ActionDisplayImage.cs` - UI image display with DOTween animations:
+  - Fade in/out effects with customizable durations
+  - Scale animations with start/target scale control
+  - Simultaneous fade and scale animations using DOTween Sequences
+- `ActionDisplayText.cs` - TextMeshPro text display with DOTween animations:
+  - Fade in/out transitions
+  - Typewriter effect with adjustable speed
+  - Automatic text clearing after display duration
+- `ActionDialogueSequence.cs` - Complete dialogue system for visual novels/story games:
+  - Sequential dialogue line playback with auto-advance or manual progression
+  - Character portrait support with left/right positioning
+  - Multiple animation types for images (None, SlideUpFromBottom, SlideInFromSide, FadeIn, PopIn)
+  - Multiple animation types for text (None, TypeOn, FadeIn, SlideUpFromBottom)
+  - Customizable background image with position/size control
+  - DOTween-based animations with configurable durations and easing
+  - Loop mode for repeating dialogues
+  - Preview system in Editor with custom inspector
+  - Events: onDialogueStart, onDialogueComplete, onLineChanged
+  - Companion script: `DialogueUIController.cs` handles UI creation and management
 
 #### Physics Components
 Located in `Assets/Scripts/Physics/`:
@@ -97,10 +119,10 @@ Located in `Assets/Scripts/Physics/`:
   - Configurable jump modes (none, random, collision-based, combined)
   - Automatic Rigidbody and CapsuleCollider setup
   - Rotation toward movement direction
-- `PhysicsBumper.cs` - Advanced bumper/repulsion system with:
+- `PhysicsBumper.cs` - Advanced bumper/repulsion system with DOTween animations:
   - Configurable force direction (collision normal or radial)
-  - Scale animation with custom curves and per-axis scaling
-  - Material emission effects for visual feedback
+  - Scale animation using DOTween with AnimationCurve support and per-axis scaling
+  - Material emission effects animated with DOTween (color or float properties)
   - Cooldown system with events
   - Comprehensive editor gizmos and debugging
 - `PhysicsPlatformStick.cs` - Moving platform attachment system using physics forces
@@ -124,9 +146,9 @@ Located in `Assets/Scripts/Game/`:
   - Periodic event system (e.g., every 10 seconds)
   - Three display formats (MM:SS, decimal seconds, HH:MM:SS)
   - Automatic pause/resume integration with GameStateManager
-- `GameUIManager.cs` - UI data display system for:
-  - Score display with punch animations
-  - Health bar with color transitions
+- `GameUIManager.cs` - UI data display system with DOTween animations:
+  - Score display with DOTween punch scale animations
+  - Health bar with smooth value tweening and color transitions
   - Timer display with multiple formats
   - Victory text with score and time summary
 - `GameAudioManager.cs` - Audio system with:
@@ -147,12 +169,25 @@ Located in `Assets/Scripts/Game/`:
 
 #### UI Components
 Located in `Assets/Scripts/UI/`:
-- `FadeInFromBlackOnRestart.cs` - Automatic scene transition fade (standalone):
+- `FadeInFromBlackOnRestart.cs` - Automatic scene transition fade using DOTween:
   - Automatically fades from black every time scene loads/restarts
   - No event wiring required - completely automatic
+  - DOTween-based fade with unscaled time support (works during pause)
   - Editable fade duration and optional start delay
   - Auto-enables Image component on play (disable Image component in editor to not block view)
   - Perfect for hiding checkpoint restoration and scene restart transitions
+
+#### Animation Components
+Located in `Assets/Scripts/Animation/`:
+- `ActionAnimateTransform.cs` - Procedural transform animation using DOTween with AnimationCurves:
+  - Animates 9 transform properties independently: PositionX/Y/Z, RotationX/Y/Z, ScaleX/Y/Z
+  - Uses AnimationCurve for complex easing (set in Inspector)
+  - DOTween integration with `.SetEase(curve)` for curve support
+  - Supports Offset mode (add to initial value) and Absolute mode (replace value)
+  - Loop modes: Normal loop and Ping-Pong (Yoyo)
+  - Unscaled time support
+  - Events: onAnimationStart, onAnimationComplete, onAnimationLoop, onAnimationUpdate
+  - **Note**: usePhysicsUpdate not supported with DOTween (use PhysicsPlatformAnimator for physics-based platforms)
 
 ## Code Conventions
 
@@ -239,6 +274,85 @@ When creating new scripts for student use:
 4. Consider editor gizmos for visual feedback
 5. Follow the underscore naming convention for utility scripts (`_scriptName`)
 6. **REQUIRED**: Add XML documentation comments (see Documentation Generator section below)
+
+### Editor Scene Generator Patterns
+
+When creating editor tools to generate example scenes (like `EventSequencerExampleGenerator`), follow these critical patterns:
+
+#### Programmatic UnityEvent Configuration
+UnityEvents must be configured via **SerializedProperty** to persist properly. Direct manipulation via UnityEventTools or reflection won't save to the scene:
+
+```csharp
+private static void AddPersistentListener(SerializedProperty unityEvent, Object target, string methodName)
+{
+    SerializedProperty calls = unityEvent.FindPropertyRelative("m_PersistentCalls.m_Calls");
+    int index = calls.arraySize;
+    calls.InsertArrayElementAtIndex(index);
+
+    SerializedProperty call = calls.GetArrayElementAtIndex(index);
+    call.FindPropertyRelative("m_Target").objectReferenceValue = target;
+    call.FindPropertyRelative("m_MethodName").stringValue = methodName;
+    call.FindPropertyRelative("m_Mode").enumValueIndex = (int)PersistentListenerMode.EventDefined;
+    call.FindPropertyRelative("m_CallState").enumValueIndex = (int)UnityEventCallState.RuntimeOnly;
+}
+
+// For methods with bool parameters:
+private static void AddPersistentListener(SerializedProperty unityEvent, Object target, string methodName, bool boolValue)
+{
+    // ... same as above, plus:
+    call.FindPropertyRelative("m_Mode").enumValueIndex = (int)PersistentListenerMode.Bool;
+    call.FindPropertyRelative("m_Arguments.m_BoolArgument").boolValue = boolValue;
+}
+```
+
+#### UI EventSystem Requirement
+Unity's UI system requires an **EventSystem** component for button clicks to work. Always check and create if missing:
+
+```csharp
+// Create EventSystem if it doesn't exist (required for UI button interaction)
+if (GameObject.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
+{
+    GameObject eventSystemObj = new GameObject("EventSystem");
+    eventSystemObj.AddComponent<UnityEngine.EventSystems.EventSystem>();
+    eventSystemObj.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+}
+```
+
+**Note**: Use `FindFirstObjectByType` (Unity 6+), not the deprecated `FindObjectOfType`.
+
+#### Component Enable/Disable Lifecycle
+Components with `playOnStart` behavior need **OnEnable** handlers to work with enable/disable cycles:
+
+```csharp
+// PROBLEM: Start() only runs once when object is created
+void Start() {
+    if (playOnStart) Play();
+}
+
+// SOLUTION: Add OnEnable to restart on re-enable
+private bool hasStarted = false;
+
+void OnEnable() {
+    // Only play if Start() has already been called
+    if (hasStarted && playOnStart) {
+        Play();
+    }
+}
+
+void Start() {
+    // ... initialization ...
+    hasStarted = true;
+    if (playOnStart) Play();
+}
+```
+
+This pattern ensures animations/behaviors restart when GameObjects are re-enabled, critical for event sequencers and spawning systems.
+
+#### SerializedObject Best Practices
+- Always call `so.ApplyModifiedProperties()` after making changes
+- Call `EditorUtility.SetDirty(component)` to mark the object as modified
+- Use `Undo.RegisterCreatedObjectUndo()` for undo support when creating GameObjects
+- Access private fields via `SerializedObject.FindProperty("fieldName")`
 
 ## Script Documentation Generator
 
@@ -413,3 +527,88 @@ public class InputTriggerZone : MonoBehaviour
 10. **Version History** - Track when scripts were last modified and log changes
 
 **Next Implementation**: UnityEvent descriptions (#3) to help students understand when events fire and how to use them in the Inspector.
+
+---
+
+## Changelog
+
+### October 2025 - DOTween Animation Refactoring
+
+**Major Changes:**
+- **Added DOTween FREE** to the project (`Assets/Plugins/Demigiant/DOTween/`)
+  - Professional animation engine for smooth, efficient tweening
+  - All scripts use DOTween FREE (open-source), not DOTween Pro
+  - Students can use the toolkit without requiring paid assets
+
+**Scripts Refactored to Use DOTween:**
+
+1. **ActionDisplayImage.cs** - Replaced ~70 lines of manual coroutine code
+   - Now uses `DOFade()` and `DOScale()` for smooth transitions
+   - Simultaneous fade and scale animations using `Sequence.Join()`
+   - Automatic cleanup with `OnDestroy()`
+   - Code reduction: 318 → 265 lines
+
+2. **ActionDisplayText.cs** - Replaced 17-line fade coroutine
+   - Uses `DOFade()` for text fade in/out
+   - Typewriter effect uses `DOTween.To()` for `maxVisibleCharacters` animation
+   - More reliable than `DOText()` for maintaining text formatting
+
+3. **FadeInFromBlackOnRestart.cs** - Replaced 28-line fade coroutine
+   - Entire fade now **4 lines** of DOTween code
+   - Built-in unscaled time support with `.SetUpdate(true)`
+   - Automatic delay handling with `.SetDelay()`
+
+4. **GameUIManager.cs** - Replaced score punch and health bar coroutines
+   - Uses built-in `DOPunchScale()` for score animations
+   - Health bar uses `DOTween.To()` for smooth value interpolation
+   - Simpler, more readable code
+
+5. **PhysicsBumper.cs** - Replaced ~60 lines of animation coroutine
+   - **Preserves AnimationCurve support** via `.SetEase(curve)`
+   - Scale and emission animations run simultaneously with `Sequence.Join()`
+   - Supports both float and color material properties
+
+6. **ActionAnimateTransform.cs** - Replaced ~200 lines of coroutine logic
+   - Complex multi-property animations using DOTween
+   - **Full AnimationCurve support** for custom easing
+   - All 9 transform properties (Position/Rotation/Scale XYZ) animated independently
+   - Maintains Offset and Absolute modes
+   - Loop and PingPong support via `LoopType.Yoyo`
+   - **Note**: `usePhysicsUpdate` not supported (use `PhysicsPlatformAnimator` instead)
+   - **Note**: `loopDelay` not currently supported
+
+**New Scripts Added:**
+
+7. **ActionDialogueSequence.cs** - Complete dialogue system for visual novels
+   - Sequential dialogue line playback with multiple animation types
+   - Character portrait support with left/right positioning
+   - Image animations: None, SlideUpFromBottom, SlideInFromSide, FadeIn, PopIn
+   - Text animations: None, TypeOn, FadeIn, SlideUpFromBottom
+   - Customizable background with position/size controls
+   - Default fade durations: 0.2 seconds for snappy transitions
+   - Loop mode, preview system, and comprehensive events
+   - TypeOn animation uses `DOTween.To()` for `maxVisibleCharacters`
+
+8. **DialogueUIController.cs** - Dialogue UI management (companion script)
+   - Handles creation and manipulation of all dialogue UI elements
+   - Decoupled from dialogue playback logic for clean separation of concerns
+   - Dynamic Canvas creation with proper CanvasScaler setup
+   - Preview mode support for Editor workflow
+
+9. **ActionDialogueSequenceEditor.cs** - Custom Inspector for dialogue system
+   - Context-aware animation settings (only shows relevant fields)
+   - Live preview in Editor with line selection
+   - Visual layout improvements for student usability
+
+**Technical Benefits:**
+- **~405 total lines of code removed** and replaced with cleaner DOTween API
+- Consistent animation approach across all scripts
+- Better performance (DOTween is highly optimized)
+- Easier to maintain and extend
+- Students learn professional-grade animation techniques
+- AnimationCurve support preserved where needed for advanced customization
+
+**Compatibility:**
+- All refactored scripts work with **DOTween FREE** (no Pro required)
+- Backwards compatible - existing scenes continue to work
+- No breaking changes to public APIs or Inspector fields

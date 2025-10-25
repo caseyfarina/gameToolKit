@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 /// <summary>
 /// Displays UI images on screen with fade and scale animation effects.
@@ -39,7 +40,7 @@ public class ActionDisplayImage : MonoBehaviour
     
     private Image imageComponent;
     private RectTransform rectTransform;
-    private Coroutine displayCoroutine;
+    private Sequence displaySequence;
     private Color originalColor;
     private Vector3 originalScale;
     
@@ -88,14 +89,14 @@ public class ActionDisplayImage : MonoBehaviour
             return;
         }
         
-        // Stop any currently running display coroutine
-        if (displayCoroutine != null)
+        // Stop any currently running display sequence
+        if (displaySequence != null && displaySequence.IsActive())
         {
-            StopCoroutine(displayCoroutine);
+            displaySequence.Kill();
         }
-        
+
         // Start the new display sequence
-        displayCoroutine = StartCoroutine(DisplayImageSequence(imageToDisplay));
+        StartCoroutine(DisplayImageSequence(imageToDisplay));
     }
     
     /// <summary>
@@ -130,130 +131,68 @@ public class ActionDisplayImage : MonoBehaviour
     {
         // Set the image sprite
         imageComponent.sprite = imageToDisplay;
-        
+
         // Calculate animation durations
         float actualFadeDuration = useFading ? fadeDuration : 0f;
         float actualScaleDuration = useScaling ? scaleDuration : 0f;
         float maxAnimationDuration = Mathf.Max(actualFadeDuration, actualScaleDuration);
-        
+
         // Set initial states
+        if (useFading)
+        {
+            SetImageVisibility(0f);
+        }
+        else
+        {
+            SetImageVisibility(originalColor.a);
+        }
+
         if (useScaling)
         {
             rectTransform.localScale = startScale;
         }
-        
+
+        // Create the animation sequence
+        displaySequence = DOTween.Sequence();
+
         // Animate in (fade and/or scale)
-        if (useFading || useScaling)
+        if (useFading)
         {
-            yield return StartCoroutine(AnimateIn(actualFadeDuration, actualScaleDuration));
+            displaySequence.Join(imageComponent.DOFade(originalColor.a, actualFadeDuration));
         }
-        else
+
+        if (useScaling)
         {
-            // Show instantly
-            SetImageVisibility(originalColor.a);
+            displaySequence.Join(rectTransform.DOScale(targetScale, actualScaleDuration));
         }
-        
+
         // Wait for display time (minus animation durations)
         float waitTime = Mathf.Max(0f, timeOnScreen - (maxAnimationDuration * 2f));
-        yield return new WaitForSeconds(waitTime);
-        
+        displaySequence.AppendInterval(waitTime);
+
         // Animate out (fade and/or scale)
-        if (useFading || useScaling)
-        {
-            yield return StartCoroutine(AnimateOut(actualFadeDuration, actualScaleDuration));
-        }
-        else
-        {
-            // Hide instantly
-            SetImageVisibility(0f);
-        }
-        
-        // Reset to original scale
-        if (useScaling)
-        {
-            rectTransform.localScale = originalScale;
-        }
-        
-        // Clear the image sprite (optional - keeps last image)
-        // imageComponent.sprite = null;
-        displayCoroutine = null;
-    }
-    
-    private IEnumerator AnimateIn(float fadeTime, float scaleTime)
-    {
-        float maxTime = Mathf.Max(fadeTime, scaleTime);
-        float elapsedTime = 0f;
-        
-        while (elapsedTime < maxTime)
-        {
-            elapsedTime += Time.deltaTime;
-            float normalizedTime = elapsedTime / maxTime;
-            
-            // Handle fading
-            if (useFading && fadeTime > 0f)
-            {
-                float fadeProgress = Mathf.Clamp01(elapsedTime / fadeTime);
-                float currentAlpha = Mathf.Lerp(0f, originalColor.a, fadeProgress);
-                SetImageVisibility(currentAlpha);
-            }
-            
-            // Handle scaling
-            if (useScaling && scaleTime > 0f)
-            {
-                float scaleProgress = Mathf.Clamp01(elapsedTime / scaleTime);
-                Vector3 currentScale = Vector3.Lerp(startScale, targetScale, scaleProgress);
-                rectTransform.localScale = currentScale;
-            }
-            
-            yield return null;
-        }
-        
-        // Ensure we end at target values
         if (useFading)
-            SetImageVisibility(originalColor.a);
-        if (useScaling)
-            rectTransform.localScale = targetScale;
-    }
-    
-    private IEnumerator AnimateOut(float fadeTime, float scaleTime)
-    {
-        float maxTime = Mathf.Max(fadeTime, scaleTime);
-        float elapsedTime = 0f;
-        
-        Vector3 currentScale = rectTransform.localScale;
-        
-        while (elapsedTime < maxTime)
         {
-            elapsedTime += Time.deltaTime;
-            float normalizedTime = elapsedTime / maxTime;
-            
-            // Handle fading
-            if (useFading && fadeTime > 0f)
-            {
-                float fadeProgress = Mathf.Clamp01(elapsedTime / fadeTime);
-                float currentAlpha = Mathf.Lerp(originalColor.a, 0f, fadeProgress);
-                SetImageVisibility(currentAlpha);
-            }
-            
-            // Handle scaling
-            if (useScaling && scaleTime > 0f)
-            {
-                float scaleProgress = Mathf.Clamp01(elapsedTime / scaleTime);
-                Vector3 targetScaleOut = startScale;
-                Vector3 newScale = Vector3.Lerp(currentScale, targetScaleOut, scaleProgress);
-                rectTransform.localScale = newScale;
-            }
-            
-            yield return null;
+            displaySequence.Append(imageComponent.DOFade(0f, actualFadeDuration));
         }
-        
-        // Ensure we end at target values
-        if (useFading)
-            SetImageVisibility(0f);
+
         if (useScaling)
-            rectTransform.localScale = startScale;
+        {
+            displaySequence.Join(rectTransform.DOScale(startScale, actualScaleDuration));
+        }
+
+        // Reset to original scale when complete
+        displaySequence.OnComplete(() =>
+        {
+            if (useScaling)
+            {
+                rectTransform.localScale = originalScale;
+            }
+            displaySequence = null;
+        });
+
+        yield break;
     }
-    
     private void SetImageVisibility(float alpha)
     {
         if (imageComponent != null)
@@ -269,14 +208,14 @@ public class ActionDisplayImage : MonoBehaviour
     /// </summary>
     public void HideImage()
     {
-        if (displayCoroutine != null)
+        if (displaySequence != null && displaySequence.IsActive())
         {
-            StopCoroutine(displayCoroutine);
-            displayCoroutine = null;
+            displaySequence.Kill();
+            displaySequence = null;
         }
-        
+
         SetImageVisibility(0f);
-        
+
         // Reset scale if using scaling
         if (useScaling && rectTransform != null)
         {
@@ -305,7 +244,16 @@ public class ActionDisplayImage : MonoBehaviour
     /// </summary>
     public bool IsDisplaying()
     {
-        return displayCoroutine != null;
+        return displaySequence != null && displaySequence.IsActive();
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up DOTween sequences when this object is destroyed
+        if (displaySequence != null && displaySequence.IsActive())
+        {
+            displaySequence.Kill();
+        }
     }
     
     /// <summary>
