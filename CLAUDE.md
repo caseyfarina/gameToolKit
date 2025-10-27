@@ -24,6 +24,8 @@ The project features a ball physics-based game template as the foundation, with 
   - `Week1_ComponentWorkflows.txt` - Detailed workflows for GameAudioManager, GameStateManager, GameUIManager
   - `CodebaseImprovements_GameGenres.txt` - Guide for implementing different game genres using the toolkit
   - `TimerExample_SceneSetup.txt` - Complete example scene setup demonstrating GameTimerManager
+  - `CharacterControllerCC_Documentation.md` - Comprehensive setup guide for CharacterControllerCC with Quick Start, all parameters, troubleshooting, and 4 common scenarios
+  - `DecalAnimationSystem_Documentation.md` - Complete URP decal animation guide covering ActionDecalSequence (standalone), ActionDecalSequenceLibrary, and blinking scripts with setup examples
 
 ## Unity Version
 
@@ -105,6 +107,32 @@ Located in `Assets/Scripts/Actions/`:
   - Preview system in Editor with custom inspector
   - Events: onDialogueStart, onDialogueComplete, onLineChanged
   - Companion script: `DialogueUIController.cs` handles UI creation and management
+- `ActionDecalSequence.cs` - URP Decal Projector material animation system:
+  - Frame-by-frame material sequence playback with custom timing per frame
+  - Works standalone (no library required) for simple animations
+  - Playback controls: Play, Stop, Pause, Resume, JumpToFrame
+  - Adjustable playback speed (0.1x to 5x) and loop mode
+  - Custom Inspector with live playback controls and duration calculator
+  - Events: onSequenceStart, onSequenceComplete, onFrameChanged, onPause, onResume, onStop
+  - Perfect for: animated facial expressions, flashing signs, texture cycling
+- `ActionDecalSequenceLibrary.cs` - Manager for multiple ActionDecalSequence components:
+  - Switch between different decal animation sequences by index or name
+  - Navigation controls: PlayNext, PlayPrevious, PlaySequence(int)
+  - Supports pause/resume/stop for current sequence
+  - Custom Inspector with sequence switcher buttons and live status
+  - Perfect for: character expressions, animation state machines, multi-state objects
+- `ActionBlinkDecal.cs` - Automatic eye blinking using material switching:
+  - Two-state animation (open eyes ↔ closed eyes)
+  - Randomized timing with configurable variation (natural feel)
+  - Manual BlinkOnce() for triggered blinks
+  - Events: onBlinkStart, onBlinkComplete
+  - Simple setup: assign two materials and configure timing
+- `ActionBlinkDecalOptimized.cs` - Optimized blinking using texture switching:
+  - More efficient than ActionBlinkDecal (switches textures, not materials)
+  - Creates material instance automatically (safe for multiple characters)
+  - Configurable shader property name (default: "_BaseMap" for URP)
+  - Recommended for scenes with multiple blinking characters
+  - Same functionality as ActionBlinkDecal with better performance
 
 #### Physics Components
 Located in `Assets/Scripts/Physics/`:
@@ -114,6 +142,18 @@ Located in `Assets/Scripts/Physics/`:
   - Ground detection and slope handling
   - Animation integration with child animator support
   - Jump mechanics and physics-based movement
+- `CharacterControllerCC.cs` - CharacterController-based humanoid controller (Unity TPC style):
+  - Smooth movement with acceleration/deceleration (speedChangeRate)
+  - Height-based jumping with physics formula and anti-spam timeout
+  - SmoothDampAngle rotation for natural turning
+  - Robust slope detection with automatic sliding on steep surfaces
+  - Moving platform support (Tag/Layer/Both detection modes)
+  - Dodge mechanic with cooldown and air dodge option
+  - Full animator integration with 5 parameters (Speed, Grounded, VerticalVelocity, IsDodging, IsWalking)
+  - StringToHash optimization with parameter safety checks
+  - 8 UnityEvents for no-code interaction (onJump, onLanding, onDodge, etc.)
+  - Extensive debug gizmos for grounded check, slopes, platforms
+  - **Documentation**: See CharacterControllerCC_Documentation.md for complete setup guide
 - `PhysicsEnemyController.cs` - AI enemy controller with:
   - Player detection and chase behavior
   - Configurable jump modes (none, random, collision-based, combined)
@@ -441,9 +481,9 @@ The generator automatically includes:
 - ❌ **Excludes**: Editor scripts in Editor folders
 
 #### Current Compliance Status
-As of October 2025, **all 42 educational scripts (100%) are fully compliant** with XML documentation requirements:
+As of October 2025, **all 46 educational scripts (100%) are fully compliant** with XML documentation requirements:
 - Input: 6/6 scripts ✅
-- Actions: 8/8 scripts ✅
+- Actions: 12/12 scripts ✅ (includes 4 decal animation scripts)
 - Physics: 7/7 scripts ✅
 - Game: 9/9 scripts ✅
 - UI: 1/1 scripts ✅
@@ -612,3 +652,143 @@ public class InputTriggerZone : MonoBehaviour
 - All refactored scripts work with **DOTween FREE** (no Pro required)
 - Backwards compatible - existing scenes continue to work
 - No breaking changes to public APIs or Inspector fields
+
+---
+
+### October 2025 - Comprehensive Documentation & Example Generators
+
+**Documentation Added:**
+
+1. **CharacterControllerCC_Documentation.md** - Complete 940-line setup guide
+   - **Quick Start section** for overwhelmed students (5-minute setup)
+   - All 40+ parameters explained with tables, defaults, and descriptions
+   - Complete animator setup guide with recommended transition settings
+   - Hierarchy structure and component requirements
+   - 12 public methods and 8 read-only properties reference
+   - 8 UnityEvents fully documented
+   - Scene gizmo visualization guide (7 different gizmos explained)
+   - 4 common setup scenarios: Basic TPC, Platformer with Moving Platforms, Combat with Dodge, Slope-Based Level Design
+   - Comprehensive troubleshooting section (8 common issues with solutions)
+   - Best practices for performance, level design, animation, and events
+   - Technical notes on physics timing, grounded detection algorithm, moving platform system, and slope physics
+
+2. **DecalAnimationSystem_Documentation.md** - Complete 830-line URP decal guide
+   - **Quick Start section** (3 easy steps for first animation)
+   - Clearly answers: "Can ActionDecalSequence be used without library?" (YES!)
+   - 4 complete script references: ActionDecalSequence, ActionDecalSequenceLibrary, ActionBlinkDecal, ActionBlinkDecalOptimized
+   - Material vs Texture switching explained
+   - URP project setup guide for enabling decals (one-time setup)
+   - 4 common scenarios: Flashing neon sign, character facial expressions, realistic NPC blinking, interactive poster
+   - Comprehensive troubleshooting (8 common issues: visibility, playback, materials)
+   - Best practices for performance, organization, animation design
+   - Complete example: Full facial expression system with hierarchy and event wiring
+
+**New Decal Animation Scripts (4 main + 2 editors):**
+
+1. **ActionDecalSequence.cs** - Frame-by-frame material animation for URP DecalProjector
+   - Material sequence with custom timing per frame (MaterialFrame struct)
+   - Playback controls: Play(), Stop(), Pause(), Resume(), JumpToFrame(int)
+   - Adjustable playback speed (0.1x to 5x) with loop support
+   - Runtime frame manipulation: AddFrame(), ClearFrames(), SetPlaybackSpeed()
+   - 6 UnityEvents: onSequenceStart, onSequenceComplete, onSequencePause, onSequenceResume, onSequenceStop, onFrameChanged
+   - Public properties: IsPlaying, IsPaused, CurrentFrameIndex, TotalFrames
+   - Pause state preservation (remembers remaining time when paused)
+   - Auto-cleanup on destroy/disable
+
+2. **ActionDecalSequenceLibrary.cs** - Manager for multiple sequences
+   - Switch between sequences by index or name
+   - Navigation: PlayNext(), PlayPrevious(), PlaySequence(int), PlaySequenceByName(string)
+   - Control current sequence: Pause, Resume, Stop
+   - Get sequence references: GetCurrentSequence(), GetSequence(int)
+   - Default sequence with auto-play on start
+   - 2 UnityEvents: onSequenceChanged, onLibraryStopped
+   - Automatic null checking and validation
+
+3. **ActionBlinkDecal.cs** - Simple automatic blinking with material switching
+   - Two materials (open eyes / closed eyes)
+   - Randomized timing with variation percentage (natural feel)
+   - Configurable: timeBetweenBlinks, randomPercentage, blinkDuration
+   - Manual BlinkOnce() for triggered blinks
+   - Runtime material/timing changes
+   - 2 UnityEvents: onBlinkStart, onBlinkComplete
+
+4. **ActionBlinkDecalOptimized.cs** - Optimized texture-based blinking
+   - Switches textures instead of materials (more efficient)
+   - Creates material instance automatically (prevents asset modification)
+   - Configurable shader property name (default "_BaseMap" for URP)
+   - Shader.PropertyToID caching for performance
+   - Recommended for multiple characters
+   - Same API as ActionBlinkDecal
+
+5. **ActionDecalSequenceEditor.cs** - Custom Inspector for sequences
+   - Shows total frames and duration in edit mode
+   - Calculates adjusted duration based on playback speed
+   - Live playback controls in play mode (Play/Pause/Resume/Stop buttons)
+   - Real-time status display (Playing/Paused/Stopped)
+   - Current frame counter (e.g., "3 / 5")
+   - Auto-repaint in play mode for live updates
+
+6. **ActionDecalSequenceLibraryEditor.cs** - Custom Inspector for library
+   - Lists all sequences with names and indices
+   - Shows current playing sequence with status
+   - Number buttons (0-9) for quick sequence switching
+   - Previous/Next navigation buttons
+   - Pause/Resume/Stop controls
+   - Live status updates in play mode
+
+**New Example Generator Scripts (11 + 1 helper):**
+
+Educational example scene generators accessible via **Tools > Examples** menu:
+
+1. **PhysicsBumperExampleGenerator.cs** - Demonstrates PhysicsBumper with DOTween animations
+2. **CharacterControllerExampleGenerator.cs** - Shows CharacterControllerCC setup with moving platform
+3. **EnemyControllerExampleGenerator.cs** - PhysicsEnemyController chasing player
+4. **CollectionSystemExampleGenerator.cs** - GameCollectionManager with collectibles
+5. **HealthSystemExampleGenerator.cs** - GameHealthManager with damage zones and UI
+6. **TimerSystemExampleGenerator.cs** - GameTimerManager countdown example
+7. **InventorySystemExampleGenerator.cs** - GameInventorySlot system with UI
+8. **CheckpointSystemExampleGenerator.cs** - GameCheckpointManager demonstration
+9. **TriggerZoneExampleGenerator.cs** - InputTriggerZone examples
+10. **AutoSpawnerExampleGenerator.cs** - ActionAutoSpawner with random spawning
+11. **PuzzleSystemExampleGenerator.cs** - ActionPuzzleRequirement with multiple targets
+12. **ExamplePlayerBallFactory.cs** - Helper for creating proper player balls with PlayerInput
+
+**All example generators follow consistent patterns:**
+- Use pink/blue materials from Assets/Materials/
+- Create TMP annotations explaining the example
+- Wire UnityEvents via SerializedProperty for persistence
+- Create EventSystem if needed for UI interaction
+- Position camera for optimal viewing
+- Use ExamplePlayerBallFactory for consistent player setup
+
+**CharacterControllerCC Improvements:**
+
+- Added **animator parameter safety checks** to prevent crashes
+  - New HasParameter(int paramHash) method checks if parameter exists before setting
+  - All animator.Set calls wrapped with existence checks
+  - Prevents "Parameter 'Hash XXXXX' does not exist" errors
+- Fixed animator parameter naming: `"IsGrounded"` → `"Grounded"` (Unity convention)
+- Now gracefully handles incomplete Animator Controllers (won't crash if parameters missing)
+- StringToHash optimization already in place for performance
+
+**Documentation Features:**
+
+Both documentation files feature:
+- **Supportive, encouraging tone** for overwhelmed students
+- **Quick Start sections** (5 minutes or less) at the beginning
+- "Don't worry!" and "You've got this!" messaging
+- Progressive disclosure: simple first, then complex details
+- Clear "When NOT to use" sections
+- Extensive troubleshooting with checkmarks
+- Real-world examples and scenarios
+- Best practices for students
+- Professional formatting with tables, code blocks, hierarchies
+
+**Educational Impact:**
+
+- **6,434 new lines** of documentation and code added
+- Students can now generate 11 example scenes with one click
+- Complete reference documentation for two major systems
+- Decal animation system provides texture-based animation without rigging
+- CharacterControllerCC rivals Unity's official Starter Assets in features
+- All scripts maintain 100% XML documentation compliance (46/46 scripts)
