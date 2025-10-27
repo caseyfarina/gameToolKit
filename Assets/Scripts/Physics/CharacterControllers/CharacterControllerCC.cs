@@ -3,6 +3,16 @@ using UnityEngine.InputSystem;
 using UnityEngine.Events;
 
 /// <summary>
+/// Platform detection modes for moving platform support
+/// </summary>
+public enum PlatformDetectionMode
+{
+    Tag,        // Only check platform tag (easiest for students)
+    Layer,      // Only check platform layer
+    Both        // Require both tag AND layer (most restrictive)
+}
+
+/// <summary>
 /// CharacterController-based humanoid character controller with slope detection, dodge mechanics, animation support, and built-in moving platform support.
 /// Common use: Third-person adventure games, action platformers, or character movement systems requiring kinematic control.
 /// </summary>
@@ -12,10 +22,15 @@ public class CharacterControllerCC : MonoBehaviour
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float maxVelocity = 8f;
+    [Tooltip("Acceleration and deceleration rate")]
+    [SerializeField] private float speedChangeRate = 10.0f;
     [SerializeField] private float airControlFactor = 0.5f;
 
     [Header("Jump Settings")]
-    [SerializeField] private float jumpForce = 12f;
+    [Tooltip("Height in meters the character can jump")]
+    [SerializeField] private float jumpHeight = 1.2f;
+    [Tooltip("Time required to pass before being able to jump again")]
+    [SerializeField] private float jumpTimeout = 0.5f;
     [SerializeField] private float groundCheckDistance = 0.1f;
     [SerializeField] private LayerMask groundLayer = 1;
 
@@ -26,14 +41,25 @@ public class CharacterControllerCC : MonoBehaviour
     [SerializeField] private bool allowAirDodge = false;
 
     [Header("Character Settings")]
-    [SerializeField] private float rotationSpeed = 10f;
+    [Tooltip("How fast the character turns to face movement direction")]
+    [Range(0.0f, 0.3f)]
+    [SerializeField] private float rotationSmoothTime = 0.12f;
     [SerializeField] private CharacterController controller;
+
+    [Header("Gravity Settings")]
+    [SerializeField] private float gravity = -20f;
+    [SerializeField] private float terminalVelocity = -50f;
+    // FIX 3: Added a customizable force for sticking to the ground
+    [SerializeField] private float groundStickForce = -1.5f;
 
     [Header("Slope Settings")]
     [SerializeField] private float maxSlopeAngle = 45f;
     [SerializeField] private float slopeCheckDistance = 1f;
+    [SerializeField] private float slopeSlideSpeed = 5f;
 
     [Header("Platform Settings")]
+    [Tooltip("Detect platforms by layer, tag, or both")]
+    [SerializeField] private PlatformDetectionMode platformDetectionMode = PlatformDetectionMode.Tag;
     [SerializeField] private LayerMask platformLayer;
     [SerializeField] private string platformTag = "movingPlatform";
     [SerializeField] private bool applyVerticalMovement = true;
@@ -109,9 +135,17 @@ public class CharacterControllerCC : MonoBehaviour
     private bool wasOnPlatform;
     private int landingStabilizationFrames = 0;
 
-    // Gravity settings
-    private float gravity = -20f;
-    private float terminalVelocity = -50f;
+    // Unity TPC improvements
+    private float jumpTimeoutDelta;
+    private float currentSpeed;
+    private float rotationVelocity;
+
+    // Animation IDs (StringToHash optimization)
+    private int _animIDSpeed;
+    private int _animIDGrounded;
+    private int _animIDVerticalVelocity;
+    private int _animIDIsDodging;
+    private int _animIDIsWalking;
 
     private void Start()
     {
@@ -120,6 +154,19 @@ public class CharacterControllerCC : MonoBehaviour
 
         if (characterAnimator == null && characterMesh != null)
             characterAnimator = characterMesh.GetComponentInChildren<Animator>();
+
+        // Initialize animation IDs for StringToHash optimization
+        if (characterAnimator != null)
+        {
+            _animIDSpeed = Animator.StringToHash("Speed");
+            _animIDGrounded = Animator.StringToHash("Grounded");
+            _animIDVerticalVelocity = Animator.StringToHash("VerticalVelocity");
+            _animIDIsDodging = Animator.StringToHash("IsDodging");
+            _animIDIsWalking = Animator.StringToHash("IsWalking");
+        }
+
+        // Initialize jump timeout
+        jumpTimeoutDelta = jumpTimeout;
 
         // Auto-configure CharacterController for character control
         ConfigureCharacterController();
@@ -174,21 +221,29 @@ public class CharacterControllerCC : MonoBehaviour
         }
     }
 
+    // FIX 1: Keeping input checks and visual updates in Update()
     private void Update()
     {
         UpdateDodgeCooldown();
         CheckGrounded();
         CheckSlope();
         CheckForPlatform();
-        HandleDodge();
+        HandleDodge(); // Starts/stops dodge state, velocity applied in FixedUpdate
+        HandleJump(); // Sets jumpRequested, velocity applied in FixedUpdate
+
+        HandleRotation(); // FIX 4: Rotation is visual, stays in Update()
+        UpdateAnimations();
+        CheckMovementEvents();
+    }
+
+    // FIX 1: All physics-related calculations moved to FixedUpdate()
+    private void FixedUpdate()
+    {
         HandleMovement();
-        HandleJump();
+        HandleSlopeSliding();
         HandleGravity();
         ApplyPlatformMovement();
         ApplyMovement();
-        HandleRotation();
-        UpdateAnimations();
-        CheckMovementEvents();
     }
 
     private void UpdateDodgeCooldown()
@@ -209,20 +264,58 @@ public class CharacterControllerCC : MonoBehaviour
     private void CheckGrounded()
     {
         wasGrounded = isGrounded;
+        bool wasOnSteepSlope = isOnSteepSlope;
 
-        // Use CharacterController's built-in grounded check
-        isGrounded = controller.isGrounded;
+        // If moving upward, we cannot be grounded (prevents immediate re-grounding after jump)
+        if (velocity.y > 0.1f)
+        {
+            isGrounded = false;
+            isOnSteepSlope = false;
+            slopeNormal = Vector3.up;
+        }
+        else
+        {
+            // Perform sphere cast downward to detect ground AND get surface normal
+            Vector3 castOrigin = transform.position - new Vector3(0f, controller.height * 0.5f - controller.radius, 0f);
+            castOrigin.y += 0.1f; // Start slightly above to ensure we hit the ground
 
-        // Additional sphere check for more reliable detection
-        Vector3 checkPosition = transform.position - new Vector3(0f, controller.height * 0.5f - controller.radius, 0f);
-        bool sphereCheck = Physics.CheckSphere(
-            checkPosition,
-            controller.radius + groundCheckDistance,
-            groundLayer
-        );
+            RaycastHit hit;
+            float castDistance = groundCheckDistance + 0.15f;
+            bool sphereHit = Physics.SphereCast(
+                castOrigin,
+                controller.radius * 0.9f, // Slightly smaller than controller radius
+                Vector3.down,
+                out hit,
+                castDistance,
+                groundLayer
+            );
 
-        // Combine both checks
-        isGrounded = isGrounded || sphereCheck;
+            // Use CharacterController's built-in check as backup
+            bool controllerGrounded = controller.isGrounded;
+
+            // Combine both checks for reliability
+            isGrounded = controllerGrounded || sphereHit;
+
+            // Analyze surface normal to determine slope angle
+            if (sphereHit)
+            {
+                slopeNormal = hit.normal;
+                float slopeAngle = Vector3.Angle(hit.normal, Vector3.up);
+                isOnSteepSlope = slopeAngle > maxSlopeAngle;
+            }
+            else if (controllerGrounded)
+            {
+                // Controller says grounded but no sphere hit - assume flat ground
+                slopeNormal = Vector3.up;
+                isOnSteepSlope = false;
+            }
+            else
+            {
+                // Not grounded at all
+                slopeNormal = Vector3.up;
+                isOnSteepSlope = false;
+            }
+        }
 
         // Landing event
         if (isGrounded && !wasGrounded)
@@ -245,6 +338,12 @@ public class CharacterControllerCC : MonoBehaviour
             onGrounded.Invoke();
         }
 
+        // Steep slope event
+        if (isOnSteepSlope && !wasOnSteepSlope)
+        {
+            onSteepSlope.Invoke();
+        }
+
         // Count down stabilization frames
         if (landingStabilizationFrames > 0)
         {
@@ -254,43 +353,28 @@ public class CharacterControllerCC : MonoBehaviour
 
     private void CheckSlope()
     {
-        bool wasOnSteepSlope = isOnSteepSlope;
-        isOnSteepSlope = false;
-        slopeNormal = Vector3.up;
-
-        // Check for slopes in front of character
-        Vector3 checkOrigin = transform.position + Vector3.up * 0.1f;
-
-        // Forward slope check
-        if (lastMoveDirection != Vector3.zero)
+        // Additional forward slope check for blocking movement into walls
+        // This prevents walking into steep slopes ahead
+        if (lastMoveDirection != Vector3.zero && isGrounded)
         {
-            if (Physics.Raycast(checkOrigin, lastMoveDirection, out RaycastHit forwardHit, controller.radius + slopeCheckDistance, groundLayer))
+            Vector3 checkOrigin = transform.position + Vector3.up * (controller.height * 0.25f);
+            RaycastHit forwardHit;
+
+            if (Physics.Raycast(checkOrigin, lastMoveDirection, out forwardHit, controller.radius + slopeCheckDistance, groundLayer))
             {
-                float slopeAngle = Vector3.Angle(forwardHit.normal, Vector3.up);
-                if (slopeAngle > maxSlopeAngle)
+                float forwardSlopeAngle = Vector3.Angle(forwardHit.normal, Vector3.up);
+
+                // If there's a steep wall ahead, also mark as steep slope
+                if (forwardSlopeAngle > maxSlopeAngle)
                 {
                     isOnSteepSlope = true;
-                    slopeNormal = forwardHit.normal;
+                    // Don't override slopeNormal from CheckGrounded unless this is steeper
+                    if (Vector3.Angle(forwardHit.normal, Vector3.up) > Vector3.Angle(slopeNormal, Vector3.up))
+                    {
+                        slopeNormal = forwardHit.normal;
+                    }
                 }
             }
-        }
-
-        // Downward slope check
-        Vector3 downCheckOrigin = transform.position - new Vector3(0f, controller.height * 0.5f - controller.radius - 0.1f, 0f);
-        if (Physics.Raycast(downCheckOrigin, Vector3.down, out RaycastHit downHit, slopeCheckDistance, groundLayer))
-        {
-            float slopeAngle = Vector3.Angle(downHit.normal, Vector3.up);
-            if (slopeAngle > maxSlopeAngle)
-            {
-                isOnSteepSlope = true;
-                slopeNormal = downHit.normal;
-            }
-        }
-
-        // Fire event when entering steep slope
-        if (isOnSteepSlope && !wasOnSteepSlope)
-        {
-            onSteepSlope.Invoke();
         }
     }
 
@@ -301,16 +385,40 @@ public class CharacterControllerCC : MonoBehaviour
         // Raycast downward to detect platform
         Vector3 rayStart = transform.position - new Vector3(0f, controller.height * 0.5f - controller.radius, 0f);
 
+        // Use appropriate layer mask based on detection mode
+        LayerMask raycastLayer = platformDetectionMode == PlatformDetectionMode.Tag ? groundLayer : platformLayer;
+
         RaycastHit hit;
         bool foundPlatform = Physics.Raycast(
             rayStart,
             Vector3.down,
             out hit,
             controller.radius + groundCheckDistance + 0.1f,
-            platformLayer
+            raycastLayer
         );
 
-        if (foundPlatform && hit.collider.CompareTag(platformTag))
+        // Check platform based on detection mode
+        bool isPlatformValid = false;
+        if (foundPlatform)
+        {
+            switch (platformDetectionMode)
+            {
+                case PlatformDetectionMode.Tag:
+                    // Use groundLayer for raycast, filter by tag
+                    isPlatformValid = hit.collider.CompareTag(platformTag);
+                    break;
+                case PlatformDetectionMode.Layer:
+                    // Use platformLayer for raycast, any hit is valid
+                    isPlatformValid = true;
+                    break;
+                case PlatformDetectionMode.Both:
+                    // Use platformLayer for raycast, also check tag
+                    isPlatformValid = hit.collider.CompareTag(platformTag);
+                    break;
+            }
+        }
+
+        if (isPlatformValid)
         {
             if (currentPlatform != hit.transform)
             {
@@ -374,7 +482,7 @@ public class CharacterControllerCC : MonoBehaviour
             onDodge.Invoke();
         }
 
-        // Execute dodge movement
+        // Execute dodge movement (Applies velocity that will be moved in FixedUpdate)
         if (isDodging)
         {
             // Cancel dodge if on steep slope
@@ -438,47 +546,96 @@ public class CharacterControllerCC : MonoBehaviour
 
             if (!blockMovement)
             {
-                float currentSpeed = moveSpeed;
+                float targetSpeed = moveSpeed;
                 if (!isGrounded)
                 {
-                    currentSpeed *= airControlFactor;
+                    targetSpeed *= airControlFactor;
                 }
 
-                // Apply speed with max velocity cap
-                Vector3 targetVelocity = moveDirection * currentSpeed;
-                targetVelocity = Vector3.ClampMagnitude(targetVelocity, maxVelocity);
+                // Get current horizontal speed
+                Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
+                float currentHorizontalSpeed = horizontalVelocity.magnitude;
 
-                velocity.x = targetVelocity.x;
-                velocity.z = targetVelocity.z;
+                // Smooth acceleration to target speed (Unity TPC style)
+                currentSpeed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed,
+                    Time.fixedDeltaTime * speedChangeRate);
+
+                // Clamp to max velocity
+                currentSpeed = Mathf.Min(currentSpeed, maxVelocity);
+
+                // Apply smoothed speed in movement direction
+                velocity.x = moveDirection.x * currentSpeed;
+                velocity.z = moveDirection.z * currentSpeed;
             }
         }
         else
         {
-            // No input - stop horizontal movement when grounded
-            if (isGrounded && !isDodging)
+            // No input - smooth deceleration when grounded (but not on steep slopes)
+            if (isGrounded && !isDodging && !isOnSteepSlope)
             {
-                velocity.x = 0f;
-                velocity.z = 0f;
+                Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
+                float currentHorizontalSpeed = horizontalVelocity.magnitude;
+
+                // Smooth deceleration to zero
+                currentSpeed = Mathf.Lerp(currentHorizontalSpeed, 0f,
+                    Time.fixedDeltaTime * speedChangeRate);
+
+                // Apply deceleration or stop completely if very slow
+                if (currentSpeed < 0.01f)
+                {
+                    velocity.x = 0f;
+                    velocity.z = 0f;
+                }
+                else
+                {
+                    Vector3 currentDirection = horizontalVelocity.normalized;
+                    velocity.x = currentDirection.x * currentSpeed;
+                    velocity.z = currentDirection.z * currentSpeed;
+                }
             }
+        }
+    }
+
+    private void HandleSlopeSliding()
+    {
+        // If grounded on a steep slope, slide down
+        if (isGrounded && isOnSteepSlope)
+        {
+            // Calculate slide direction (down the slope surface)
+            Vector3 slideDirection = Vector3.ProjectOnPlane(Vector3.down, slopeNormal).normalized;
+
+            // Set sliding velocity directly (don't accumulate)
+            velocity.x = slideDirection.x * slopeSlideSpeed;
+            velocity.z = slideDirection.z * slopeSlideSpeed;
         }
     }
 
     private void HandleJump()
     {
-        if (jumpRequested && isGrounded)
+        if (jumpRequested && isGrounded && jumpTimeoutDelta <= 0f)
         {
-            velocity.y = jumpForce;
+            // Height-based jump formula: velocity = sqrt(height * -2 * gravity)
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             jumpRequested = false;
+            isGrounded = false;  // Force not-grounded to ensure gravity applies
+            jumpTimeoutDelta = jumpTimeout; // Reset timeout
             onJump.Invoke();
+        }
+
+        // Countdown jump timeout
+        if (jumpTimeoutDelta > 0f)
+        {
+            jumpTimeoutDelta -= Time.fixedDeltaTime;
         }
     }
 
+    // FIX 3: Updated to use groundStickForce and Time.fixedDeltaTime
     private void HandleGravity()
     {
-        // Apply gravity
+        // Apply gravity when not grounded
         if (!isGrounded)
         {
-            velocity.y += gravity * Time.deltaTime;
+            velocity.y += gravity * Time.fixedDeltaTime;
 
             // Clamp to terminal velocity
             if (velocity.y < terminalVelocity)
@@ -488,23 +645,29 @@ public class CharacterControllerCC : MonoBehaviour
         }
         else
         {
-            // Keep slight downward force when grounded to stick to ground
-            if (velocity.y < 0f)
+            // When grounded, apply small downward force to stick to ground.
+            // Safety: also catches any erroneous positive velocity when grounded
+            if (velocity.y > 0f || velocity.y < groundStickForce)
             {
-                velocity.y = -2f;
+                velocity.y = groundStickForce;
             }
         }
     }
 
     private void ApplyPlatformMovement()
     {
-        // Skip application during landing stabilization frames to prevent jitter
-        if (isOnPlatform && currentPlatform != null && landingStabilizationFrames == 0)
+        if (!isOnPlatform || currentPlatform == null)
         {
-            // Calculate platform movement delta
-            Vector3 platformDelta = currentPlatform.position - lastPlatformPosition;
-            Quaternion platformRotationDelta = currentPlatform.rotation * Quaternion.Inverse(lastPlatformRotation);
+            return;
+        }
 
+        // Calculate platform movement delta
+        Vector3 platformDelta = currentPlatform.position - lastPlatformPosition;
+        Quaternion platformRotationDelta = currentPlatform.rotation * Quaternion.Inverse(lastPlatformRotation);
+
+        // Apply movement only after landing stabilization
+        if (landingStabilizationFrames == 0)
+        {
             // Filter vertical movement if disabled
             if (!applyVerticalMovement)
             {
@@ -522,31 +685,35 @@ public class CharacterControllerCC : MonoBehaviour
 
             // Apply platform movement
             controller.Move(platformDelta);
+        }
 
-            // Store current platform state for next frame
-            lastPlatformPosition = currentPlatform.position;
-            lastPlatformRotation = currentPlatform.rotation;
-        }
-        else if (isOnPlatform && currentPlatform != null)
-        {
-            // Still update platform tracking even during stabilization
-            lastPlatformPosition = currentPlatform.position;
-            lastPlatformRotation = currentPlatform.rotation;
-        }
+        // ALWAYS store current platform state for next frame's delta calculation
+        lastPlatformPosition = currentPlatform.position;
+        lastPlatformRotation = currentPlatform.rotation;
     }
 
+    // FIX 1: Using Time.fixedDeltaTime for CharacterController.Move for physics consistency
     private void ApplyMovement()
     {
         // Move character with calculated velocity
-        controller.Move(velocity * Time.deltaTime);
+        controller.Move(velocity * Time.fixedDeltaTime);
     }
 
+    // Unity TPC style: SmoothDampAngle for better rotation feel
     private void HandleRotation()
     {
-        if (lastMoveDirection != Vector3.zero && isGrounded)
+        // Only rotate when actively moving
+        if (moveInput != Vector2.zero && lastMoveDirection != Vector3.zero)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(lastMoveDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            // Calculate target angle from movement direction
+            float targetAngle = Mathf.Atan2(lastMoveDirection.x, lastMoveDirection.z) * Mathf.Rad2Deg;
+
+            // Smooth rotation using SmoothDampAngle
+            float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle,
+                ref rotationVelocity, rotationSmoothTime);
+
+            // Apply rotation
+            transform.rotation = Quaternion.Euler(0.0f, smoothAngle, 0.0f);
         }
     }
 
@@ -557,14 +724,41 @@ public class CharacterControllerCC : MonoBehaviour
             Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
             float speed = horizontalVelocity.magnitude;
 
-            characterAnimator.SetFloat("Speed", speed);
-            characterAnimator.SetBool("IsGrounded", isGrounded);
-            characterAnimator.SetFloat("VerticalVelocity", velocity.y);
-            characterAnimator.SetBool("IsDodging", isDodging);
+            // Use StringToHash IDs for better performance
+            // Only set parameters if they exist (prevents errors with incomplete Animator Controllers)
+            if (HasParameter(_animIDSpeed))
+                characterAnimator.SetFloat(_animIDSpeed, speed);
 
-            bool isWalking = speed > 0.1f && isGrounded;
-            characterAnimator.SetBool("IsWalking", isWalking);
+            if (HasParameter(_animIDGrounded))
+                characterAnimator.SetBool(_animIDGrounded, isGrounded);
+
+            if (HasParameter(_animIDVerticalVelocity))
+                characterAnimator.SetFloat(_animIDVerticalVelocity, velocity.y);
+
+            if (HasParameter(_animIDIsDodging))
+                characterAnimator.SetBool(_animIDIsDodging, isDodging);
+
+            if (HasParameter(_animIDIsWalking))
+            {
+                bool isWalking = speed > 0.1f && isGrounded;
+                characterAnimator.SetBool(_animIDIsWalking, isWalking);
+            }
         }
+    }
+
+    /// <summary>
+    /// Checks if animator has a parameter with the given hash
+    /// </summary>
+    private bool HasParameter(int paramHash)
+    {
+        if (characterAnimator == null) return false;
+
+        foreach (AnimatorControllerParameter param in characterAnimator.parameters)
+        {
+            if (param.nameHash == paramHash)
+                return true;
+        }
+        return false;
     }
 
     private void CheckMovementEvents()
@@ -593,11 +787,27 @@ public class CharacterControllerCC : MonoBehaviour
     }
 
     /// <summary>
-    /// Changes the force applied when jumping
+    /// Changes the jump height in meters
     /// </summary>
-    public void SetJumpForce(float newForce)
+    public void SetJumpHeight(float newHeight)
     {
-        jumpForce = newForce;
+        jumpHeight = newHeight;
+    }
+
+    /// <summary>
+    /// Changes the jump timeout duration
+    /// </summary>
+    public void SetJumpTimeout(float newTimeout)
+    {
+        jumpTimeout = newTimeout;
+    }
+
+    /// <summary>
+    /// Changes the acceleration and deceleration rate
+    /// </summary>
+    public void SetSpeedChangeRate(float newRate)
+    {
+        speedChangeRate = newRate;
     }
 
     /// <summary>
@@ -606,6 +816,14 @@ public class CharacterControllerCC : MonoBehaviour
     public void SetMaxVelocity(float newMax)
     {
         maxVelocity = newMax;
+    }
+
+    /// <summary>
+    /// Changes the rotation smoothing time
+    /// </summary>
+    public void SetRotationSmoothTime(float newSmoothTime)
+    {
+        rotationSmoothTime = newSmoothTime;
     }
 
     /// <summary>
@@ -632,6 +850,30 @@ public class CharacterControllerCC : MonoBehaviour
         dodgeCooldown = newCooldown;
     }
 
+    /// <summary>
+    /// Changes the gravity force applied to the character
+    /// </summary>
+    public void SetGravity(float newGravity)
+    {
+        gravity = newGravity;
+    }
+
+    /// <summary>
+    /// Changes the maximum falling speed
+    /// </summary>
+    public void SetTerminalVelocity(float newTerminalVelocity)
+    {
+        terminalVelocity = newTerminalVelocity;
+    }
+
+    /// <summary>
+    /// Changes how fast the character slides down steep slopes
+    /// </summary>
+    public void SetSlopeSlideSpeed(float newSlideSpeed)
+    {
+        slopeSlideSpeed = newSlideSpeed;
+    }
+
     public bool IsGrounded => isGrounded;
     public bool IsMoving => isMoving;
     public bool IsOnSteepSlope => isOnSteepSlope;
@@ -643,24 +885,26 @@ public class CharacterControllerCC : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        if (controller == null) return;
+        // Get controller reference if needed (for Edit mode visualization)
+        CharacterController cc = controller != null ? controller : GetComponent<CharacterController>();
+        if (cc == null) return;
 
         // Ground check visualization
         Gizmos.color = isGrounded ? Color.green : Color.red;
-        Vector3 checkPosition = transform.position - new Vector3(0f, controller.height * 0.5f - controller.radius, 0f);
-        Gizmos.DrawWireSphere(checkPosition, controller.radius + groundCheckDistance);
+        Vector3 checkPosition = transform.position - new Vector3(0f, cc.height * 0.5f - cc.radius, 0f);
+        Gizmos.DrawWireSphere(checkPosition, cc.radius + groundCheckDistance);
 
         // Platform detection ray
         Gizmos.color = isOnPlatform ? Color.green : Color.yellow;
-        Vector3 rayStart = transform.position - new Vector3(0f, controller.height * 0.5f - controller.radius, 0f);
-        Gizmos.DrawRay(rayStart, Vector3.down * (controller.radius + groundCheckDistance + 0.1f));
+        Vector3 rayStart = transform.position - new Vector3(0f, cc.height * 0.5f - cc.radius, 0f);
+        Gizmos.DrawRay(rayStart, Vector3.down * (cc.radius + groundCheckDistance + 0.1f));
 
         // Slope check visualization
         Gizmos.color = isOnSteepSlope ? Color.red : Color.yellow;
         if (lastMoveDirection != Vector3.zero)
         {
             Vector3 checkOrigin = transform.position + Vector3.up * 0.1f;
-            Gizmos.DrawRay(checkOrigin, lastMoveDirection * (controller.radius + slopeCheckDistance));
+            Gizmos.DrawRay(checkOrigin, lastMoveDirection * (cc.radius + slopeCheckDistance));
         }
 
         // Slope normal visualization
@@ -668,6 +912,14 @@ public class CharacterControllerCC : MonoBehaviour
         {
             Gizmos.color = Color.blue;
             Gizmos.DrawRay(transform.position, slopeNormal * 2f);
+        }
+
+        // Slope slide direction visualization
+        if (Application.isPlaying && isGrounded && isOnSteepSlope)
+        {
+            Vector3 slideDirection = Vector3.ProjectOnPlane(Vector3.down, slopeNormal).normalized;
+            Gizmos.color = Color.red;
+            Gizmos.DrawRay(transform.position, slideDirection * 3f);
         }
 
         // Dodge visualization
