@@ -175,6 +175,8 @@ Located in `Assets/Scripts/Physics/`:
   - Animation integration with child animator support
   - Jump mechanics and physics-based movement
 - `CharacterControllerCC.cs` - CharacterController-based humanoid controller (Unity TPC style):
+  - **Auto-requires**: CharacterController + PlayerInput components (added automatically)
+  - **Auto-configures**: PlayerInput with "Player" default action map via Reset()
   - Smooth movement with acceleration/deceleration (speedChangeRate)
   - Height-based jumping with physics formula and anti-spam timeout
   - SmoothDampAngle rotation for natural turning
