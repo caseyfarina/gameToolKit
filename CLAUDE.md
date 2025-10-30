@@ -634,18 +634,35 @@ The project was using DOTween UI extension methods (`DOFade()`, `DOAnchorPos()`)
    - Unscaled time support preserved with `.SetUpdate(true)`
 
 **Technical Implementation:**
+
+The project uses **lambda expressions** with `DOTween.To()` to tween properties directly, which is the DOTween FREE-compatible approach:
+
 ```csharp
 // BEFORE (DOTween Pro UI Extensions - NOT FREE):
 imageComponent.DOFade(0f, duration)
 rectTransform.DOAnchorPos(targetPosition, duration)
 
-// AFTER (DOTween FREE Core Methods):
-DOTween.To(() => imageComponent.color, x => imageComponent.color = x,
-    new Color(color.r, color.g, color.b, 0f), duration)
+// AFTER (DOTween FREE Core Methods with Lambdas):
+DOTween.To(
+    () => imageComponent.color,              // Getter lambda: returns current value
+    x => imageComponent.color = x,           // Setter lambda: sets new value
+    new Color(color.r, color.g, color.b, 0f), // Target value
+    duration                                  // Duration
+)
 
-DOTween.To(() => rectTransform.anchoredPosition, x => rectTransform.anchoredPosition = x,
-    targetPosition, duration)
+DOTween.To(
+    () => rectTransform.anchoredPosition,    // Getter lambda
+    x => rectTransform.anchoredPosition = x, // Setter lambda
+    targetPosition,                           // Target value
+    duration                                  // Duration
+)
 ```
+
+**Lambda Pattern Explanation:**
+- **Getter `() => property`**: Lambda that returns the current property value
+- **Setter `x => property = x`**: Lambda that sets the property to a new value
+- DOTween calls the getter/setter repeatedly to animate between current and target values
+- This works with ANY property (color, position, scale, custom values)
 
 **Impact:**
 - ✅ **100% DOTween FREE compatible** - No Pro license required
