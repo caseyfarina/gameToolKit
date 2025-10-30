@@ -2,6 +2,30 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Structure & Workflow
+
+**IMPORTANT: Development & Package Relationship**
+
+This project has a unique two-repository structure:
+
+1. **Development/Testing Environment** (This Repository)
+   - Location: `F:\Unity Projects 2025\gameToolKitFarina\gameToolKit\`
+   - This is the **main Unity project** where all development and testing happens
+   - Contains the full Unity project with scenes, testing assets, and the eventGameToolKit package embedded at `Assets/eventGameToolKit/`
+
+2. **Unity Package Repository** (Separate Git Repo)
+   - Location: `F:\Unity Projects 2025\eventGameToolKit\`
+   - This is the **standalone Unity package** with its own git repository
+   - Students install this package via Unity Package Manager
+   - Contains only the package contents (no test scenes or development assets)
+
+**Workflow:**
+- ✅ **Work in**: `gameToolKitFarina/gameToolKit/Assets/eventGameToolKit/` (this project)
+- ✅ **Test in**: `gameToolKitFarina/gameToolKit/` (full Unity project with scenes)
+- ✅ **Push to**: `eventGameToolKit/` repository (periodically sync changes to package repo)
+
+When making changes to scripts, always edit them in the `gameToolKitFarina/gameToolKit/Assets/eventGameToolKit/` directory. After testing and confirming changes work, those files need to be pushed to the separate `eventGameToolKit/` package repository.
+
 ## Project Overview
 
 This is an educational Unity 3D project for the "Animation and Interactivity" class. It provides a modular toolkit of scripts that students can use to create interactive experiences without needing to write code. The core design philosophy centers around UnityEvents, allowing students to visually wire together behaviors in the Unity Inspector to create complex interactive systems.
@@ -572,6 +596,98 @@ public class InputTriggerZone : MonoBehaviour
 
 ## Changelog
 
+### October 2025 - DOTween FREE Compatibility & CharacterControllerCC Animation Fix
+
+**CRITICAL: DOTween FREE Compatibility Refactor**
+
+The project was using DOTween UI extension methods (`DOFade()`, `DOAnchorPos()`) that are **NOT included in DOTween FREE**. All UI animation scripts have been refactored to use core `DOTween.To()` methods instead.
+
+**Scripts Refactored for DOTween FREE (4 scripts, 12 total changes):**
+
+1. **ActionDisplayImage.cs** - UI Image fade animations
+   - Replaced `imageComponent.DOFade()` with `DOTween.To()` animating Color alpha
+   - 2 occurrences fixed (fade in, fade out)
+   - Functionality identical, now FREE-compatible
+
+2. **ActionDisplayText.cs** - TextMeshProUGUI fade animations
+   - Replaced `textComponent.DOFade()` with `DOTween.To()` animating Color alpha
+   - 2 occurrences fixed (fade in, fade out)
+   - Typewriter effect unchanged (already used `DOTween.To()`)
+
+3. **ActionDialogueSequence.cs** - Dialogue system animations
+   - Replaced `Image.DOFade()` with `DOTween.To()` animating Color (4 occurrences)
+   - Replaced `RectTransform.DOAnchorPos()` with `DOTween.To()` animating anchoredPosition (3 occurrences)
+   - 7 total occurrences fixed across portrait and text animations
+   - All animation types still work: FadeIn, SlideUpFromBottom, SlideInFromSide, TypeOn
+
+4. **FadeInFromBlackOnRestart.cs** - Scene transition fade
+   - Replaced `imageComponent.DOFade()` with `DOTween.To()` animating Color alpha
+   - 1 occurrence fixed
+   - Unscaled time support preserved with `.SetUpdate(true)`
+
+**Technical Implementation:**
+```csharp
+// BEFORE (DOTween Pro UI Extensions - NOT FREE):
+imageComponent.DOFade(0f, duration)
+rectTransform.DOAnchorPos(targetPosition, duration)
+
+// AFTER (DOTween FREE Core Methods):
+DOTween.To(() => imageComponent.color, x => imageComponent.color = x,
+    new Color(color.r, color.g, color.b, 0f), duration)
+
+DOTween.To(() => rectTransform.anchoredPosition, x => rectTransform.anchoredPosition = x,
+    targetPosition, duration)
+```
+
+**Impact:**
+- ✅ **100% DOTween FREE compatible** - No Pro license required
+- ✅ All animations work identically to before
+- ✅ No breaking changes to public APIs or Inspector fields
+- ✅ Students can use toolkit without purchasing DOTween Pro
+
+---
+
+**CharacterControllerCC Animation System Fix**
+
+Fixed critical issue where the `Grounded` animator parameter was being set **every frame**, causing jump animation retriggering and transition problems.
+
+**Problem:**
+- `Grounded` bool was updated every frame in `UpdateAnimations()` (line 733)
+- This caused Unity Animator transitions to continuously retrigger
+- Made it difficult/impossible to play full jump animations
+- "Any State → Jump" transitions would fire repeatedly while airborne
+
+**Solution:**
+- Added dedicated state tracking variable `_lastAnimatorGroundedState` (line 151)
+- Grounded parameter now only updates when state actually changes (line 737-741)
+- Uses comparison: `if (isGrounded != _lastAnimatorGroundedState)` before calling `SetBool()`
+- Immediately updates tracking variable after setting animator parameter
+
+**Code Changes:**
+```csharp
+// Added state tracking variable
+private bool _lastAnimatorGroundedState;
+
+// Updated animation method (line 737-741)
+if (HasParameter(_animIDGrounded) && isGrounded != _lastAnimatorGroundedState)
+{
+    characterAnimator.SetBool(_animIDGrounded, isGrounded);
+    _lastAnimatorGroundedState = isGrounded;
+}
+```
+
+**Benefits:**
+- ✅ Jump animations play correctly without retriggering
+- ✅ Landing animations trigger properly on state change
+- ✅ Better performance (fewer animator updates)
+- ✅ Follows Unity's official character controller best practices
+- ✅ No changes to public API or Inspector
+
+**Files Modified:**
+- `CharacterControllerCC.cs` (lines 151, 737-741)
+
+---
+
 ### October 2025 - DOTween Animation Refactoring
 
 **Major Changes:**
@@ -583,20 +699,22 @@ public class InputTriggerZone : MonoBehaviour
 **Scripts Refactored to Use DOTween:**
 
 1. **ActionDisplayImage.cs** - Replaced ~70 lines of manual coroutine code
-   - Now uses `DOFade()` and `DOScale()` for smooth transitions
+   - Now uses `DOTween.To()` for color animations and `DOScale()` for smooth transitions
    - Simultaneous fade and scale animations using `Sequence.Join()`
    - Automatic cleanup with `OnDestroy()`
    - Code reduction: 318 → 265 lines
+   - **Note**: Originally used `DOFade()` UI extension, refactored to `DOTween.To()` for FREE compatibility
 
 2. **ActionDisplayText.cs** - Replaced 17-line fade coroutine
-   - Uses `DOFade()` for text fade in/out
+   - Uses `DOTween.To()` for text fade in/out (refactored from `DOFade()` for FREE compatibility)
    - Typewriter effect uses `DOTween.To()` for `maxVisibleCharacters` animation
    - More reliable than `DOText()` for maintaining text formatting
 
 3. **FadeInFromBlackOnRestart.cs** - Replaced 28-line fade coroutine
-   - Entire fade now **4 lines** of DOTween code
+   - Entire fade now compact DOTween code using `DOTween.To()`
    - Built-in unscaled time support with `.SetUpdate(true)`
    - Automatic delay handling with `.SetDelay()`
+   - **Note**: Originally used `DOFade()` UI extension, refactored to `DOTween.To()` for FREE compatibility
 
 4. **GameUIManager.cs** - Replaced score punch and health bar coroutines
    - Uses built-in `DOPunchScale()` for score animations
@@ -627,7 +745,7 @@ public class InputTriggerZone : MonoBehaviour
    - Customizable background with position/size controls
    - Default fade durations: 0.2 seconds for snappy transitions
    - Loop mode, preview system, and comprehensive events
-   - TypeOn animation uses `DOTween.To()` for `maxVisibleCharacters`
+   - All animations use `DOTween.To()` for FREE compatibility (refactored from UI extensions)
 
 8. **DialogueUIController.cs** - Dialogue UI management (companion script)
    - Handles creation and manipulation of all dialogue UI elements
