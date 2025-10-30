@@ -22,7 +22,15 @@ This project has a unique two-repository structure:
 **Workflow:**
 - ✅ **Work in**: `gameToolKitFarina/gameToolKit/Assets/eventGameToolKit/` (this project)
 - ✅ **Test in**: `gameToolKitFarina/gameToolKit/` (full Unity project with scenes)
-- ✅ **Push to**: `eventGameToolKit/` repository (periodically sync changes to package repo)
+- ✅ **Sync to package**: Copy changes to `eventGameToolKit-Package/` repository
+- ✅ **Push together**: ALWAYS push both repos to git at the same time
+
+**CRITICAL SYNC RULE:**
+Before pushing to git, ALWAYS sync the package repository with the development project:
+1. Verify no errors in development project (`gameToolKit`)
+2. Sync all changes from `gameToolKit/Assets/eventGameToolKit/` → `eventGameToolKit-Package/`
+3. Test package in clean Unity project to verify it works standalone
+4. Push BOTH repositories to GitHub together (never push just one)
 
 When making changes to scripts, always edit them in the `gameToolKitFarina/gameToolKit/Assets/eventGameToolKit/` directory. After testing and confirming changes work, those files need to be pushed to the separate `eventGameToolKit/` package repository.
 
