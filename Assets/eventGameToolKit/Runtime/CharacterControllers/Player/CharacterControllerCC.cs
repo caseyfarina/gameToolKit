@@ -27,6 +27,12 @@ public class CharacterControllerCC : MonoBehaviour
     [SerializeField] private float speedChangeRate = 10.0f;
     [SerializeField] private float airControlFactor = 0.5f;
 
+    [Header("Sprint Settings (Optional)")]
+    [Tooltip("Enable sprint functionality (hold Sprint button to run faster)")]
+    [SerializeField] private bool enableSprint = false;
+    [Tooltip("Speed multiplier when sprinting (2.0 = twice as fast)")]
+    [SerializeField] private float sprintSpeedMultiplier = 1.5f;
+
     [Header("Jump Settings")]
     [Tooltip("Height in meters the character can jump")]
     [SerializeField] private float jumpHeight = 1.2f;
@@ -134,6 +140,7 @@ public class CharacterControllerCC : MonoBehaviour
     private Vector3 lastMoveDirection;
     private bool isOnSteepSlope;
     private Vector3 slopeNormal = Vector3.up;
+    private bool isSprinting;
 
     // Dodge state
     private bool dodgeRequested;
@@ -260,6 +267,17 @@ public class CharacterControllerCC : MonoBehaviour
             {
                 dodgeRequested = true;
             }
+        }
+    }
+
+    /// <summary>
+    /// Input System callback for sprint input (only active if enableSprint is true)
+    /// </summary>
+    public void OnSprint(InputValue value)
+    {
+        if (enableSprint)
+        {
+            isSprinting = value.isPressed;
         }
     }
 
@@ -589,6 +607,13 @@ public class CharacterControllerCC : MonoBehaviour
             if (!blockMovement)
             {
                 float targetSpeed = moveSpeed;
+
+                // Apply sprint multiplier if sprinting is enabled and active
+                if (enableSprint && isSprinting && isGrounded)
+                {
+                    targetSpeed *= sprintSpeedMultiplier;
+                }
+
                 if (!isGrounded)
                 {
                     targetSpeed *= airControlFactor;
@@ -946,6 +971,7 @@ public class CharacterControllerCC : MonoBehaviour
     public Transform CurrentPlatform => currentPlatform;
     public float DodgeCooldownRemaining => dodgeCooldownTimer;
     public float CurrentSpeed => new Vector3(velocity.x, 0f, velocity.z).magnitude;
+    public bool IsSprinting => isSprinting && enableSprint;
 
     private void OnDrawGizmosSelected()
     {

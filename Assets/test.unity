@@ -325,6 +325,7 @@ GameObject:
   - component: {fileID: 955638386}
   - component: {fileID: 955638385}
   - component: {fileID: 955638384}
+  - component: {fileID: 955638387}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -373,7 +374,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 15.6
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -399,13 +400,57 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 955638383}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: 0.19984254, y: 0.79735875, z: -0.43829748, w: 0.36356214}
+  m_LocalPosition: {x: -6.921404, y: 21.940838, z: 11.863478}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &955638387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 955638383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &1371384414
 GameObject:
   m_ObjectHideFlags: 0
@@ -421,6 +466,7 @@ GameObject:
   - component: {fileID: 1371384416}
   - component: {fileID: 1371384415}
   - component: {fileID: 1371384421}
+  - component: {fileID: 1371384422}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -442,7 +488,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterControllerCC
   moveSpeed: 8
   maxVelocity: 8
-  speedChangeRate: 10
+  speedChangeRate: 4.05
   airControlFactor: 0.5
   jumpHeight: 1.2
   jumpTimeout: 0.5
@@ -468,8 +514,9 @@ MonoBehaviour:
     m_Bits: 0
   platformTag: movingPlatform
   applyVerticalMovement: 1
-  characterAnimator: {fileID: 0}
+  characterAnimator: {fileID: 1692808685}
   characterMesh: {fileID: 0}
+  idleTimeBeforeEmote: 0
   onGrounded:
     m_PersistentCalls:
       m_Calls: []
@@ -549,7 +596,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1371384414}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -644,6 +691,25 @@ MonoBehaviour:
   m_DefaultActionMap: 
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &1371384422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1371384414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082462218f6dff14689229abe69a9c58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EventGameToolkit.Runtime::ActionPlayCharacterEmoteAnimation
+  characterAnimator: {fileID: 1692808685}
+  emoteMappings:
+  - actionReference: {fileID: -8750674506638915993, guid: 4419d82f33d36e848b3ed5af4c8da37e, type: 3}
+    animatorTriggerName: 
+  onEmoteTriggered:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1420971904
 GameObject:
   m_ObjectHideFlags: 0
@@ -756,6 +822,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1459679627 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 34caeefea7c9663449c138f57790ac50, type: 3}
+  m_PrefabInstance: {fileID: 1692808683}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1692808683
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -774,7 +845,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 34caeefea7c9663449c138f57790ac50, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -0.045
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 34caeefea7c9663449c138f57790ac50, type: 3}
       propertyPath: m_LocalRotation.w
@@ -811,13 +882,38 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 34caeefea7c9663449c138f57790ac50, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1692808685}
   m_SourcePrefab: {fileID: 100100000, guid: 34caeefea7c9663449c138f57790ac50, type: 3}
 --- !u!4 &1692808684 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 34caeefea7c9663449c138f57790ac50, type: 3}
   m_PrefabInstance: {fileID: 1692808683}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &1692808685
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1459679627}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: e174656e1c0de3545916adffb47f1f1e, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
