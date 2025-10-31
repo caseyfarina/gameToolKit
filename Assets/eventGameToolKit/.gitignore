@@ -1,0 +1,37 @@
+# Unity Package .gitignore
+# NOTE: For Unity packages, .meta files SHOULD be included to preserve GUIDs
+
+# OS Generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# IDE specific
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Unity generated (these should NOT be in the package folder itself)
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+
+# Exclude test/scratch files (if you create any)
+test material animation.anim
+test material animation.anim.meta

@@ -1,0 +1,13 @@
+SCENE: physicsController
+Generated: 2025-10-26 21:31:52
+
+GameObjects Processed: 91 / 100 (limit)
+
+================================================================================
+
+=== key restart (key restart) [ACTIVE] ===
+Component: InputKeyPress
+  On Press Event:
+    → key restart.RestartScene()
+
+

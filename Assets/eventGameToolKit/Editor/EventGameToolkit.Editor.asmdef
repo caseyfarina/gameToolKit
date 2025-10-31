@@ -1,0 +1,24 @@
+{
+    "name": "EventGameToolkit.Editor",
+    "rootNamespace": "",
+    "references": [
+        "EventGameToolkit.Runtime",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "Unity.Cinemachine",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "DOTweenEditor.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,41 @@
+{
+  "name": "com.caseyfarina.eventgametoolkit",
+  "version": "1.0.0",
+  "displayName": "Event Game Toolkit",
+  "description": "Educational Unity toolkit for Animation and Interactivity class. Provides modular, no-code components using UnityEvents for creating interactive experiences. Includes systems for input detection, spawning, health, timers, physics, dialogue, decal animation, and more.",
+  "unity": "6000.0",
+  "unityRelease": "0f1",
+  "keywords": [
+    "education",
+    "toolkit",
+    "events",
+    "unityevents",
+    "interactive",
+    "student",
+    "animation",
+    "interactivity",
+    "no-code",
+    "modular"
+  ],
+  "author": {
+    "name": "Casey Farina",
+    "email": "casey@example.com",
+    "url": "https://github.com/caseyfarina"
+  },
+  "documentationUrl": "https://github.com/caseyfarina/eventGameToolKit#readme",
+  "changelogUrl": "https://github.com/caseyfarina/eventGameToolKit/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/caseyfarina/eventGameToolKit/blob/main/LICENSE",
+  "dependencies": {
+    "com.unity.inputsystem": "1.11.2",
+    "com.unity.textmeshpro": "3.0.6",
+    "com.unity.cinemachine": "3.1.2",
+    "com.unity.render-pipelines.universal": "17.0.3"
+  },
+  "samples": [
+    {
+      "displayName": "Example Scenes",
+      "description": "Pre-configured example scenes demonstrating each system (Physics, Health, Timers, etc.)",
+      "path": "gtkExampleScenes"
+    }
+  ]
+}
