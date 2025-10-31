@@ -134,8 +134,58 @@ If using a 3D character model with animations:
 | **Speed** | Float | Horizontal movement speed (0 = idle, 8 = running) |
 | **Grounded** | Bool | True when character is on the ground |
 | **VerticalVelocity** | Float | Upward/downward velocity (positive = rising, negative = falling) |
-| **IsDodging** | Bool | True during dodge animation |
-| **IsWalking** | Bool | True when moving on ground (combines Speed > 0.1 && Grounded) |
+| **IsDodging** | Bool | True during dodge roll animation |
+| **IsWalking** | Bool | True when moving on ground (combines `Speed > 0.1 && Grounded`) |
+
+### 🎯 Understanding IsDodging and IsWalking Parameters
+
+**IsDodging (Bool) - Interrupt Any Animation for Dodge:**
+
+This parameter lets dodge animations **interrupt** whatever the character is doing:
+
+```
+Any State → Dodge (Condition: IsDodging == true)
+├─ Priority: High (so it interrupts everything)
+├─ Has Exit Time: ❌ (instant interrupt!)
+└─ Transition Duration: 0.0s
+
+Dodge Animation → Idle (Condition: IsDodging == false)
+├─ Has Exit Time: ✅ (let dodge animation finish)
+├─ Exit Time: 0.9 (90% through animation)
+└─ Transition Duration: 0.15s
+```
+
+**Why use "Any State"?** Dodge can trigger from Idle, Walk, Run, Jump, Fall - any state!
+
+**IsWalking (Bool) - Prevents Air-Walk Bug:**
+
+This is a **convenience parameter** that prevents a common bug:
+
+❌ **Bad Approach** (using Speed alone):
+```
+Idle → Walk (Condition: Speed > 0.1)
+```
+**Problem:** If you jump while moving forward, Speed is still > 0.1, so Walk animation plays in mid-air!
+
+✅ **Good Approach** (using IsWalking):
+```csharp
+// CharacterControllerCC automatically calculates:
+bool isWalking = speed > 0.1f && isGrounded;
+```
+```
+Idle → Walk (Condition: IsWalking == true)
+```
+**Solution:** Walk animation only plays when grounded! No air-walking!
+
+**Parameter Usage Summary:**
+
+| Parameter | Use Case | Typical Transition |
+|-----------|----------|-------------------|
+| **Speed** | Drive Walk/Run blend tree | Walk Blend Tree (0.0 = Idle, 8.0 = Run) |
+| **IsWalking** | Simple Idle ↔ Walk switch | `IsWalking == true` to start walking |
+| **IsDodging** | Interrupt with dodge | `Any State → Dodge` when `IsDodging == true` |
+| **Grounded** | Ground ↔ Air states | `Grounded == false` to enter Air Movement |
+| **VerticalVelocity** | Drive Jump/Fall blend tree | Air Movement Blend Tree (-10 to +5) |
 
 ### 🎯 Understanding VerticalVelocity for Airborne Animations
 
