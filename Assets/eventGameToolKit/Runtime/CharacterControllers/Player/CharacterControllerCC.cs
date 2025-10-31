@@ -77,6 +77,11 @@ public class CharacterControllerCC : MonoBehaviour
     [Header("Animation")]
     [SerializeField] private Animator characterAnimator;
     [SerializeField] private Transform characterMesh;
+    [Header("⚠️ OPTIONAL: For idle emote/fidget animations after being idle")]
+    [Space(-20)]
+    [Header("Set to 0 to disable. Animator can use 'IdleTime' float parameter.")]
+    [Tooltip("Time in seconds before IdleTime parameter starts counting. 0 = disabled. Useful for fidget/emote animations.")]
+    [SerializeField] private float idleTimeBeforeEmote = 0f;
 
     [Header("Events")]
     /// <summary>
@@ -156,9 +161,13 @@ public class CharacterControllerCC : MonoBehaviour
     private int _animIDVerticalVelocity;
     private int _animIDIsDodging;
     private int _animIDIsWalking;
+    private int _animIDIdleTime;
 
     // Animation state tracking (prevents unnecessary updates)
     private bool _lastAnimatorGroundedState;
+
+    // Idle time tracking for emote/fidget animations
+    private float currentIdleTime;
 
     /// <summary>
     /// Called when component is first added or reset. Auto-configures PlayerInput component.
@@ -195,6 +204,7 @@ public class CharacterControllerCC : MonoBehaviour
             _animIDVerticalVelocity = Animator.StringToHash("VerticalVelocity");
             _animIDIsDodging = Animator.StringToHash("IsDodging");
             _animIDIsWalking = Animator.StringToHash("IsWalking");
+            _animIDIdleTime = Animator.StringToHash("IdleTime");
         }
 
         // Initialize jump timeout
@@ -779,6 +789,23 @@ public class CharacterControllerCC : MonoBehaviour
             {
                 bool isWalking = speed > 0.1f && isGrounded;
                 characterAnimator.SetBool(_animIDIsWalking, isWalking);
+            }
+
+            // Track idle time for emote/fidget animations (if enabled)
+            if (HasParameter(_animIDIdleTime) && idleTimeBeforeEmote > 0f)
+            {
+                // Reset idle time if moving, jumping, or dodging
+                if (speed > 0.1f || !isGrounded || isDodging)
+                {
+                    currentIdleTime = 0f;
+                }
+                else
+                {
+                    // Increment idle time when truly idle
+                    currentIdleTime += Time.deltaTime;
+                }
+
+                characterAnimator.SetFloat(_animIDIdleTime, currentIdleTime);
             }
         }
     }

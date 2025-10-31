@@ -186,6 +186,55 @@ Idle → Walk (Condition: IsWalking == true)
 | **IsDodging** | Interrupt with dodge | `Any State → Dodge` when `IsDodging == true` |
 | **Grounded** | Ground ↔ Air states | `Grounded == false` to enter Air Movement |
 | **VerticalVelocity** | Drive Jump/Fall blend tree | Air Movement Blend Tree (-10 to +5) |
+| **IdleTime** (Optional) | Emote/fidget after idle | `Idle → Emote` when `IdleTime > 5.0` |
+
+### 🎯 Understanding IdleTime for Emote/Fidget Animations
+
+The **IdleTime** parameter is an **optional** float that tracks how long the character has been standing still. This is perfect for playing fidget animations or emotes after being idle!
+
+**How IdleTime Works:**
+- Starts at `0.0` when character is moving, jumping, or dodging
+- Counts up in seconds when character is truly idle (not moving, grounded, not dodging)
+- Automatically resets to `0.0` when player moves again
+
+**Setup Steps:**
+
+1. **Enable in CharacterControllerCC:**
+   - Set **Idle Time Before Emote** to a positive value (e.g., `5.0` for 5 seconds)
+   - Set to `0` to disable this feature
+
+2. **Add parameter in Animator:**
+   - Create a Float parameter called **"IdleTime"**
+
+3. **Create emote transition:**
+   ```
+   Idle → Emote (Condition: IdleTime > 5.0)
+   ├─ Has Exit Time: ❌
+   └─ Transition Duration: 0.2s
+
+   Emote → Idle (Condition: IdleTime < 0.1)  ← Resets when moving
+   ├─ Has Exit Time: ✅ (let emote finish)
+   ├─ Exit Time: 0.95
+   └─ Transition Duration: 0.3s
+   ```
+
+**Example Use Cases:**
+- **Fidget Animation**: Character looks around, adjusts clothing at 3 seconds idle
+- **Stretching**: Character stretches or yawns at 8 seconds idle
+- **Boredom**: Character sits down, checks phone at 10 seconds idle
+- **Multiple Emotes**: Chain multiple emotes with different thresholds (5s, 10s, 15s)
+
+**Advanced Pattern - Multiple Emotes:**
+```
+Idle
+├─ → Fidget_1   (IdleTime > 3.0 && IdleTime < 6.0)
+├─ → Fidget_2   (IdleTime > 6.0 && IdleTime < 10.0)
+└─ → Sit_Down   (IdleTime > 10.0)
+
+Each emote → Idle (IdleTime < 0.1)
+```
+
+This creates a progression of idle behaviors the longer the player waits!
 
 ### 🎯 Understanding VerticalVelocity for Airborne Animations
 
