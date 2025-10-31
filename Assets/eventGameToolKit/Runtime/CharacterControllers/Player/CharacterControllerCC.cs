@@ -607,11 +607,13 @@ public class CharacterControllerCC : MonoBehaviour
             if (!blockMovement)
             {
                 float targetSpeed = moveSpeed;
+                float effectiveMaxVelocity = maxVelocity;
 
                 // Apply sprint multiplier if sprinting is enabled and active
                 if (enableSprint && isSprinting && isGrounded)
                 {
                     targetSpeed *= sprintSpeedMultiplier;
+                    effectiveMaxVelocity *= sprintSpeedMultiplier; // Also increase max velocity cap
                 }
 
                 if (!isGrounded)
@@ -627,8 +629,8 @@ public class CharacterControllerCC : MonoBehaviour
                 currentSpeed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed,
                     Time.fixedDeltaTime * speedChangeRate);
 
-                // Clamp to max velocity
-                currentSpeed = Mathf.Min(currentSpeed, maxVelocity);
+                // Clamp to effective max velocity (accounts for sprint)
+                currentSpeed = Mathf.Min(currentSpeed, effectiveMaxVelocity);
 
                 // Apply smoothed speed in movement direction
                 velocity.x = moveDirection.x * currentSpeed;
