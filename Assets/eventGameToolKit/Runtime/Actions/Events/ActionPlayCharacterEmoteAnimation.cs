@@ -4,9 +4,8 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Automatically plays character emote animations in response to Input System actions.
-/// Students can map keyboard/gamepad inputs to animator parameters without writing code.
-/// Uses InputActionReference for easy action selection from dropdown menus in the Inspector.
+/// Plays character emote animations when pressing buttons. Students map keyboard/gamepad inputs to animator trigger parameters.
+/// Uses InputActionReference for easy dropdown selection of actions. Only supports Trigger parameters (for one-shot emote animations).
 /// </summary>
 public class ActionPlayCharacterEmoteAnimation : MonoBehaviour
 {
@@ -15,7 +14,7 @@ public class ActionPlayCharacterEmoteAnimation : MonoBehaviour
     [SerializeField] private Animator characterAnimator;
 
     [Header("Emote Mappings")]
-    [Tooltip("Add emote mappings: each input action triggers a specific animator parameter")]
+    [Tooltip("Add emote mappings: each input action triggers a specific animator trigger parameter")]
     [SerializeField] private List<EmoteMapping> emoteMappings = new List<EmoteMapping>();
 
     [Header("Events")]
@@ -39,9 +38,9 @@ public class ActionPlayCharacterEmoteAnimation : MonoBehaviour
         // Cache all parameter hashes for performance
         foreach (var mapping in emoteMappings)
         {
-            if (!string.IsNullOrEmpty(mapping.animatorParameterName))
+            if (!string.IsNullOrEmpty(mapping.animatorTriggerName))
             {
-                _parameterHashes[mapping.animatorParameterName] = Animator.StringToHash(mapping.animatorParameterName);
+                _parameterHashes[mapping.animatorTriggerName] = Animator.StringToHash(mapping.animatorTriggerName);
             }
         }
 
@@ -83,80 +82,31 @@ public class ActionPlayCharacterEmoteAnimation : MonoBehaviour
         if (characterAnimator == null)
             return;
 
-        if (string.IsNullOrEmpty(mapping.animatorParameterName))
+        if (string.IsNullOrEmpty(mapping.animatorTriggerName))
         {
-            Debug.LogWarning($"ActionPlayCharacterEmoteAnimation on {gameObject.name}: Animator parameter name is empty in mapping!", this);
+            Debug.LogWarning($"ActionPlayCharacterEmoteAnimation on {gameObject.name}: Animator trigger name is empty in mapping!", this);
             return;
         }
 
         // Get cached parameter hash
-        if (!_parameterHashes.TryGetValue(mapping.animatorParameterName, out int paramHash))
+        if (!_parameterHashes.TryGetValue(mapping.animatorTriggerName, out int paramHash))
         {
-            Debug.LogWarning($"ActionPlayCharacterEmoteAnimation on {gameObject.name}: Parameter '{mapping.animatorParameterName}' not found in cache!", this);
+            Debug.LogWarning($"ActionPlayCharacterEmoteAnimation on {gameObject.name}: Trigger '{mapping.animatorTriggerName}' not found in cache!", this);
             return;
         }
 
         // Check if parameter exists in animator
         if (!HasParameter(paramHash))
         {
-            Debug.LogWarning($"ActionPlayCharacterEmoteAnimation on {gameObject.name}: Animator does not have parameter '{mapping.animatorParameterName}'!", this);
+            Debug.LogWarning($"ActionPlayCharacterEmoteAnimation on {gameObject.name}: Animator does not have trigger parameter '{mapping.animatorTriggerName}'!", this);
             return;
         }
 
-        // Set the appropriate parameter type
-        switch (mapping.parameterType)
-        {
-            case AnimatorParameterType.Trigger:
-                characterAnimator.SetTrigger(paramHash);
-                break;
-
-            case AnimatorParameterType.Bool:
-                characterAnimator.SetBool(paramHash, mapping.boolValue);
-                break;
-
-            case AnimatorParameterType.Int:
-                characterAnimator.SetInteger(paramHash, mapping.intValue);
-                break;
-
-            case AnimatorParameterType.Float:
-                characterAnimator.SetFloat(paramHash, mapping.floatValue);
-                break;
-        }
+        // Trigger the emote animation
+        characterAnimator.SetTrigger(paramHash);
 
         // Fire event
         onEmoteTriggered?.Invoke();
-
-        // Schedule reset if enabled
-        if (mapping.resetAfterSeconds > 0f && mapping.parameterType != AnimatorParameterType.Trigger)
-        {
-            StartCoroutine(ResetParameterAfterDelay(mapping, paramHash));
-        }
-    }
-
-    /// <summary>
-    /// Resets a parameter to its default value after a delay
-    /// </summary>
-    private System.Collections.IEnumerator ResetParameterAfterDelay(EmoteMapping mapping, int paramHash)
-    {
-        yield return new WaitForSeconds(mapping.resetAfterSeconds);
-
-        if (characterAnimator == null || !HasParameter(paramHash))
-            yield break;
-
-        switch (mapping.parameterType)
-        {
-            case AnimatorParameterType.Bool:
-                characterAnimator.SetBool(paramHash, mapping.defaultBoolValue);
-                break;
-
-            case AnimatorParameterType.Int:
-                characterAnimator.SetInteger(paramHash, mapping.defaultIntValue);
-                break;
-
-            case AnimatorParameterType.Float:
-                characterAnimator.SetFloat(paramHash, mapping.defaultFloatValue);
-                break;
-        }
     }
 
     /// <summary>
@@ -194,16 +144,17 @@ public class ActionPlayCharacterEmoteAnimation : MonoBehaviour
                 Debug.LogWarning($"ActionPlayCharacterEmoteAnimation on {gameObject.name}: Mapping {i} has no Input Action assigned!", this);
             }
 
-            if (string.IsNullOrEmpty(mapping.animatorParameterName))
+            if (string.IsNullOrEmpty(mapping.animatorTriggerName))
             {
-                Debug.LogWarning($"ActionPlayCharacterEmoteAnimation on {gameObject.name}: Mapping {i} has no Animator Parameter Name!", this);
+                Debug.LogWarning($"ActionPlayCharacterEmoteAnimation on {gameObject.name}: Mapping {i} has no Animator Trigger Name!", this);
             }
         }
     }
 }
 
 /// <summary>
-/// Defines a mapping between an Input System action and an Animator parameter
+/// Defines a mapping between an Input System action and an Animator trigger parameter.
+/// Simple: Press button → Trigger emote animation
 /// </summary>
 [System.Serializable]
 public class EmoteMapping
@@ -212,44 +163,7 @@ public class EmoteMapping
     [Tooltip("Select the input action from your Input Actions asset (appears as dropdown)")]
     public InputActionReference actionReference;
 
-    [Header("Animator Parameter")]
-    [Tooltip("Name of the animator parameter to set (must match exactly)")]
-    public string animatorParameterName = "";
-
-    [Tooltip("Type of animator parameter")]
-    public AnimatorParameterType parameterType = AnimatorParameterType.Trigger;
-
-    [Header("Parameter Values (for Bool, Int, Float)")]
-    [Tooltip("Value to set for Bool parameters")]
-    public bool boolValue = true;
-
-    [Tooltip("Value to set for Int parameters")]
-    public int intValue = 1;
-
-    [Tooltip("Value to set for Float parameters")]
-    public float floatValue = 1f;
-
-    [Header("Optional: Auto-Reset")]
-    [Tooltip("For Bool/Int/Float: Automatically reset to default after this many seconds (0 = no auto-reset)")]
-    public float resetAfterSeconds = 0f;
-
-    [Tooltip("Default Bool value to reset to")]
-    public bool defaultBoolValue = false;
-
-    [Tooltip("Default Int value to reset to")]
-    public int defaultIntValue = 0;
-
-    [Tooltip("Default Float value to reset to")]
-    public float defaultFloatValue = 0f;
-}
-
-/// <summary>
-/// Types of animator parameters that can be triggered
-/// </summary>
-public enum AnimatorParameterType
-{
-    Trigger,    // One-shot trigger (most common for emotes)
-    Bool,       // True/False toggle
-    Int,        // Integer value
-    Float       // Float value
+    [Header("Animator Trigger")]
+    [Tooltip("Name of the animator TRIGGER parameter to activate (must match exactly)")]
+    public string animatorTriggerName = "";
 }
