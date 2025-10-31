@@ -242,3 +242,14 @@ public class EmoteMapping
     [Tooltip("Default Float value to reset to")]
     public float defaultFloatValue = 0f;
 }
+
+/// <summary>
+/// Types of animator parameters that can be triggered
+/// </summary>
+public enum AnimatorParameterType
+{
+    Trigger,    // One-shot trigger (most common for emotes)
+    Bool,       // True/False toggle
+    Int,        // Integer value
+    Float       // Float value
+}
