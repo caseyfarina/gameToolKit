@@ -277,7 +277,11 @@ public class CharacterControllerCC : MonoBehaviour
     {
         if (enableSprint)
         {
+            // For a 'Value' action, this event now correctly fires when the value 
+            // changes from 0 to 1 (press) AND 1 to 0 (release).
             isSprinting = value.isPressed;
+            // Re-enable your Debug.Log to confirm: 
+            // Debug.Log($"Sprint state changed: isSprinting = {isSprinting}");
         }
     }
 
@@ -577,8 +581,26 @@ public class CharacterControllerCC : MonoBehaviour
 
         Vector3 inputDirection = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
 
+        float targetSpeed = moveSpeed; // Start with base speed
+
+        // --- Calculate Target Speed based on Sprint and Air Control ---
         if (inputDirection != Vector3.zero)
         {
+            float effectiveMaxVelocity = maxVelocity;
+
+            // Apply sprint multiplier if sprinting is enabled and active
+            if (enableSprint && isSprinting && isGrounded)
+            {
+                targetSpeed *= sprintSpeedMultiplier;
+                effectiveMaxVelocity *= sprintSpeedMultiplier; // Also increase max velocity cap
+            }
+
+            if (!isGrounded)
+            {
+                targetSpeed *= airControlFactor;
+            }
+
+            // --- Movement Direction Calculation ---
             Vector3 cameraForward = mainCamera.transform.forward;
             Vector3 cameraRight = mainCamera.transform.right;
 
@@ -590,37 +612,17 @@ public class CharacterControllerCC : MonoBehaviour
             Vector3 moveDirection = (cameraRight * inputDirection.x + cameraForward * inputDirection.z);
             lastMoveDirection = moveDirection;
 
-            // Check if trying to move uphill on steep slope
+            // ... (Steep slope movement block logic remains the same) ...
             bool blockMovement = false;
             if (isOnSteepSlope)
             {
-                // Project move direction onto slope plane
                 Vector3 slopePlaneDirection = Vector3.ProjectOnPlane(moveDirection, slopeNormal).normalized;
-
-                // Check if movement is upward (dot product with up vector is positive)
                 float movementVertical = Vector3.Dot(slopePlaneDirection, Vector3.up);
-
-                // Block if trying to move uphill, allow if moving downhill or sideways
                 blockMovement = movementVertical > 0.01f;
             }
 
             if (!blockMovement)
             {
-                float targetSpeed = moveSpeed;
-                float effectiveMaxVelocity = maxVelocity;
-
-                // Apply sprint multiplier if sprinting is enabled and active
-                if (enableSprint && isSprinting && isGrounded)
-                {
-                    targetSpeed *= sprintSpeedMultiplier;
-                    effectiveMaxVelocity *= sprintSpeedMultiplier; // Also increase max velocity cap
-                }
-
-                if (!isGrounded)
-                {
-                    targetSpeed *= airControlFactor;
-                }
-
                 // Get current horizontal speed
                 Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
                 float currentHorizontalSpeed = horizontalVelocity.magnitude;
@@ -639,14 +641,29 @@ public class CharacterControllerCC : MonoBehaviour
         }
         else
         {
-            // No input - smooth deceleration when grounded (but not on steep slopes)
+            // No input - smooth deceleration (grounded, not dodging, not on steep slope)
             if (isGrounded && !isDodging && !isOnSteepSlope)
             {
                 Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
                 float currentHorizontalSpeed = horizontalVelocity.magnitude;
 
-                // Smooth deceleration to zero
-                currentSpeed = Mathf.Lerp(currentHorizontalSpeed, 0f,
+                // *** THE FIX IS HERE: Set deceleration target based on sprint state/speed ***
+                // Target speed for deceleration is 0 if not moving AND not fast (or if slow).
+                // If we're moving faster than base speed (due to sprint) and input is zero, 
+                // we should decelerate to base speed (moveSpeed) first, then to 0.
+                float decelerationTarget = 0f;
+
+                // If current speed is greater than moveSpeed AND not sprinting, 
+                // the immediate target for deceleration should be the base moveSpeed.
+                // This ensures the sprint velocity is reduced even if we let go of input
+                // while in a sprint.
+                if (currentHorizontalSpeed > moveSpeed + 0.01f) // Use a small tolerance
+                {
+                    decelerationTarget = moveSpeed;
+                }
+
+                // Smooth deceleration to the calculated target (0 or moveSpeed)
+                currentSpeed = Mathf.Lerp(currentHorizontalSpeed, decelerationTarget,
                     Time.fixedDeltaTime * speedChangeRate);
 
                 // Apply deceleration or stop completely if very slow
@@ -664,7 +681,6 @@ public class CharacterControllerCC : MonoBehaviour
             }
         }
     }
-
     private void HandleSlopeSliding()
     {
         // If grounded on a steep slope, slide down
