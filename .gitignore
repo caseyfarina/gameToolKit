@@ -67,6 +67,10 @@ crashlytics-build.properties
 [Aa]ssets/[Ss]treamingAssets/aa.meta
 [Aa]ssets/[Ss]treamingAssets/aa/*
 
+# Test/Demo assets (not part of educational toolkit)
+**/TerrainDemoScene_URP/
+**/TerrainDemoScene_URP.meta
+
 # ETC
 .DS_Store
 .DS_Store?
