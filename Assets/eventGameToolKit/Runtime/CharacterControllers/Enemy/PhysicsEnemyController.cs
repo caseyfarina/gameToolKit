@@ -11,8 +11,9 @@ public enum EnemyJumpMode
 }
 
 /// <summary>
-/// AI enemy that chases the player using physics forces with configurable jump behaviors.
-/// Common use: Patrolling enemies, chase sequences, monster AI, or competitive racing opponents.
+/// AI enemy that chases the player using physics forces with configurable jump behaviors, sprint mechanics, and robust animation support.
+/// Features: Player detection, chase AI, optional sprint when close, multiple jump modes, idle animations, and grounded state tracking.
+/// Common use: Patrolling enemies, chase sequences, monster AI, competitive racing opponents, or boss encounters.
 /// </summary>
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public class PhysicsEnemyController : MonoBehaviour
@@ -45,9 +46,22 @@ public class PhysicsEnemyController : MonoBehaviour
     [SerializeField] private float maxJumpInterval = 5f;
     [SerializeField] private float jumpCooldown = 1f;
 
+    [Header("Sprint Settings (Optional - AI only)")]
+    [Tooltip("Enable sprint when chasing player (enemy runs faster when close)")]
+    [SerializeField] private bool enableSprint = false;
+    [Tooltip("Distance from player at which enemy starts sprinting")]
+    [SerializeField] private float sprintActivationDistance = 5f;
+    [Tooltip("Speed multiplier when sprinting (2.0 = twice as fast)")]
+    [SerializeField] private float sprintSpeedMultiplier = 1.5f;
+
     [Header("Animation")]
     [SerializeField] private Animator enemyAnimator;
     [SerializeField] private Transform enemyMesh;
+    [Header("⚠️ OPTIONAL: For idle animations after being idle")]
+    [Space(-20)]
+    [Header("Set to 0 to disable. Animator can use 'IdleTime' float parameter.")]
+    [Tooltip("Time in seconds before IdleTime parameter starts counting. 0 = disabled. Useful for fidget/emote animations.")]
+    [SerializeField] private float idleTimeBeforeEmote = 0f;
 
     [Header("Events")]
     public UnityEvent onPlayerDetected;
@@ -68,9 +82,27 @@ public class PhysicsEnemyController : MonoBehaviour
     private float nextJumpTime;
     private float lastJumpTime;
     private Coroutine chaseCoroutine;
+    private bool isSprinting;
+
+    // Animation IDs (StringToHash optimization)
+    private int _animIDSpeed;
+    private int _animIDIsGrounded;
+    private int _animIDIsChasing;
+    private int _animIDPlayerInRange;
+    private int _animIDDistanceToPlayer;
+    private int _animIDVerticalVelocity;
+    private int _animIDIsMoving;
+    private int _animIDIdleTime;
+
+    // Animation state tracking (prevents unnecessary updates)
+    private bool _lastAnimatorGroundedState;
+
+    // Idle time tracking for emote/fidget animations
+    private float currentIdleTime;
 
     public bool IsChasing => isChasing;
     public bool PlayerInRange => playerInRange;
+    public bool IsSprinting => isSprinting && enableSprint;
     public float DistanceToPlayer => playerTransform != null ? Vector3.Distance(transform.position, playerTransform.position) : float.MaxValue;
 
     private void Start()
@@ -82,6 +114,19 @@ public class PhysicsEnemyController : MonoBehaviour
 
         if (enemyAnimator == null && enemyMesh != null)
             enemyAnimator = enemyMesh.GetComponentInChildren<Animator>();
+
+        // Initialize animation IDs for StringToHash optimization
+        if (enemyAnimator != null)
+        {
+            _animIDSpeed = Animator.StringToHash("Speed");
+            _animIDIsGrounded = Animator.StringToHash("IsGrounded");
+            _animIDIsChasing = Animator.StringToHash("IsChasing");
+            _animIDPlayerInRange = Animator.StringToHash("PlayerInRange");
+            _animIDDistanceToPlayer = Animator.StringToHash("DistanceToPlayer");
+            _animIDVerticalVelocity = Animator.StringToHash("VerticalVelocity");
+            _animIDIsMoving = Animator.StringToHash("IsMoving");
+            _animIDIdleTime = Animator.StringToHash("IdleTime");
+        }
     }
 
     private void SetupComponents()
@@ -217,9 +262,23 @@ public class PhysicsEnemyController : MonoBehaviour
         Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
         directionToPlayer.y = 0f;
 
-        if (rb.linearVelocity.magnitude < maxVelocity)
+        // Calculate sprint state based on distance to player
+        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+        isSprinting = enableSprint && isGrounded && distanceToPlayer <= sprintActivationDistance;
+
+        // Apply sprint multiplier to force and max velocity
+        float effectiveMoveForce = moveForce;
+        float effectiveMaxVelocity = maxVelocity;
+
+        if (isSprinting)
         {
-            rb.AddForce(directionToPlayer * moveForce, ForceMode.Force);
+            effectiveMoveForce *= sprintSpeedMultiplier;
+            effectiveMaxVelocity *= sprintSpeedMultiplier;
+        }
+
+        if (rb.linearVelocity.magnitude < effectiveMaxVelocity)
+        {
+            rb.AddForce(directionToPlayer * effectiveMoveForce, ForceMode.Force);
             onForceApplied.Invoke();
         }
     }
@@ -315,16 +374,69 @@ public class PhysicsEnemyController : MonoBehaviour
             Vector3 horizontalVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
             float speed = horizontalVelocity.magnitude;
 
-            enemyAnimator.SetFloat("Speed", speed);
-            enemyAnimator.SetBool("IsGrounded", isGrounded);
-            enemyAnimator.SetBool("IsChasing", isChasing);
-            enemyAnimator.SetBool("PlayerInRange", playerInRange);
-            enemyAnimator.SetFloat("DistanceToPlayer", DistanceToPlayer);
-            enemyAnimator.SetFloat("VerticalVelocity", rb.linearVelocity.y);
+            // Use StringToHash IDs for better performance
+            // Only set parameters if they exist (prevents errors with incomplete Animator Controllers)
+            if (HasParameter(_animIDSpeed))
+                enemyAnimator.SetFloat(_animIDSpeed, speed);
 
-            bool isMoving = speed > 0.1f && isGrounded;
-            enemyAnimator.SetBool("IsMoving", isMoving);
+            // CRITICAL FIX: Only update IsGrounded when it actually changes
+            // Setting it every frame can retrigger transitions and prevent jump animations
+            if (HasParameter(_animIDIsGrounded) && isGrounded != _lastAnimatorGroundedState)
+            {
+                enemyAnimator.SetBool(_animIDIsGrounded, isGrounded);
+                _lastAnimatorGroundedState = isGrounded;
+            }
+
+            if (HasParameter(_animIDIsChasing))
+                enemyAnimator.SetBool(_animIDIsChasing, isChasing);
+
+            if (HasParameter(_animIDPlayerInRange))
+                enemyAnimator.SetBool(_animIDPlayerInRange, playerInRange);
+
+            if (HasParameter(_animIDDistanceToPlayer))
+                enemyAnimator.SetFloat(_animIDDistanceToPlayer, DistanceToPlayer);
+
+            if (HasParameter(_animIDVerticalVelocity))
+                enemyAnimator.SetFloat(_animIDVerticalVelocity, rb.linearVelocity.y);
+
+            if (HasParameter(_animIDIsMoving))
+            {
+                bool isMoving = speed > 0.1f && isGrounded;
+                enemyAnimator.SetBool(_animIDIsMoving, isMoving);
+            }
+
+            // Track idle time for emote/fidget animations (if enabled)
+            if (HasParameter(_animIDIdleTime) && idleTimeBeforeEmote > 0f)
+            {
+                // Reset idle time if moving, not grounded, or player in range
+                if (speed > 0.1f || !isGrounded || playerInRange)
+                {
+                    currentIdleTime = 0f;
+                }
+                else
+                {
+                    // Increment idle time when truly idle (grounded, not moving, no player nearby)
+                    currentIdleTime += Time.deltaTime;
+                }
+
+                enemyAnimator.SetFloat(_animIDIdleTime, currentIdleTime);
+            }
         }
+    }
+
+    /// <summary>
+    /// Checks if animator has a parameter with the given hash
+    /// </summary>
+    private bool HasParameter(int paramHash)
+    {
+        if (enemyAnimator == null) return false;
+
+        foreach (AnimatorControllerParameter param in enemyAnimator.parameters)
+        {
+            if (param.nameHash == paramHash)
+                return true;
+        }
+        return false;
     }
 
     /// <summary>
