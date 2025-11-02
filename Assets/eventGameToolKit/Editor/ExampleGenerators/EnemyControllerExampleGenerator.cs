@@ -125,10 +125,20 @@ public class EnemyControllerExampleGenerator : EditorWindow
 
         SerializedObject so = new SerializedObject(controller);
         so.FindProperty("playerTag").stringValue = "Player";
-        so.FindProperty("moveSpeed").floatValue = 3f;
+        so.FindProperty("moveForce").floatValue = 300f;
+        so.FindProperty("maxVelocity").floatValue = 3f;
         so.FindProperty("detectionRange").floatValue = 15f;
         so.FindProperty("jumpMode").enumValueIndex = jumpMode; // 0 = None, 2 = OnCollision
         so.FindProperty("jumpForce").floatValue = 5f;
+
+        // New sprint settings (added in recent update)
+        so.FindProperty("enableSprint").boolValue = false;
+        so.FindProperty("sprintActivationDistance").floatValue = 5f;
+        so.FindProperty("sprintSpeedMultiplier").floatValue = 1.5f;
+
+        // New idle time settings (added in recent update)
+        so.FindProperty("idleTimeBeforeEmote").floatValue = 0f; // Disabled by default
+
         so.ApplyModifiedProperties();
 
         return enemy;

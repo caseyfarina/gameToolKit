@@ -4,7 +4,7 @@ using UnityEditor;
 using TMPro;
 
 /// <summary>
-/// Editor utility to generate an example scene demonstrating PhysicsCharacterController
+/// Editor utility to generate an example scene demonstrating CharacterControllerCC
 /// Creates a 3D character with WASD movement and jump using the Cameron model
 /// </summary>
 public class CharacterControllerExampleGenerator : EditorWindow
@@ -105,25 +105,21 @@ public class CharacterControllerExampleGenerator : EditorWindow
         character.transform.localPosition = new Vector3(0f, 1f, 0f);
         character.tag = "Player";
 
-        // Add physics components
-        Rigidbody rb = character.AddComponent<Rigidbody>();
-        rb.mass = 70f;
-        rb.linearDamping = 0f;
-        rb.angularDamping = 0.05f;
-        rb.constraints = RigidbodyConstraints.FreezeRotation;
+        // Add CharacterController (auto-added by CharacterControllerCC but explicit is clearer)
+        CharacterController cc = character.AddComponent<CharacterController>();
+        cc.height = 2f;
+        cc.radius = 0.5f;
+        cc.center = new Vector3(0f, 1f, 0f);
 
-        CapsuleCollider col = character.AddComponent<CapsuleCollider>();
-        col.height = 2f;
-        col.radius = 0.5f;
-        col.center = new Vector3(0f, 1f, 0f);
-
-        // Add character controller
-        PhysicsCharacterController controller = character.AddComponent<PhysicsCharacterController>();
+        // Add CharacterControllerCC (Unity 6 Third Person Controller style)
+        CharacterControllerCC controller = character.AddComponent<CharacterControllerCC>();
 
         SerializedObject so = new SerializedObject(controller);
         so.FindProperty("moveSpeed").floatValue = 5f;
-        so.FindProperty("jumpForce").floatValue = 8f;
-        so.FindProperty("groundCheckDistance").floatValue = 1.1f;
+        so.FindProperty("jumpHeight").floatValue = 1.5f;
+        so.FindProperty("gravity").floatValue = -15f;
+        so.FindProperty("groundedOffset").floatValue = -0.14f;
+        so.FindProperty("groundedRadius").floatValue = 0.5f;
         so.ApplyModifiedProperties();
 
         // Instantiate Cameron model as child
