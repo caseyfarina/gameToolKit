@@ -15,6 +15,9 @@ public class CharacterControllerExampleGenerator : EditorWindow
         // Clear selection
         Selection.activeGameObject = null;
 
+        // Get or create pink material (auto-creates if missing)
+        Material pinkMat = ExampleMaterialHelper.GetPinkMaterial();
+
         // Load Cameron model
         GameObject cameronPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Samples/Cinemachine/3.1.2/Shared Assets/Cameron/Model/Cameron_Model.fbx");
 
@@ -32,8 +35,8 @@ public class CharacterControllerExampleGenerator : EditorWindow
         GameObject canvas = CreateCanvas(root.transform);
         GameObject character = CreateCharacter(root.transform, cameronPrefab);
         GameObject ground = CreateGround(root.transform);
-        GameObject obstacle1 = CreateObstacle(root.transform, new Vector3(5f, 0.5f, 0f));
-        GameObject obstacle2 = CreateObstacle(root.transform, new Vector3(-5f, 0.5f, 3f));
+        GameObject obstacle1 = CreateObstacle(root.transform, new Vector3(5f, 0.5f, 0f), pinkMat);
+        GameObject obstacle2 = CreateObstacle(root.transform, new Vector3(-5f, 0.5f, 3f), pinkMat);
 
         // Add annotations
         CreateAnnotation(canvas.transform, new Vector2(0f, 450f), "Character Controller Demo", 56);
@@ -150,7 +153,7 @@ public class CharacterControllerExampleGenerator : EditorWindow
         return ground;
     }
 
-    private static GameObject CreateObstacle(Transform parent, Vector3 position)
+    private static GameObject CreateObstacle(Transform parent, Vector3 position, Material obstacleMat)
     {
         GameObject obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube);
         obstacle.name = "Obstacle";
@@ -158,11 +161,10 @@ public class CharacterControllerExampleGenerator : EditorWindow
         obstacle.transform.localPosition = position;
         obstacle.transform.localScale = new Vector3(1f, 1f, 1f);
 
-        // Load pink material
-        Material pinkMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/pink.mat");
-        if (pinkMat != null)
+        // Apply pink material
+        if (obstacleMat != null)
         {
-            obstacle.GetComponent<Renderer>().sharedMaterial = pinkMat;
+            obstacle.GetComponent<Renderer>().sharedMaterial = obstacleMat;
         }
 
         return obstacle;

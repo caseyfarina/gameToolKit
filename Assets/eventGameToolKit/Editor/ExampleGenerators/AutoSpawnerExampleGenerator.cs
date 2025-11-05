@@ -16,15 +16,8 @@ public class AutoSpawnerExampleGenerator : EditorWindow
         // Clear selection
         Selection.activeGameObject = null;
 
-        // Load materials
-        Material pinkMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/pink.mat");
-        Material blueMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/blue.mat");
-
-        if (pinkMat == null || blueMat == null)
-        {
-            Debug.LogError("Could not find pink.mat or blue.mat in Assets/Materials/!");
-            return;
-        }
+        // Get or create materials (auto-creates if missing)
+        Material pinkMat = ExampleMaterialHelper.GetPinkMaterial();
 
         // Create root container
         GameObject root = new GameObject("AutoSpawnerExample");
@@ -32,13 +25,12 @@ public class AutoSpawnerExampleGenerator : EditorWindow
 
         // Generate components
         GameObject canvas = CreateCanvas(root.transform);
-        GameObject player = CreatePlayer(root.transform, blueMat);
         GameObject spawner = CreateSpawner(root.transform, pinkMat);
         GameObject ground = CreateGround(root.transform);
 
         // Add annotations
         CreateAnnotation(canvas.transform, new Vector2(0f, 450f), "Auto Spawner Demo\n\nObjects spawn automatically!", 46);
-        CreateAnnotation(canvas.transform, new Vector2(0f, -400f), "WASD to Move | Avoid falling pink cubes", 36);
+        CreateAnnotation(canvas.transform, new Vector2(0f, -400f), "Watch the pink cubes spawn and fall!", 36);
 
         // Position camera
         SetupCamera();
@@ -96,11 +88,6 @@ public class AutoSpawnerExampleGenerator : EditorWindow
         tmp.fontStyle = FontStyles.Bold;
 
         return textObj;
-    }
-
-    private static GameObject CreatePlayer(Transform parent, Material playerMat)
-    {
-        return ExamplePlayerBallFactory.CreatePlayerBall(parent, new Vector3(0f, 1f, 0f), playerMat);
     }
 
     private static GameObject CreateSpawner(Transform parent, Material spawnedObjectMat)
