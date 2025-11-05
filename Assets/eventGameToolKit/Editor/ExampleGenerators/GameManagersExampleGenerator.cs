@@ -502,6 +502,17 @@ public class GameManagersExampleGenerator : EditorWindow
         EditorUtility.SetDirty(collectionManager);
         EditorUtility.SetDirty(stateManager);
         EditorUtility.SetDirty(uiManager);
+
+        // Clean up temporary helper components (they're Editor scripts and would cause "Missing Script" errors in Play mode)
+        if (uiRefs != null)
+        {
+            Object.DestroyImmediate(uiRefs);
+        }
+        VictoryPanelReference victoryRefCleanup = uiManager.GetComponent<VictoryPanelReference>();
+        if (victoryRefCleanup != null)
+        {
+            Object.DestroyImmediate(victoryRefCleanup);
+        }
     }
 
     private static void AddPersistentListener(SerializedProperty unityEvent, Object target, string methodName)
@@ -695,7 +706,8 @@ public class GameManagersExampleGenerator : EditorWindow
     }
 }
 
-// Helper components for storing references
+// Temporary helper components for storing references during scene generation
+// These are destroyed after use to avoid "Missing Script" errors in Play mode
 public class UIReferences : MonoBehaviour
 {
     public GameObject pausePanel;
@@ -704,15 +716,4 @@ public class UIReferences : MonoBehaviour
 public class VictoryPanelReference : MonoBehaviour
 {
     public GameObject victoryPanel;
-}
-
-// Simple rotation component for collectibles
-public class SimpleRotate : MonoBehaviour
-{
-    public Vector3 rotationSpeed = new Vector3(0, 90, 0);
-
-    void Update()
-    {
-        transform.Rotate(rotationSpeed * Time.deltaTime);
-    }
 }

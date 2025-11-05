@@ -11,6 +11,18 @@ using DG.Tweening;
 /// </summary>
 public class GameUIManager : MonoBehaviour
 {
+    [Header("UI Section Toggles")]
+    [Tooltip("Enable/disable score display")]
+    [SerializeField] private bool showScore = true;
+    [Tooltip("Enable/disable health text display")]
+    [SerializeField] private bool showHealthText = true;
+    [Tooltip("Enable/disable health bar display")]
+    [SerializeField] private bool showHealthBar = true;
+    [Tooltip("Enable/disable timer display")]
+    [SerializeField] private bool showTimer = true;
+    [Tooltip("Enable/disable inventory display")]
+    [SerializeField] private bool showInventory = true;
+
     [Header("Score Display")]
     [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private string scorePrefix = "Score: ";
@@ -156,7 +168,7 @@ public class GameUIManager : MonoBehaviour
 
     private void UpdateScoreDisplay()
     {
-        if (scoreText != null)
+        if (showScore && scoreText != null)
         {
             scoreText.text = scorePrefix + currentScore.ToString();
         }
@@ -164,7 +176,7 @@ public class GameUIManager : MonoBehaviour
 
     private void AnimateScoreChange()
     {
-        if (scoreText != null)
+        if (showScore && scoreText != null)
         {
             // Kill any existing animation
             if (scoreAnimationTween != null && scoreAnimationTween.IsActive())
@@ -202,7 +214,7 @@ public class GameUIManager : MonoBehaviour
     /// </summary>
     public void UpdateHealthText(int currentHealth, int maxHealth)
     {
-        if (healthText != null)
+        if (showHealthText && healthText != null)
         {
             healthText.text = healthPrefix + $"{currentHealth}/{maxHealth}";
         }
@@ -213,7 +225,7 @@ public class GameUIManager : MonoBehaviour
     /// </summary>
     public void UpdateHealthBar(int currentHealth, int maxHealth)
     {
-        if (healthBar != null && maxHealth > 0)
+        if (showHealthBar && healthBar != null && maxHealth > 0)
         {
             float healthPercent = (float)currentHealth / maxHealth;
 
@@ -314,7 +326,7 @@ public class GameUIManager : MonoBehaviour
 
     private void UpdateTimerDisplay()
     {
-        if (timerText != null)
+        if (showTimer && timerText != null)
         {
             int minutes = Mathf.FloorToInt(gameTime / 60f);
             int seconds = Mathf.FloorToInt(gameTime % 60f);
@@ -348,7 +360,7 @@ public class GameUIManager : MonoBehaviour
     /// </summary>
     public void UpdateInventory(int itemCount)
     {
-        if (inventoryText != null)
+        if (showInventory && inventoryText != null)
         {
             inventoryText.text = inventoryPrefix + itemCount.ToString();
         }
@@ -360,7 +372,7 @@ public class GameUIManager : MonoBehaviour
     /// </summary>
     public void UpdateInventory(string itemType, int itemCount)
     {
-        if (inventoryText != null)
+        if (showInventory && inventoryText != null)
         {
             inventoryText.text = $"{itemType}: {itemCount}";
         }
