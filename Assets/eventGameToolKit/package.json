@@ -35,7 +35,7 @@
     {
       "displayName": "Example Scenes",
       "description": "Three example scenes demonstrating ActionAnimateTransform and PhysicsCharacterController setups. Includes preset files for common animation patterns.",
-      "path": "Samples~/Example Scenes"
+      "path": "Samples~/ExampleScenes"
     }
   ]
 }
