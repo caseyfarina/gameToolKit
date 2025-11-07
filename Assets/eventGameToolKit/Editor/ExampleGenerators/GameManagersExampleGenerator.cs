@@ -668,11 +668,22 @@ public class GameManagersExampleGenerator : EditorWindow
             Collider collider = collectible.GetComponent<Collider>();
             collider.isTrigger = true;
 
-            // Add rotation animation (spin)
-            SimpleRotate rotator = collectible.AddComponent<SimpleRotate>();
-            SerializedObject so = new SerializedObject(rotator);
-            so.FindProperty("rotationSpeed").vector3Value = new Vector3(0, 90, 0);
-            so.ApplyModifiedProperties();
+            // Add rotation animation (spin using ActionAnimateTransform)
+            ActionAnimateTransform animator = collectible.AddComponent<ActionAnimateTransform>();
+            SerializedObject animSo = new SerializedObject(animator);
+
+            // Configure Y-axis rotation
+            animSo.FindProperty("animateRotationY").boolValue = true;
+            animSo.FindProperty("rotationYTarget").floatValue = 360f;
+            animSo.FindProperty("duration").floatValue = 4f; // 90 degrees/sec = 360 degrees in 4 seconds
+            animSo.FindProperty("loop").boolValue = true;
+            animSo.FindProperty("playOnStart").boolValue = true;
+
+            // Set rotation curve to linear (constant speed)
+            AnimationCurve linearCurve = AnimationCurve.Linear(0, 0, 1, 1);
+            animSo.FindProperty("rotationYCurve").animationCurveValue = linearCurve;
+
+            animSo.ApplyModifiedProperties();
         }
 
         return collectiblesParent;
