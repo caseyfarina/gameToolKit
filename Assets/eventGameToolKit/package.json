@@ -34,8 +34,8 @@
   "samples": [
     {
       "displayName": "Example Scenes",
-      "description": "Pre-configured example scenes demonstrating each system (Physics, Health, Timers, etc.)",
-      "path": "gtkExampleScenes"
+      "description": "Three example scenes demonstrating ActionAnimateTransform and PhysicsCharacterController setups. Includes preset files for common animation patterns.",
+      "path": "Samples~/Example Scenes"
     }
   ]
 }

@@ -1,0 +1,5 @@
+{
+  "displayName": "Example Scenes",
+  "description": "Three example scenes demonstrating ActionAnimateTransform and PhysicsCharacterController setups. Includes preset files for common animation patterns (bounce, rotate, squash/stretch).",
+  "createSeparatePackage": false
+}
