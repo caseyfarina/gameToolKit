@@ -1,5 +1,20 @@
 using UnityEngine;
 using UnityEngine.Events;
+using DG.Tweening;
+
+/// <summary>
+/// Data structure for state-specific sound configuration
+/// </summary>
+[System.Serializable]
+public struct StateSoundData
+{
+    [Tooltip("Audio clip to play for this state")]
+    public AudioClip clip;
+
+    [Tooltip("Volume for this sound (0-1)")]
+    [Range(0f, 1f)]
+    public float volume;
+}
 
 /// <summary>
 /// Configurable multi-state switch with visual and audio feedback that fires events on state changes.
@@ -20,38 +35,37 @@ public class PuzzleSwitch : MonoBehaviour
     [Tooltip("If true, cycles through states. If false, can be set to specific state via events")]
     [SerializeField] private bool cycleStates = true;
 
-    [Header("Activation Settings")]
-    [Tooltip("Can this switch be activated by player interaction?")]
-    [SerializeField] private bool canBeActivated = true;
-
-    [Tooltip("Tag required to activate (e.g., 'Player'). Leave empty for any tag")]
-    [SerializeField] private string requiredTag = "Player";
-
-    [Tooltip("Key to press for activation (if not using trigger)")]
-    [SerializeField] private KeyCode activationKey = KeyCode.E;
-
-    [Tooltip("Use trigger-based activation (walk through) vs key press")]
-    [SerializeField] private bool useTriggerActivation = true;
-
     [Header("Visual Feedback")]
-    [Tooltip("Materials for each state (must match numberOfStates)")]
+    [Tooltip("Materials for each state (optional, must match numberOfStates)")]
     [SerializeField] private Material[] stateMaterials;
 
-    [Tooltip("Colors for each state (fallback if materials not set)")]
-    [SerializeField] private Color[] stateColors;
-
-    [Tooltip("Renderer to apply material/color changes")]
+    [Tooltip("Renderer to apply material changes (optional)")]
     [SerializeField] private Renderer targetRenderer;
 
     [Tooltip("Optional: Rotation per state (Y-axis degrees)")]
     [SerializeField] private float[] stateRotations;
 
-    [Header("Audio")]
-    [Tooltip("Sound played when switch changes state")]
-    [SerializeField] private AudioClip stateChangeSound;
+    [Tooltip("Duration for rotation animation between states (0 = instant)")]
+    [SerializeField] private float rotationDuration = 0.3f;
 
-    [Tooltip("Sounds for each specific state (optional)")]
-    [SerializeField] private AudioClip[] stateSounds;
+    [Tooltip("Easing curve for rotation animation")]
+    [SerializeField] private Ease rotationEase = Ease.OutQuad;
+
+    [Header("Audio")]
+    [Tooltip("Enable audio feedback for state changes")]
+    [SerializeField] private bool enableAudio = false;
+
+    [Tooltip("AudioSource component to play sounds (required if audio enabled)")]
+    [SerializeField] private AudioSource audioSource;
+
+    [Tooltip("Default sound played when switch changes state")]
+    [SerializeField] private AudioClip defaultStateChangeSound;
+
+    [Tooltip("Default volume for state change sound (0-1)")]
+    [SerializeField] [Range(0f, 1f)] private float defaultVolume = 1f;
+
+    [Tooltip("Sounds for each specific state (overrides default if set)")]
+    [SerializeField] private StateSoundData[] stateSounds;
 
     [Header("Events")]
     [Tooltip("Fires when state changes, passes new state index")]
@@ -97,8 +111,7 @@ public class PuzzleSwitch : MonoBehaviour
     public UnityEvent onState4 = new UnityEvent();
 
     // Internal state
-    private bool playerInRange = false;
-    private AudioSource audioSource;
+    private Tweener rotationTween;
 
     void Start()
     {
@@ -118,50 +131,14 @@ public class PuzzleSwitch : MonoBehaviour
             targetRenderer = GetComponent<Renderer>();
         }
 
-        // Setup audio source
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null && (stateChangeSound != null || stateSounds.Length > 0))
+        // Validate audio setup
+        if (enableAudio && audioSource == null)
         {
-            audioSource = gameObject.AddComponent<AudioSource>();
+            Debug.LogWarning($"PuzzleSwitch '{switchID}': Audio is enabled but no AudioSource is assigned.", this);
         }
 
         // Apply initial visual state
         UpdateVisuals();
-    }
-
-    void Update()
-    {
-        // Handle key-based activation when player in range
-        if (!useTriggerActivation && playerInRange && canBeActivated)
-        {
-            if (Input.GetKeyDown(activationKey))
-            {
-                Activate();
-            }
-        }
-    }
-
-    void OnTriggerEnter(Collider other)
-    {
-        // Check tag requirement
-        if (!string.IsNullOrEmpty(requiredTag) && !other.CompareTag(requiredTag))
-            return;
-
-        playerInRange = true;
-
-        // Auto-activate on trigger if enabled
-        if (useTriggerActivation && canBeActivated)
-        {
-            Activate();
-        }
-    }
-
-    void OnTriggerExit(Collider other)
-    {
-        if (!string.IsNullOrEmpty(requiredTag) && !other.CompareTag(requiredTag))
-            return;
-
-        playerInRange = false;
     }
 
     /// <summary>
@@ -169,9 +146,6 @@ public class PuzzleSwitch : MonoBehaviour
     /// </summary>
     public void Activate()
     {
-        if (!canBeActivated)
-            return;
-
         if (cycleStates)
         {
             NextState();
@@ -257,36 +231,37 @@ public class PuzzleSwitch : MonoBehaviour
     }
 
     /// <summary>
-    /// Enables or disables player activation
-    /// </summary>
-    public void SetActivatable(bool activatable)
-    {
-        canBeActivated = activatable;
-    }
-
-    /// <summary>
     /// Updates visual feedback based on current state
     /// </summary>
     private void UpdateVisuals()
     {
-        if (targetRenderer == null)
-            return;
-
         // Apply material if available
-        if (stateMaterials != null && currentState < stateMaterials.Length && stateMaterials[currentState] != null)
+        if (targetRenderer != null && stateMaterials != null && currentState < stateMaterials.Length && stateMaterials[currentState] != null)
         {
             targetRenderer.material = stateMaterials[currentState];
-        }
-        // Fallback to color change
-        else if (stateColors != null && currentState < stateColors.Length)
-        {
-            targetRenderer.material.color = stateColors[currentState];
         }
 
         // Apply rotation if specified
         if (stateRotations != null && currentState < stateRotations.Length)
         {
-            transform.rotation = Quaternion.Euler(0, stateRotations[currentState], 0);
+            // Kill existing rotation tween
+            rotationTween?.Kill();
+
+            Quaternion targetRotation = Quaternion.Euler(0, stateRotations[currentState], 0);
+
+            // Animate rotation with DOTween if duration > 0
+            if (rotationDuration > 0)
+            {
+                rotationTween = transform.DORotate(
+                    new Vector3(0, stateRotations[currentState], 0),
+                    rotationDuration
+                ).SetEase(rotationEase);
+            }
+            else
+            {
+                // Instant rotation
+                transform.rotation = targetRotation;
+            }
         }
     }
 
@@ -295,18 +270,18 @@ public class PuzzleSwitch : MonoBehaviour
     /// </summary>
     private void PlayAudio()
     {
-        if (audioSource == null)
+        if (!enableAudio || audioSource == null)
             return;
 
         // Play state-specific sound if available
-        if (stateSounds != null && currentState < stateSounds.Length && stateSounds[currentState] != null)
+        if (stateSounds != null && currentState < stateSounds.Length && stateSounds[currentState].clip != null)
         {
-            audioSource.PlayOneShot(stateSounds[currentState]);
+            audioSource.PlayOneShot(stateSounds[currentState].clip, stateSounds[currentState].volume);
         }
-        // Fallback to generic state change sound
-        else if (stateChangeSound != null)
+        // Fallback to default state change sound
+        else if (defaultStateChangeSound != null)
         {
-            audioSource.PlayOneShot(stateChangeSound);
+            audioSource.PlayOneShot(defaultStateChangeSound, defaultVolume);
         }
     }
 
@@ -342,15 +317,14 @@ public class PuzzleSwitch : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        // Show activation range
-        if (useTriggerActivation)
-        {
-            Gizmos.color = new Color(0, 1, 1, 0.3f);
-            Collider col = GetComponent<Collider>();
-            if (col != null && col.isTrigger)
-            {
-                Gizmos.DrawWireCube(transform.position, col.bounds.size);
-            }
-        }
+        // Show switch information
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, 0.5f);
+    }
+
+    void OnDestroy()
+    {
+        // Clean up DOTween
+        rotationTween?.Kill();
     }
 }
