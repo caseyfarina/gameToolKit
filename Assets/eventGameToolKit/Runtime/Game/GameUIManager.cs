@@ -758,12 +758,23 @@ public class GameUIManager : MonoBehaviour
                 break;
 
             case InventoryAnimationType.Bounce:
-                Vector3 originalPos = inventoryText.transform.localPosition;
-                Vector3 bouncePos = originalPos + Vector3.up * (inventoryAnimationStrength * 100f);
+                RectTransform inventoryRect = inventoryText.GetComponent<RectTransform>();
+                Vector2 originalPos = inventoryRect.anchoredPosition;
+                Vector2 bouncePos = originalPos + Vector2.up * (inventoryAnimationStrength * 100f);
 
                 inventoryAnimationTween = DOTween.Sequence()
-                    .Append(inventoryText.transform.DOLocalMove(bouncePos, inventoryAnimationDuration * 0.5f))
-                    .Append(inventoryText.transform.DOLocalMove(originalPos, inventoryAnimationDuration * 0.5f))
+                    .Append(DOTween.To(
+                        () => inventoryRect.anchoredPosition,
+                        x => inventoryRect.anchoredPosition = x,
+                        bouncePos,
+                        inventoryAnimationDuration * 0.5f
+                    ))
+                    .Append(DOTween.To(
+                        () => inventoryRect.anchoredPosition,
+                        x => inventoryRect.anchoredPosition = x,
+                        originalPos,
+                        inventoryAnimationDuration * 0.5f
+                    ))
                     .SetUpdate(true)
                     .SetEase(Ease.OutQuad);
                 break;
