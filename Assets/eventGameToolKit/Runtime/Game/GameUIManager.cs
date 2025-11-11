@@ -163,13 +163,24 @@ public class GameUIManager : MonoBehaviour
         if (enableEditorPreview && !Application.isPlaying)
         {
             #if UNITY_EDITOR
-            CreateOrUpdateEditorPreview();
+            // Use delayCall to avoid "SendMessage cannot be called during OnValidate" warnings
+            UnityEditor.EditorApplication.delayCall += () => {
+                if (this != null && enableEditorPreview && !Application.isPlaying)
+                {
+                    CreateOrUpdateEditorPreview();
+                }
+            };
             #endif
         }
         else if (!enableEditorPreview && !Application.isPlaying)
         {
             #if UNITY_EDITOR
-            DestroyEditorPreview();
+            UnityEditor.EditorApplication.delayCall += () => {
+                if (this != null && !enableEditorPreview && !Application.isPlaying)
+                {
+                    DestroyEditorPreview();
+                }
+            };
             #endif
         }
     }
