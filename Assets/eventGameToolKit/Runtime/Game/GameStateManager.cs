@@ -158,10 +158,10 @@ public class GameStateManager : MonoBehaviour
 
     private void UpdateUI()
     {
-        // Show/hide pause panel (when paused OR when won)
+        // Show/hide pause panel (only when paused, not victory)
         if (pausePanel != null)
         {
-            pausePanel.SetActive(isPaused || hasWon);
+            pausePanel.SetActive(isPaused);
         }
 
         // Show/hide restart button (when paused OR when won)
