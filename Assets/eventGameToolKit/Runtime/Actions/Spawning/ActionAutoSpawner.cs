@@ -10,6 +10,12 @@ using UnityEngine.Events;
 /// </summary>
 public class ActionAutoSpawner : MonoBehaviour
 {
+    public enum SpawnMode
+    {
+        RandomSphere,
+        SpawnPoints
+    }
+
     [Header("Spawn Settings")]
     [Tooltip("List of prefabs to spawn randomly from")]
     [SerializeField] private GameObject[] spawnPrefabs;
@@ -20,8 +26,15 @@ public class ActionAutoSpawner : MonoBehaviour
     [Tooltip("Maximum time in seconds between spawns")]
     [SerializeField] private float spawnRateMax = 5f;
 
-    [Tooltip("Random positional offset range (0 = spawn at exact position)")]
+    [Header("Spawn Position Mode")]
+    [Tooltip("How to determine spawn position")]
+    [SerializeField] private SpawnMode spawnMode = SpawnMode.RandomSphere;
+
+    [Tooltip("Random positional offset range (RandomSphere mode only)")]
     [SerializeField] private float spawnPositionRange = 0f;
+
+    [Tooltip("Array of spawn point transforms (SpawnPoints mode only)")]
+    [SerializeField] private Transform[] spawnPoints;
 
     [Header("Spawn Limits (Optional)")]
     [Tooltip("Maximum number of spawned objects that can exist at once (0 = unlimited)")]
@@ -142,15 +155,46 @@ public class ActionAutoSpawner : MonoBehaviour
             return;
         }
 
-        // Calculate spawn position
-        Vector3 spawnPosition = transform.position;
-        if (spawnPositionRange > 0f)
+        // Calculate spawn position based on mode
+        Vector3 spawnPosition;
+        Quaternion spawnRotation;
+
+        if (spawnMode == SpawnMode.SpawnPoints)
         {
-            spawnPosition += Random.insideUnitSphere * spawnPositionRange;
+            // Spawn at random spawn point from array
+            if (spawnPoints == null || spawnPoints.Length == 0)
+            {
+                Debug.LogWarning($"ActionAutoSpawner on {gameObject.name}: SpawnPoints mode selected but no spawn points assigned!", this);
+                nextSpawnTime = Random.Range(spawnRateMin, spawnRateMax) + time;
+                return;
+            }
+
+            // Choose random spawn point
+            int spawnPointIndex = Random.Range(0, spawnPoints.Length);
+            Transform spawnPoint = spawnPoints[spawnPointIndex];
+
+            if (spawnPoint == null)
+            {
+                Debug.LogWarning($"ActionAutoSpawner on {gameObject.name}: Spawn point at index {spawnPointIndex} is null!", this);
+                nextSpawnTime = Random.Range(spawnRateMin, spawnRateMax) + time;
+                return;
+            }
+
+            spawnPosition = spawnPoint.position;
+            spawnRotation = spawnPoint.rotation;
+        }
+        else // RandomSphere mode
+        {
+            spawnPosition = transform.position;
+            if (spawnPositionRange > 0f)
+            {
+                spawnPosition += Random.insideUnitSphere * spawnPositionRange;
+            }
+            spawnRotation = transform.rotation;
         }
 
         // Instantiate the object
-        GameObject spawnedObject = Instantiate(prefabToSpawn, spawnPosition, transform.rotation);
+        GameObject spawnedObject = Instantiate(prefabToSpawn, spawnPosition, spawnRotation);
 
         // Track spawned object
         spawnedObjects.Add(spawnedObject);
