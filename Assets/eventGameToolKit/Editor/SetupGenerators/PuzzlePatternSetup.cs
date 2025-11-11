@@ -136,11 +136,11 @@ public class PuzzlePatternSetup : EditorWindow
             // Add InputTriggerZone for interaction
             InputTriggerZone trigger = switchObj.AddComponent<InputTriggerZone>();
             SerializedObject triggerSO = new SerializedObject(trigger);
-            triggerSO.FindProperty("targetTag").stringValue = "Player";
+            triggerSO.FindProperty("triggerObjectTag").stringValue = "Player";
             triggerSO.ApplyModifiedProperties();
 
             // Wire trigger -> nextState
-            SerializedProperty onEnter = triggerSO.FindProperty("onTriggerEnter");
+            SerializedProperty onEnter = triggerSO.FindProperty("onTriggerEnterEvent");
             AddPersistentListener(onEnter, puzzleSwitch, "NextState");
             triggerSO.ApplyModifiedProperties();
         }

@@ -3,8 +3,8 @@ using UnityEditor;
 using UnityEngine.Events;
 
 /// <summary>
-/// Setup generator for Collection Pattern: collectibles that increase score with UI display
-/// Creates: GameCollectionManager + GameUIManager + collectibles with wired UnityEvents
+/// Setup generator for Collection Pattern: collectibles that increase inventory count with UI display
+/// Creates: GameInventorySlot + GameUIManager + collectibles with wired UnityEvents
 /// </summary>
 public class CollectionPatternSetup : EditorWindow
 {
@@ -20,8 +20,8 @@ public class CollectionPatternSetup : EditorWindow
         GUILayout.Space(10);
 
         GUILayout.Label("This creates:", EditorStyles.helpBox);
-        GUILayout.Label("• GameCollectionManager (tracks score)");
-        GUILayout.Label("• GameUIManager (displays score)");
+        GUILayout.Label("• GameInventorySlot (tracks collected items)");
+        GUILayout.Label("• GameUIManager (displays item count)");
         GUILayout.Label("• 5 collectible spheres");
         GUILayout.Label("• All UnityEvents automatically wired");
         GUILayout.Space(10);
@@ -39,11 +39,18 @@ public class CollectionPatternSetup : EditorWindow
         GameObject container = new GameObject("CollectionPattern_Setup");
         Undo.RegisterCreatedObjectUndo(container, "Create Collection Pattern");
 
-        // Create GameCollectionManager
-        GameObject managerObj = new GameObject("GameCollectionManager");
-        managerObj.transform.SetParent(container.transform);
-        GameCollectionManager collectionManager = managerObj.AddComponent<GameCollectionManager>();
-        Undo.RegisterCreatedObjectUndo(managerObj, "Create GameCollectionManager");
+        // Create GameInventorySlot
+        GameObject inventoryObj = new GameObject("GameInventorySlot");
+        inventoryObj.transform.SetParent(container.transform);
+        GameInventorySlot inventorySlot = inventoryObj.AddComponent<GameInventorySlot>();
+        Undo.RegisterCreatedObjectUndo(inventoryObj, "Create GameInventorySlot");
+
+        // Configure inventory
+        SerializedObject inventorySO = new SerializedObject(inventorySlot);
+        inventorySO.FindProperty("itemType").stringValue = "Coins";
+        inventorySO.FindProperty("maxCapacity").intValue = 100;
+        inventorySO.FindProperty("currentValue").intValue = 0;
+        inventorySO.ApplyModifiedProperties();
 
         // Create GameUIManager
         GameObject uiObj = new GameObject("GameUIManager");
@@ -51,21 +58,20 @@ public class CollectionPatternSetup : EditorWindow
         GameUIManager uiManager = uiObj.AddComponent<GameUIManager>();
         Undo.RegisterCreatedObjectUndo(uiObj, "Create GameUIManager");
 
-        // Configure UI Manager to only show score
+        // Configure UI Manager to only show inventory
         SerializedObject uiSO = new SerializedObject(uiManager);
-        uiSO.FindProperty("showScore").boolValue = true;
+        uiSO.FindProperty("showScore").boolValue = false;
         uiSO.FindProperty("showHealthText").boolValue = false;
         uiSO.FindProperty("showHealthBar").boolValue = false;
         uiSO.FindProperty("showTimer").boolValue = false;
-        uiSO.FindProperty("showInventory").boolValue = false;
+        uiSO.FindProperty("showInventory").boolValue = true;
         uiSO.FindProperty("enableEditorPreview").boolValue = true;
         uiSO.ApplyModifiedProperties();
 
-        // Wire UnityEvent: collectionManager.onValueChanged -> uiManager.UpdateScore
-        SerializedObject managerSO = new SerializedObject(collectionManager);
-        SerializedProperty onValueChanged = managerSO.FindProperty("onValueChanged");
-        AddPersistentListener(onValueChanged, uiManager, "UpdateScore");
-        managerSO.ApplyModifiedProperties();
+        // Wire UnityEvent: inventorySlot.onValueChanged -> uiManager.UpdateInventory
+        SerializedProperty onValueChanged = inventorySO.FindProperty("onValueChanged");
+        AddPersistentListener(onValueChanged, uiManager, "UpdateInventory");
+        inventorySO.ApplyModifiedProperties();
 
         // Create collectibles
         GameObject collectiblesParent = new GameObject("Collectibles");
@@ -93,12 +99,12 @@ public class CollectionPatternSetup : EditorWindow
             // Add InputTriggerZone
             InputTriggerZone triggerZone = collectible.AddComponent<InputTriggerZone>();
             SerializedObject triggerSO = new SerializedObject(triggerZone);
-            triggerSO.FindProperty("targetTag").stringValue = "Player";
+            triggerSO.FindProperty("triggerObjectTag").stringValue = "Player";
             triggerSO.ApplyModifiedProperties();
 
-            // Wire trigger -> increment collection
-            SerializedProperty onEnter = triggerSO.FindProperty("onTriggerEnter");
-            AddPersistentListener(onEnter, collectionManager, "Increment");
+            // Wire trigger -> increment inventory
+            SerializedProperty onEnter = triggerSO.FindProperty("onTriggerEnterEvent");
+            AddPersistentListener(onEnter, inventorySlot, "Increment");
             triggerSO.ApplyModifiedProperties();
 
             // Wire trigger -> destroy self

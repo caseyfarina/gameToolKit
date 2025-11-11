@@ -106,13 +106,13 @@ public class HealthPatternSetup : EditorWindow
             // Add InputTriggerZone
             InputTriggerZone triggerZone = damageZone.AddComponent<InputTriggerZone>();
             SerializedObject triggerSO = new SerializedObject(triggerZone);
-            triggerSO.FindProperty("targetTag").stringValue = "Player";
-            triggerSO.FindProperty("useStayEvent").boolValue = true;
-            triggerSO.FindProperty("stayEventInterval").floatValue = 0.5f; // Damage every 0.5 seconds
+            triggerSO.FindProperty("triggerObjectTag").stringValue = "Player";
+            triggerSO.FindProperty("enableStayEvent").boolValue = true;
+            triggerSO.FindProperty("stayInterval").floatValue = 0.5f; // Damage every 0.5 seconds
             triggerSO.ApplyModifiedProperties();
 
             // Wire trigger stay -> deal damage
-            SerializedProperty onStay = triggerSO.FindProperty("onTriggerStay");
+            SerializedProperty onStay = triggerSO.FindProperty("onTriggerStayEvent");
             AddPersistentListenerWithInt(onStay, healthManager, "TakeDamage", 10);
             triggerSO.ApplyModifiedProperties();
         }
@@ -135,11 +135,11 @@ public class HealthPatternSetup : EditorWindow
         // Add InputTriggerZone
         InputTriggerZone healTrigger = healZone.AddComponent<InputTriggerZone>();
         SerializedObject healTriggerSO = new SerializedObject(healTrigger);
-        healTriggerSO.FindProperty("targetTag").stringValue = "Player";
+        healTriggerSO.FindProperty("triggerObjectTag").stringValue = "Player";
         healTriggerSO.ApplyModifiedProperties();
 
         // Wire trigger enter -> heal
-        SerializedProperty onEnter = healTriggerSO.FindProperty("onTriggerEnter");
+        SerializedProperty onEnter = healTriggerSO.FindProperty("onTriggerEnterEvent");
         AddPersistentListenerWithInt(onEnter, healthManager, "Heal", 20);
         healTriggerSO.ApplyModifiedProperties();
 
