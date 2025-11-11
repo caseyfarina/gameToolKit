@@ -29,35 +29,35 @@ public class GameUIManager : MonoBehaviour
 
     [Header("UI Layout Settings")]
     [Tooltip("Score position (anchor position)")]
-    [SerializeField] private Vector2 scorePosition = new Vector2(10, -10);
+    [SerializeField] private Vector2 scorePosition = new Vector2(60, -40);
 
     [Tooltip("Health text position")]
-    [SerializeField] private Vector2 healthTextPosition = new Vector2(10, -50);
+    [SerializeField] private Vector2 healthTextPosition = new Vector2(60, -80);
 
     [Tooltip("Health bar position")]
-    [SerializeField] private Vector2 healthBarPosition = new Vector2(10, -80);
+    [SerializeField] private Vector2 healthBarPosition = new Vector2(60, -134.8f);
 
     [Tooltip("Health bar size")]
-    [SerializeField] private Vector2 healthBarSize = new Vector2(200, 20);
+    [SerializeField] private Vector2 healthBarSize = new Vector2(430.8f, 20);
 
     [Tooltip("Timer position")]
-    [SerializeField] private Vector2 timerPosition = new Vector2(10, -120);
+    [SerializeField] private Vector2 timerPosition = new Vector2(60, -160);
 
     [Tooltip("Inventory position")]
-    [SerializeField] private Vector2 inventoryPosition = new Vector2(10, -160);
+    [SerializeField] private Vector2 inventoryPosition = new Vector2(60, -200);
 
     [Header("UI Styling")]
     [Tooltip("Font size for score text")]
-    [SerializeField] private int scoreFontSize = 24;
+    [SerializeField] private int scoreFontSize = 40;
 
     [Tooltip("Font size for health text")]
-    [SerializeField] private int healthFontSize = 24;
+    [SerializeField] private int healthFontSize = 40;
 
     [Tooltip("Font size for timer text")]
-    [SerializeField] private int timerFontSize = 24;
+    [SerializeField] private int timerFontSize = 40;
 
     [Tooltip("Font size for inventory text")]
-    [SerializeField] private int inventoryFontSize = 24;
+    [SerializeField] private int inventoryFontSize = 40;
 
     [Tooltip("Text color")]
     [SerializeField] private Color textColor = Color.white;
