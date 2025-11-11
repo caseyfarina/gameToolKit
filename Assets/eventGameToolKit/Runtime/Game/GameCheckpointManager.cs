@@ -157,8 +157,23 @@ public class GameCheckpointManager : MonoBehaviour
         // Wait for physics to process the new position
         yield return new WaitForFixedUpdate();
 
+        // Check for CharacterController (requires special handling)
+        CharacterController cc = player.GetComponent<CharacterController>();
         Rigidbody rb = player.GetComponent<Rigidbody>();
-        if (rb != null)
+
+        if (cc != null)
+        {
+            // CharacterController requires disabling before setting position
+            cc.enabled = false;
+            player.transform.position = savedPosition;
+            player.transform.rotation = savedRotation;
+            Debug.Log($"GameCheckpointManager: Set CharacterController position to {savedPosition}");
+
+            // Wait a frame before re-enabling
+            yield return null;
+            cc.enabled = true;
+        }
+        else if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
