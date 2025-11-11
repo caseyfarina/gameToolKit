@@ -25,15 +25,15 @@ public class GameCollectionManager : MonoBehaviour
     [SerializeField] private int threshold = 10;
 
     [Header("Events")]
-    [Tooltip("Fires ONCE when counting UP to reach threshold (below → at/above)\nExample: Score reaches 100 points")]
+    [Tooltip("Fires ONCE when value crosses threshold going UP (below threshold → at/above threshold)\nExample: Score goes from 99 to 100")]
     /// <summary>
     /// Fires when the value crosses the threshold going UP (from below to at/above threshold)
     /// </summary>
     public UnityEvent onCountUpToThreshold;
 
-    [Tooltip("Fires ONCE when counting DOWN to threshold (above → at/below)\nExample: Ammo drops to 0")]
+    [Tooltip("Fires ONCE when value crosses threshold going DOWN (at/above threshold → below threshold)\nExample: Ammo goes from 1 to 0")]
     /// <summary>
-    /// Fires when the value crosses the threshold going DOWN (from above to at/below threshold)
+    /// Fires when the value crosses the threshold going DOWN (from at/above to below threshold)
     /// </summary>
     public UnityEvent onCountDownToThreshold;
 
@@ -61,7 +61,7 @@ public class GameCollectionManager : MonoBehaviour
     private void Start()
     {
         // Initialize threshold state based on starting value
-        wasAboveThreshold = currentValue > threshold;
+        wasAboveThreshold = currentValue >= threshold;
     }
 
     /// <summary>
@@ -132,25 +132,21 @@ public class GameCollectionManager : MonoBehaviour
 
     private void CheckThreshold()
     {
-        bool isAboveThreshold = currentValue > threshold;
+        bool isAtOrAboveThreshold = currentValue >= threshold;
 
-        // Check for upward crossing (counting up to threshold)
-        if (!isAboveThreshold && !wasAboveThreshold && currentValue >= threshold)
+        // Crossed upward: was below, now at or above
+        if (isAtOrAboveThreshold && !wasAboveThreshold)
         {
             onCountUpToThreshold.Invoke();
-            wasAboveThreshold = true;
         }
-        // Check for downward crossing (counting down to threshold)
-        else if (wasAboveThreshold && currentValue <= threshold)
+        // Crossed downward: was above, now below
+        else if (!isAtOrAboveThreshold && wasAboveThreshold)
         {
             onCountDownToThreshold.Invoke();
-            wasAboveThreshold = false;
         }
-        // Update state for values clearly above threshold
-        else if (currentValue > threshold)
-        {
-            wasAboveThreshold = true;
-        }
+
+        // Update state for next check
+        wasAboveThreshold = isAtOrAboveThreshold;
     }
 }
 
