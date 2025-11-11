@@ -1,11 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 using UnityEngine.Events;
 
 /// <summary>
 /// Manages a single inventory slot with capacity limits, triggering events when full or empty.
+/// Does NOT handle display - wire onValueChanged to GameUIManager for visual updates.
 /// Common use: Item storage systems, ammunition counters, key collections, or resource pouches.
 /// </summary>
 public class GameInventorySlot : MonoBehaviour
@@ -14,7 +14,6 @@ public class GameInventorySlot : MonoBehaviour
     [SerializeField] private string itemType = "Item";
     [SerializeField] private int maxCapacity = 10;
     [SerializeField] private int currentValue = 0;
-    [SerializeField] private TextMeshProUGUI displayText;
 
     [Header("Inventory Events")]
     /// <summary>
@@ -30,20 +29,15 @@ public class GameInventorySlot : MonoBehaviour
     /// </summary>
     public UnityEvent onSlotFull;
     /// <summary>
-    /// Fires whenever the item count changes
+    /// Fires whenever the item count changes, passing item type and count as parameters
     /// </summary>
-    public UnityEvent onValueChanged;
+    public UnityEvent<string, int> onValueChanged;
 
     public string ItemType => itemType;
     public int MaxCapacity => maxCapacity;
     public int CurrentValue => currentValue;
     public bool IsEmpty => currentValue <= 0;
     public bool IsFull => currentValue >= maxCapacity;
-
-    private void Start()
-    {
-        UpdateDisplay();
-    }
 
     /// <summary>
     /// Adds items to the inventory slot up to max capacity
@@ -56,7 +50,7 @@ public class GameInventorySlot : MonoBehaviour
         if (newValue != currentValue)
         {
             currentValue = newValue;
-            UpdateDisplay();
+            onValueChanged.Invoke(itemType, currentValue);
 
             if (currentValue >= maxCapacity && previousValue < maxCapacity)
             {
@@ -72,21 +66,12 @@ public class GameInventorySlot : MonoBehaviour
     {
         int previousValue = currentValue;
         currentValue = Mathf.Max(0, currentValue - amount);
-        UpdateDisplay();
+        onValueChanged.Invoke(itemType, currentValue);
 
         if (currentValue <= 0 && previousValue > 0)
         {
             onSlotEmpty.Invoke();
         }
-    }
-
-    private void UpdateDisplay()
-    {
-        if (displayText != null)
-        {
-            displayText.text = currentValue.ToString();
-        }
-        onValueChanged.Invoke();
     }
 
     /// <summary>
@@ -126,7 +111,7 @@ public class GameInventorySlot : MonoBehaviour
         if (currentValue > maxCapacity)
         {
             currentValue = maxCapacity;
-            UpdateDisplay();
+            onValueChanged.Invoke(itemType, currentValue);
         }
     }
 }

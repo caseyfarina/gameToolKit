@@ -1,9 +1,9 @@
 using UnityEngine;
-using TMPro;
 using UnityEngine.Events;
 
 /// <summary>
 /// Manages health with damage and healing mechanics, firing events at critical thresholds.
+/// Does NOT handle display - wire onHealthChanged to GameUIManager for visual updates.
 /// Common use: Player or enemy health systems, destructible objects, shield mechanics, or boss health bars.
 /// </summary>
 public class GameHealthManager : MonoBehaviour
@@ -12,13 +12,12 @@ public class GameHealthManager : MonoBehaviour
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private int currentHealth = 100;
     [SerializeField] private int lowHealthThreshold = 25;
-    [SerializeField] private TextMeshProUGUI healthDisplay;
 
     [Header("Health Events")]
     /// <summary>
-    /// Fires whenever health value changes (both damage and healing)
+    /// Fires whenever health value changes (both damage and healing), passing current and max health as parameters
     /// </summary>
-    public UnityEvent onHealthChanged;
+    public UnityEvent<int, int> onHealthChanged;
     /// <summary>
     /// Fires when damage is taken
     /// </summary>
@@ -58,8 +57,9 @@ public class GameHealthManager : MonoBehaviour
     {
         // Ensure health starts within valid range
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-        UpdateDisplay();
         CheckHealthStates();
+        // Fire initial health event
+        onHealthChanged.Invoke(currentHealth, maxHealth);
     }
 
     /// <summary>
@@ -72,9 +72,8 @@ public class GameHealthManager : MonoBehaviour
         int previousHealth = currentHealth;
         currentHealth = Mathf.Max(0, currentHealth - damageAmount);
 
-        UpdateDisplay();
         onDamageReceived.Invoke();
-        onHealthChanged.Invoke();
+        onHealthChanged.Invoke(currentHealth, maxHealth);
 
         // Check if we crossed the low health threshold going down
         if (previousHealth > lowHealthThreshold && currentHealth <= lowHealthThreshold && !isDead)
@@ -101,9 +100,8 @@ public class GameHealthManager : MonoBehaviour
         int previousHealth = currentHealth;
         currentHealth = Mathf.Min(maxHealth, currentHealth + healAmount);
 
-        UpdateDisplay();
         onHealthGained.Invoke();
-        onHealthChanged.Invoke();
+        onHealthChanged.Invoke(currentHealth, maxHealth);
 
         CheckHealthStates();
 
@@ -123,8 +121,7 @@ public class GameHealthManager : MonoBehaviour
         int previousHealth = currentHealth;
         currentHealth = Mathf.Clamp(newHealth, 0, maxHealth);
 
-        UpdateDisplay();
-        onHealthChanged.Invoke();
+        onHealthChanged.Invoke(currentHealth, maxHealth);
 
         // Determine if this was damage or healing
         if (currentHealth < previousHealth)
@@ -184,8 +181,7 @@ public class GameHealthManager : MonoBehaviour
         if (currentHealth > maxHealth)
         {
             currentHealth = maxHealth;
-            UpdateDisplay();
-            onHealthChanged.Invoke();
+            onHealthChanged.Invoke(currentHealth, maxHealth);
         }
     }
 
@@ -196,14 +192,6 @@ public class GameHealthManager : MonoBehaviour
     {
         lowHealthThreshold = Mathf.Clamp(newThreshold, 0, maxHealth);
         CheckHealthStates();
-    }
-
-    private void UpdateDisplay()
-    {
-        if (healthDisplay != null)
-        {
-            healthDisplay.text = $"{currentHealth}/{maxHealth}";
-        }
     }
 
     private void CheckHealthStates()

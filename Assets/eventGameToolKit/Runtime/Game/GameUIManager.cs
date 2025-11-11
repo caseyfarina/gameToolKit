@@ -2,406 +2,541 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Events;
-using System.Collections;
 using DG.Tweening;
 
 /// <summary>
-/// Displays and animates UI elements including score, health bars, timers, and victory screens.
-/// Common use: HUD systems, stat displays, game overlays, or end-game result screens.
+/// Automatically creates and manages UI elements for displaying game data (score, health, timer, inventory).
+/// Receives data from Game Managers via UnityEvents - does NOT manage game state itself.
+/// Enable editor preview to see and adjust UI layout before runtime.
 /// </summary>
 public class GameUIManager : MonoBehaviour
 {
-    [Header("UI Section Toggles")]
-    [Tooltip("Enable/disable score display")]
+    [Header("UI Element Toggles")]
+    [Tooltip("Enable score display")]
     [SerializeField] private bool showScore = true;
-    [Tooltip("Enable/disable health text display")]
+
+    [Tooltip("Enable health text display")]
     [SerializeField] private bool showHealthText = true;
-    [Tooltip("Enable/disable health bar display")]
+
+    [Tooltip("Enable health bar display")]
     [SerializeField] private bool showHealthBar = true;
-    [Tooltip("Enable/disable timer display")]
+
+    [Tooltip("Enable timer display")]
     [SerializeField] private bool showTimer = true;
-    [Tooltip("Enable/disable inventory display")]
+
+    [Tooltip("Enable inventory display")]
     [SerializeField] private bool showInventory = true;
 
-    [Header("Score Display")]
-    [SerializeField] private TextMeshProUGUI scoreText;
-    [SerializeField] private string scorePrefix = "Score: ";
-    [SerializeField] private int currentScore = 0;
+    [Header("UI Layout Settings")]
+    [Tooltip("Score position (anchor position)")]
+    [SerializeField] private Vector2 scorePosition = new Vector2(10, -10);
 
-    [Header("Health Display")]
-    [SerializeField] private TextMeshProUGUI healthText;
-    [SerializeField] private Slider healthBar;
-    [SerializeField] private Image healthBarFill;
-    [SerializeField] private string healthPrefix = "Health: ";
+    [Tooltip("Health text position")]
+    [SerializeField] private Vector2 healthTextPosition = new Vector2(10, -50);
+
+    [Tooltip("Health bar position")]
+    [SerializeField] private Vector2 healthBarPosition = new Vector2(10, -80);
+
+    [Tooltip("Health bar size")]
+    [SerializeField] private Vector2 healthBarSize = new Vector2(200, 20);
+
+    [Tooltip("Timer position")]
+    [SerializeField] private Vector2 timerPosition = new Vector2(10, -120);
+
+    [Tooltip("Inventory position")]
+    [SerializeField] private Vector2 inventoryPosition = new Vector2(10, -160);
+
+    [Header("UI Styling")]
+    [Tooltip("Font size for all text")]
+    [SerializeField] private int fontSize = 24;
+
+    [Tooltip("Text color")]
+    [SerializeField] private Color textColor = Color.white;
+
+    [Tooltip("Health bar colors")]
     [SerializeField] private Color healthColorHigh = Color.green;
     [SerializeField] private Color healthColorMid = Color.yellow;
     [SerializeField] private Color healthColorLow = Color.red;
 
-    [Header("Victory Display")]
-    [SerializeField] private TextMeshProUGUI victoryText;
+    [Header("Animation Settings")]
+    [Tooltip("Duration for score punch animation")]
+    [SerializeField] private float scoreAnimationDuration = 0.3f;
 
-    [Header("Timer Display")]
-    [SerializeField] private TextMeshProUGUI timerText;
+    [Tooltip("Duration for health bar transition")]
+    [SerializeField] private float healthAnimationDuration = 0.2f;
+
+    [Header("Text Prefixes")]
+    [SerializeField] private string scorePrefix = "Score: ";
+    [SerializeField] private string healthPrefix = "Health: ";
     [SerializeField] private string timerPrefix = "Time: ";
-    [SerializeField] private bool countUp = true;
-    [SerializeField] private float startTime = 0f;
-
-    [Header("Inventory Display")]
-    [SerializeField] private TextMeshProUGUI inventoryText;
     [SerializeField] private string inventoryPrefix = "Items: ";
 
-    [Header("Animation Settings")]
-    [SerializeField] private float scoreAnimationDuration = 0.3f;
-    [SerializeField] private float healthAnimationDuration = 0.2f;
-    [SerializeField] private AnimationCurve scorePunchCurve = AnimationCurve.EaseInOut(0, 1, 1, 1);
+    [Header("Editor Preview")]
+    [Tooltip("Enable to preview UI layout in editor (updates on value change)")]
+    [SerializeField] private bool enableEditorPreview = false;
 
     [Header("Events")]
-    /// <summary>
-    /// Fires when the score value changes
-    /// </summary>
-    public UnityEvent onScoreChanged;
-    /// <summary>
-    /// Fires when health values are updated in the UI
-    /// </summary>
-    public UnityEvent onHealthChanged;
-    /// <summary>
-    /// Fires every frame while the timer is running
-    /// </summary>
-    public UnityEvent onTimerUpdated;
     /// <summary>
     /// Fires when any UI element is updated
     /// </summary>
     public UnityEvent onUIUpdated;
 
-    private float gameTime;
-    private bool isTimerRunning = false;
+    // UI References (created at runtime or in editor preview)
+    private Canvas canvas;
+    private TextMeshProUGUI scoreText;
+    private TextMeshProUGUI healthText;
+    private Slider healthBar;
+    private Image healthBarFill;
+    private TextMeshProUGUI timerText;
+    private TextMeshProUGUI inventoryText;
+
+    // Current values for display
+    private int currentScore = 0;
+    private int currentHealth = 100;
+    private int maxHealth = 100;
+    private float currentTime = 0f;
+    private string inventoryItemType = "";
+    private int inventoryCount = 0;
+
+    // Animation tweens
     private Tween scoreAnimationTween;
     private Tween healthAnimationTween;
 
-    public int CurrentScore => currentScore;
-    public float GameTime => gameTime;
-    public bool IsTimerRunning => isTimerRunning;
-
-    private void Start()
+    void Start()
     {
-        InitializeUI();
-        StartTimer();
+        CreateUIElements();
+        UpdateAllDisplays();
     }
 
-    private void Update()
+    void OnValidate()
     {
-        if (isTimerRunning)
+        // Update preview in editor when values change
+        if (enableEditorPreview && !Application.isPlaying)
         {
-            UpdateTimer();
+            #if UNITY_EDITOR
+            CreateOrUpdateEditorPreview();
+            #endif
+        }
+        else if (!enableEditorPreview && !Application.isPlaying)
+        {
+            #if UNITY_EDITOR
+            DestroyEditorPreview();
+            #endif
         }
     }
 
-    private void OnDestroy()
+    void OnDestroy()
     {
-        // Clean up DOTween tweens when this object is destroyed
-        if (scoreAnimationTween != null && scoreAnimationTween.IsActive())
-        {
-            scoreAnimationTween.Kill();
-        }
-        if (healthAnimationTween != null && healthAnimationTween.IsActive())
-        {
-            healthAnimationTween.Kill();
-        }
+        // Clean up DOTween tweens
+        scoreAnimationTween?.Kill();
+        healthAnimationTween?.Kill();
     }
 
-    private void InitializeUI()
-    {
-        UpdateScoreDisplay();
-        UpdateTimerDisplay();
-
-        // Set initial health bar color if available
-        if (healthBarFill != null)
-        {
-            healthBarFill.color = healthColorHigh;
-        }
-    }
-
-    #region Score Management
+    #region UI Creation
 
     /// <summary>
-    /// Add points to the score
+    /// Creates all enabled UI elements at runtime
     /// </summary>
-    public void AddScore(int points)
+    private void CreateUIElements()
     {
-        currentScore += points;
-        UpdateScoreDisplay();
-        AnimateScoreChange();
-        onScoreChanged.Invoke();
-        onUIUpdated.Invoke();
-    }
-
-    /// <summary>
-    /// Subtract points from the score
-    /// </summary>
-    public void SubtractScore(int points)
-    {
-        currentScore = Mathf.Max(0, currentScore - points);
-        UpdateScoreDisplay();
-        AnimateScoreChange();
-        onScoreChanged.Invoke();
-        onUIUpdated.Invoke();
-    }
-
-    /// <summary>
-    /// Set score to specific value
-    /// </summary>
-    public void SetScore(int newScore)
-    {
-        currentScore = Mathf.Max(0, newScore);
-        UpdateScoreDisplay();
-        onScoreChanged.Invoke();
-        onUIUpdated.Invoke();
-    }
-
-    /// <summary>
-    /// Reset score to zero
-    /// </summary>
-    public void ResetScore()
-    {
-        SetScore(0);
-    }
-
-    private void UpdateScoreDisplay()
-    {
-        if (showScore && scoreText != null)
+        // Create canvas if it doesn't exist
+        canvas = GetComponentInChildren<Canvas>();
+        if (canvas == null)
         {
-            scoreText.text = scorePrefix + currentScore.ToString();
+            GameObject canvasObj = new GameObject("GameUI_Canvas");
+            canvasObj.transform.SetParent(transform);
+            canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasObj.AddComponent<CanvasScaler>();
+            canvasObj.AddComponent<GraphicRaycaster>();
+        }
+
+        // Create score display
+        if (showScore && scoreText == null)
+        {
+            scoreText = CreateTextElement("Score", scorePosition);
+        }
+
+        // Create health text
+        if (showHealthText && healthText == null)
+        {
+            healthText = CreateTextElement("HealthText", healthTextPosition);
+        }
+
+        // Create health bar
+        if (showHealthBar && healthBar == null)
+        {
+            CreateHealthBar();
+        }
+
+        // Create timer
+        if (showTimer && timerText == null)
+        {
+            timerText = CreateTextElement("Timer", timerPosition);
+        }
+
+        // Create inventory
+        if (showInventory && inventoryText == null)
+        {
+            inventoryText = CreateTextElement("Inventory", inventoryPosition);
         }
     }
 
-    private void AnimateScoreChange()
+    private TextMeshProUGUI CreateTextElement(string name, Vector2 position)
     {
-        if (showScore && scoreText != null)
-        {
-            // Kill any existing animation
-            if (scoreAnimationTween != null && scoreAnimationTween.IsActive())
-            {
-                scoreAnimationTween.Kill();
-            }
+        GameObject textObj = new GameObject(name);
+        textObj.transform.SetParent(canvas.transform, false);
 
-            // Use DOTween's punch scale for a nice bounce effect
-            scoreAnimationTween = scoreText.transform.DOPunchScale(
-                Vector3.one * 0.2f,         // Punch amount
-                scoreAnimationDuration,      // Duration
-                10,                          // Vibrato (elasticity)
-                1                            // Elasticity
-            ).SetUpdate(true);              // Use unscaled time
-        }
+        RectTransform rectTransform = textObj.AddComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(0, 1); // Top-left
+        rectTransform.anchorMax = new Vector2(0, 1);
+        rectTransform.pivot = new Vector2(0, 1);
+        rectTransform.anchoredPosition = position;
+        rectTransform.sizeDelta = new Vector2(400, 50);
+
+        TextMeshProUGUI text = textObj.AddComponent<TextMeshProUGUI>();
+        text.fontSize = fontSize;
+        text.color = textColor;
+        text.text = $"{name}: 0";
+
+        return text;
+    }
+
+    private void CreateHealthBar()
+    {
+        GameObject barObj = new GameObject("HealthBar");
+        barObj.transform.SetParent(canvas.transform, false);
+
+        RectTransform barRect = barObj.AddComponent<RectTransform>();
+        barRect.anchorMin = new Vector2(0, 1);
+        barRect.anchorMax = new Vector2(0, 1);
+        barRect.pivot = new Vector2(0, 1);
+        barRect.anchoredPosition = healthBarPosition;
+        barRect.sizeDelta = healthBarSize;
+
+        // Add slider component
+        healthBar = barObj.AddComponent<Slider>();
+        healthBar.minValue = 0;
+        healthBar.maxValue = 1;
+        healthBar.value = 1;
+
+        // Create background
+        GameObject bgObj = new GameObject("Background");
+        bgObj.transform.SetParent(barObj.transform, false);
+        RectTransform bgRect = bgObj.AddComponent<RectTransform>();
+        bgRect.anchorMin = Vector2.zero;
+        bgRect.anchorMax = Vector2.one;
+        bgRect.sizeDelta = Vector2.zero;
+        Image bgImage = bgObj.AddComponent<Image>();
+        bgImage.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+
+        // Create fill area
+        GameObject fillAreaObj = new GameObject("Fill Area");
+        fillAreaObj.transform.SetParent(barObj.transform, false);
+        RectTransform fillAreaRect = fillAreaObj.AddComponent<RectTransform>();
+        fillAreaRect.anchorMin = Vector2.zero;
+        fillAreaRect.anchorMax = Vector2.one;
+        fillAreaRect.sizeDelta = Vector2.zero;
+
+        // Create fill
+        GameObject fillObj = new GameObject("Fill");
+        fillObj.transform.SetParent(fillAreaObj.transform, false);
+        RectTransform fillRect = fillObj.AddComponent<RectTransform>();
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = Vector2.one;
+        fillRect.sizeDelta = Vector2.zero;
+        healthBarFill = fillObj.AddComponent<Image>();
+        healthBarFill.color = healthColorHigh;
+
+        // Wire up slider
+        healthBar.fillRect = fillRect;
     }
 
     #endregion
 
-    #region Health Management
+    #region Editor Preview
+
+    #if UNITY_EDITOR
+    private void CreateOrUpdateEditorPreview()
+    {
+        // Find or create canvas
+        canvas = GetComponentInChildren<Canvas>();
+        if (canvas == null)
+        {
+            GameObject canvasObj = new GameObject("GameUI_Canvas_PREVIEW");
+            canvasObj.transform.SetParent(transform);
+            canvasObj.hideFlags = HideFlags.DontSave; // Don't save to scene
+            canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasObj.AddComponent<CanvasScaler>();
+        }
+        else
+        {
+            canvas.gameObject.hideFlags = HideFlags.DontSave;
+        }
+
+        // Create/update UI elements
+        if (showScore)
+        {
+            if (scoreText == null)
+                scoreText = CreateTextElement("Score_PREVIEW", scorePosition);
+            else
+                UpdateTextElementPosition(scoreText, scorePosition);
+            scoreText.text = scorePrefix + "999";
+        }
+        else if (scoreText != null)
+        {
+            UnityEditor.EditorApplication.delayCall += () => {
+                if (scoreText != null) DestroyImmediate(scoreText.gameObject);
+            };
+            scoreText = null;
+        }
+
+        if (showHealthText)
+        {
+            if (healthText == null)
+                healthText = CreateTextElement("HealthText_PREVIEW", healthTextPosition);
+            else
+                UpdateTextElementPosition(healthText, healthTextPosition);
+            healthText.text = healthPrefix + "100/100";
+        }
+        else if (healthText != null)
+        {
+            UnityEditor.EditorApplication.delayCall += () => {
+                if (healthText != null) DestroyImmediate(healthText.gameObject);
+            };
+            healthText = null;
+        }
+
+        if (showHealthBar)
+        {
+            if (healthBar == null)
+                CreateHealthBar();
+            else
+                UpdateHealthBarPosition();
+        }
+        else if (healthBar != null)
+        {
+            UnityEditor.EditorApplication.delayCall += () => {
+                if (healthBar != null) DestroyImmediate(healthBar.gameObject);
+            };
+            healthBar = null;
+            healthBarFill = null;
+        }
+
+        if (showTimer)
+        {
+            if (timerText == null)
+                timerText = CreateTextElement("Timer_PREVIEW", timerPosition);
+            else
+                UpdateTextElementPosition(timerText, timerPosition);
+            timerText.text = timerPrefix + "01:30";
+        }
+        else if (timerText != null)
+        {
+            UnityEditor.EditorApplication.delayCall += () => {
+                if (timerText != null) DestroyImmediate(timerText.gameObject);
+            };
+            timerText = null;
+        }
+
+        if (showInventory)
+        {
+            if (inventoryText == null)
+                inventoryText = CreateTextElement("Inventory_PREVIEW", inventoryPosition);
+            else
+                UpdateTextElementPosition(inventoryText, inventoryPosition);
+            inventoryText.text = inventoryPrefix + "5";
+        }
+        else if (inventoryText != null)
+        {
+            UnityEditor.EditorApplication.delayCall += () => {
+                if (inventoryText != null) DestroyImmediate(inventoryText.gameObject);
+            };
+            inventoryText = null;
+        }
+    }
+
+    private void UpdateTextElementPosition(TextMeshProUGUI text, Vector2 position)
+    {
+        RectTransform rect = text.GetComponent<RectTransform>();
+        rect.anchoredPosition = position;
+    }
+
+    private void UpdateHealthBarPosition()
+    {
+        RectTransform rect = healthBar.GetComponent<RectTransform>();
+        rect.anchoredPosition = healthBarPosition;
+        rect.sizeDelta = healthBarSize;
+    }
+
+    private void DestroyEditorPreview()
+    {
+        if (canvas != null && canvas.gameObject.name.Contains("PREVIEW"))
+        {
+            UnityEditor.EditorApplication.delayCall += () => {
+                if (canvas != null) DestroyImmediate(canvas.gameObject);
+            };
+            canvas = null;
+            scoreText = null;
+            healthText = null;
+            healthBar = null;
+            healthBarFill = null;
+            timerText = null;
+            inventoryText = null;
+        }
+    }
+    #endif
+
+    #endregion
+
+    #region Public Update Methods (Called from Manager Events)
 
     /// <summary>
-    /// Update health display from health manager
+    /// Update score display (wire from GameCollectionManager.onValueChanged)
     /// </summary>
-    public void UpdateHealth(int currentHealth, int maxHealth)
+    public void UpdateScore(int newScore)
     {
-        UpdateHealthText(currentHealth, maxHealth);
-        UpdateHealthBar(currentHealth, maxHealth);
-        onHealthChanged.Invoke();
+        currentScore = newScore;
+        if (scoreText != null)
+        {
+            scoreText.text = scorePrefix + currentScore.ToString();
+            AnimateScoreChange();
+        }
         onUIUpdated.Invoke();
     }
 
     /// <summary>
-    /// Update just the health text
+    /// Update health display (wire from GameHealthManager.onHealthChanged)
     /// </summary>
-    public void UpdateHealthText(int currentHealth, int maxHealth)
+    public void UpdateHealth(int current, int max)
     {
-        if (showHealthText && healthText != null)
+        currentHealth = current;
+        maxHealth = max;
+
+        if (healthText != null)
         {
             healthText.text = healthPrefix + $"{currentHealth}/{maxHealth}";
         }
-    }
 
-    /// <summary>
-    /// Update health bar and color
-    /// </summary>
-    public void UpdateHealthBar(int currentHealth, int maxHealth)
-    {
-        if (showHealthBar && healthBar != null && maxHealth > 0)
+        if (healthBar != null && maxHealth > 0)
         {
             float healthPercent = (float)currentHealth / maxHealth;
 
-            // Kill any existing animation
-            if (healthAnimationTween != null && healthAnimationTween.IsActive())
-            {
-                healthAnimationTween.Kill();
-            }
+            // Kill existing animation
+            healthAnimationTween?.Kill();
 
-            // Animate health bar change using DOTween
+            // Animate health bar
             healthAnimationTween = DOTween.To(
                 () => healthBar.value,
                 x => healthBar.value = x,
                 healthPercent,
                 healthAnimationDuration
-            ).SetUpdate(true); // Use unscaled time
+            ).SetUpdate(true);
 
-            // Update health bar color
-            UpdateHealthBarColor(healthPercent);
-        }
-    }
-
-    private void UpdateHealthBarColor(float healthPercent)
-    {
-        if (healthBarFill != null)
-        {
-            Color targetColor;
-            if (healthPercent > 0.6f)
-                targetColor = healthColorHigh;
-            else if (healthPercent > 0.3f)
-                targetColor = healthColorMid;
-            else
-                targetColor = healthColorLow;
-
-            healthBarFill.color = targetColor;
-        }
-    }
-
-    #endregion
-
-    #region Timer Management
-
-    /// <summary>
-    /// Start the game timer
-    /// </summary>
-    public void StartTimer()
-    {
-        isTimerRunning = true;
-        gameTime = startTime;
-    }
-
-    /// <summary>
-    /// Stop the game timer
-    /// </summary>
-    public void StopTimer()
-    {
-        isTimerRunning = false;
-    }
-
-    /// <summary>
-    /// Reset timer to start value
-    /// </summary>
-    public void ResetTimer()
-    {
-        gameTime = startTime;
-        UpdateTimerDisplay();
-    }
-
-    /// <summary>
-    /// Set timer value
-    /// </summary>
-    public void SetTimer(float time)
-    {
-        gameTime = time;
-        UpdateTimerDisplay();
-    }
-
-    private void UpdateTimer()
-    {
-        if (countUp)
-        {
-            gameTime += Time.deltaTime;
-        }
-        else
-        {
-            gameTime -= Time.deltaTime;
-            if (gameTime <= 0)
+            // Update color
+            if (healthBarFill != null)
             {
-                gameTime = 0;
-                StopTimer();
-                // Could trigger timer expired event here
+                Color targetColor = healthPercent > 0.6f ? healthColorHigh :
+                                   healthPercent > 0.3f ? healthColorMid : healthColorLow;
+                healthBarFill.color = targetColor;
             }
         }
 
-        UpdateTimerDisplay();
-        onTimerUpdated.Invoke();
+        onUIUpdated.Invoke();
     }
 
-    private void UpdateTimerDisplay()
+    /// <summary>
+    /// Update timer display (wire from GameTimerManager.onTimerUpdate)
+    /// </summary>
+    public void UpdateTimer(float time)
     {
-        if (showTimer && timerText != null)
+        currentTime = time;
+        if (timerText != null)
         {
-            int minutes = Mathf.FloorToInt(gameTime / 60f);
-            int seconds = Mathf.FloorToInt(gameTime % 60f);
+            int minutes = Mathf.FloorToInt(currentTime / 60f);
+            int seconds = Mathf.FloorToInt(currentTime % 60f);
             timerText.text = timerPrefix + $"{minutes:00}:{seconds:00}";
         }
+        onUIUpdated.Invoke();
     }
 
-    #endregion
-
-    #region Victory Display
+    /// <summary>
+    /// Update inventory display (wire from GameInventorySlot.onValueChanged)
+    /// </summary>
+    public void UpdateInventory(string itemType, int count)
+    {
+        inventoryItemType = itemType;
+        inventoryCount = count;
+        if (inventoryText != null)
+        {
+            inventoryText.text = $"{itemType}: {count}";
+        }
+        onUIUpdated.Invoke();
+    }
 
     /// <summary>
-    /// Display victory message with score and time
+    /// Update inventory display with just count (for single item type games)
     /// </summary>
-    public void DisplayVictory()
+    public void UpdateInventoryCount(int count)
     {
-        StopTimer();
-        if (victoryText != null)
+        inventoryCount = count;
+        if (inventoryText != null)
         {
-            victoryText.text = $"Victory!\nScore: {currentScore}\nTime: {FormatTime(gameTime)}";
+            inventoryText.text = inventoryPrefix + count.ToString();
         }
         onUIUpdated.Invoke();
     }
 
     #endregion
 
-    #region Inventory Display
+    #region Animation Methods
 
-    /// <summary>
-    /// Update inventory display
-    /// </summary>
-    public void UpdateInventory(int itemCount)
+    private void AnimateScoreChange()
     {
-        if (showInventory && inventoryText != null)
-        {
-            inventoryText.text = inventoryPrefix + itemCount.ToString();
-        }
-        onUIUpdated.Invoke();
-    }
+        if (scoreText == null) return;
 
-    /// <summary>
-    /// Update inventory with item type and count
-    /// </summary>
-    public void UpdateInventory(string itemType, int itemCount)
-    {
-        if (showInventory && inventoryText != null)
-        {
-            inventoryText.text = $"{itemType}: {itemCount}";
-        }
-        onUIUpdated.Invoke();
+        // Kill existing animation
+        scoreAnimationTween?.Kill();
+
+        // Punch scale animation
+        scoreAnimationTween = scoreText.transform.DOPunchScale(
+            Vector3.one * 0.2f,
+            scoreAnimationDuration,
+            10,
+            1
+        ).SetUpdate(true);
     }
 
     #endregion
 
-    #region Student Helper Methods
+    #region Helper Methods
 
-    /// <summary>
-    /// Simple method for students - update all UI elements
-    /// </summary>
-    public void RefreshAllUI()
+    private void UpdateAllDisplays()
     {
-        UpdateScoreDisplay();
-        UpdateTimerDisplay();
-        onUIUpdated.Invoke();
-    }
+        if (scoreText != null)
+            scoreText.text = scorePrefix + currentScore.ToString();
 
+        if (healthText != null)
+            healthText.text = healthPrefix + $"{currentHealth}/{maxHealth}";
 
-    /// <summary>
-    /// Format time as string
-    /// </summary>
-    public string FormatTime(float time)
-    {
-        int minutes = Mathf.FloorToInt(time / 60f);
-        int seconds = Mathf.FloorToInt(time % 60f);
-        return $"{minutes:00}:{seconds:00}";
+        if (healthBar != null && maxHealth > 0)
+            healthBar.value = (float)currentHealth / maxHealth;
+
+        if (timerText != null)
+        {
+            int minutes = Mathf.FloorToInt(currentTime / 60f);
+            int seconds = Mathf.FloorToInt(currentTime % 60f);
+            timerText.text = timerPrefix + $"{minutes:00}:{seconds:00}";
+        }
+
+        if (inventoryText != null)
+        {
+            if (!string.IsNullOrEmpty(inventoryItemType))
+                inventoryText.text = $"{inventoryItemType}: {inventoryCount}";
+            else
+                inventoryText.text = inventoryPrefix + inventoryCount.ToString();
+        }
     }
 
     #endregion

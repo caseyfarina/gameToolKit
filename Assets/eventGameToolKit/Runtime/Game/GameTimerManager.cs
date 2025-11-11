@@ -1,19 +1,13 @@
 using UnityEngine;
 using UnityEngine.Events;
-using TMPro;
 
 /// <summary>
 /// Flexible timer system supporting countdown and count-up modes with threshold and periodic event triggers.
+/// Does NOT handle display - wire onTimerUpdate to GameUIManager for visual updates.
 /// Common use: Level time limits, speedrun timers, cooldown indicators, wave spawn timers, or challenge countdowns.
 /// </summary>
 public class GameTimerManager : MonoBehaviour
 {
-    public enum TimeFormat
-    {
-        MinutesSeconds,     // 01:30
-        DecimalSeconds,     // 90.5s
-        HoursMinutesSeconds // 01:01:30
-    }
 
     [System.Serializable]
     public class TimeThreshold
@@ -46,11 +40,6 @@ public class GameTimerManager : MonoBehaviour
     [SerializeField] private float periodicInterval = 10f;
     [SerializeField] private bool enablePeriodicEvents = false;
 
-    [Header("Display Settings")]
-    [SerializeField] private TextMeshProUGUI timerDisplay;
-    [SerializeField] private string timerPrefix = "Time: ";
-    [SerializeField] private TimeFormat displayFormat = TimeFormat.MinutesSeconds;
-
     [Header("Timer Events")]
     /// <summary>
     /// Fires when the timer starts running
@@ -77,9 +66,9 @@ public class GameTimerManager : MonoBehaviour
     /// </summary>
     public UnityEvent onPeriodicEvent;
     /// <summary>
-    /// Fires every frame while the timer is running
+    /// Fires every frame while the timer is running, passing the current time as a float parameter
     /// </summary>
-    public UnityEvent onTimerUpdate;
+    public UnityEvent<float> onTimerUpdate;
 
     private float currentTime;
     private bool isRunning = false;
@@ -93,7 +82,6 @@ public class GameTimerManager : MonoBehaviour
     private void Start()
     {
         currentTime = startTime;
-        UpdateDisplay();
 
         if (startAutomatically)
         {
@@ -134,8 +122,7 @@ public class GameTimerManager : MonoBehaviour
         // Check periodic events
         CheckPeriodicEvents();
 
-        UpdateDisplay();
-        onTimerUpdate.Invoke();
+        onTimerUpdate.Invoke(currentTime);
     }
 
     private void CheckThresholds(float previousTime)
@@ -301,7 +288,6 @@ public class GameTimerManager : MonoBehaviour
         }
 
         lastPeriodicTime = currentTime;
-        UpdateDisplay();
         onTimerRestarted.Invoke();
         Debug.Log("Timer restarted");
     }
@@ -314,6 +300,8 @@ public class GameTimerManager : MonoBehaviour
         RestartTimer();
         StartTimer();
     }
+
+    #endregion
 
     #endregion
 
@@ -336,7 +324,6 @@ public class GameTimerManager : MonoBehaviour
         }
 
         lastPeriodicTime = currentTime;
-        UpdateDisplay();
     }
 
     /// <summary>
@@ -345,7 +332,6 @@ public class GameTimerManager : MonoBehaviour
     public void AddTime(float additionalTime)
     {
         currentTime += additionalTime;
-        UpdateDisplay();
     }
 
     /// <summary>
@@ -359,41 +345,7 @@ public class GameTimerManager : MonoBehaviour
 
     #endregion
 
-    private void UpdateDisplay()
-    {
-        if (timerDisplay != null)
-        {
-            timerDisplay.text = timerPrefix + GetFormattedTime();
-        }
-    }
-
     #region Student Helper Methods
-
-    /// <summary>
-    /// Get formatted time string based on display format
-    /// </summary>
-    public string GetFormattedTime()
-    {
-        switch (displayFormat)
-        {
-            case TimeFormat.MinutesSeconds:
-                int minutes = Mathf.FloorToInt(currentTime / 60f);
-                int seconds = Mathf.FloorToInt(currentTime % 60f);
-                return $"{minutes:00}:{seconds:00}";
-
-            case TimeFormat.DecimalSeconds:
-                return $"{currentTime:F1}s";
-
-            case TimeFormat.HoursMinutesSeconds:
-                int hours = Mathf.FloorToInt(currentTime / 3600f);
-                int mins = Mathf.FloorToInt((currentTime % 3600f) / 60f);
-                int secs = Mathf.FloorToInt(currentTime % 60f);
-                return $"{hours:00}:{mins:00}:{secs:00}";
-
-            default:
-                return $"{currentTime:F1}s";
-        }
-    }
 
     /// <summary>
     /// Check if timer has reached specific time
@@ -433,7 +385,7 @@ public class GameTimerManager : MonoBehaviour
         if (showDebugInfo)
         {
             GUILayout.BeginArea(new Rect(250, 10, 200, 200));
-            GUILayout.Label($"Timer: {GetFormattedTime()}");
+            GUILayout.Label($"Timer: {currentTime:F2}");
             GUILayout.Label($"Running: {IsRunning}");
             GUILayout.Label($"Paused: {IsPaused}");
             GUILayout.Label($"Thresholds: {GetTriggeredThresholdCount()}/{thresholds?.Length ?? 0}");
