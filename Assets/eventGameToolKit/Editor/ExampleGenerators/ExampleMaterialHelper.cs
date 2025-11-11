@@ -29,6 +29,15 @@ public static class ExampleMaterialHelper
     }
 
     /// <summary>
+    /// Get or create a material with the specified name and color (public API for setup generators)
+    /// </summary>
+    public static Material GetOrCreateMaterial(string materialName, Color color)
+    {
+        string path = $"{MATERIALS_FOLDER}/{materialName.ToLower()}.mat";
+        return GetOrCreateMaterial(path, color, materialName);
+    }
+
+    /// <summary>
     /// Get or create a material at the specified path with the given color
     /// </summary>
     private static Material GetOrCreateMaterial(string path, Color color, string materialName)
