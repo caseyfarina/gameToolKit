@@ -47,8 +47,17 @@ public class GameUIManager : MonoBehaviour
     [SerializeField] private Vector2 inventoryPosition = new Vector2(10, -160);
 
     [Header("UI Styling")]
-    [Tooltip("Font size for all text")]
-    [SerializeField] private int fontSize = 24;
+    [Tooltip("Font size for score text")]
+    [SerializeField] private int scoreFontSize = 24;
+
+    [Tooltip("Font size for health text")]
+    [SerializeField] private int healthFontSize = 24;
+
+    [Tooltip("Font size for timer text")]
+    [SerializeField] private int timerFontSize = 24;
+
+    [Tooltip("Font size for inventory text")]
+    [SerializeField] private int inventoryFontSize = 24;
 
     [Tooltip("Text color")]
     [SerializeField] private Color textColor = Color.white;
@@ -58,12 +67,48 @@ public class GameUIManager : MonoBehaviour
     [SerializeField] private Color healthColorMid = Color.yellow;
     [SerializeField] private Color healthColorLow = Color.red;
 
-    [Header("Animation Settings")]
+    [Header("Score Animation")]
+    [Tooltip("Enable punch animation when score changes")]
+    [SerializeField] private bool animateScore = true;
     [Tooltip("Duration for score punch animation")]
     [SerializeField] private float scoreAnimationDuration = 0.3f;
+    [Tooltip("Punch scale strength")]
+    [SerializeField] private float scorePunchStrength = 0.2f;
 
+    [Header("Health Animation")]
+    [Tooltip("Enable smooth transitions for health bar")]
+    [SerializeField] private bool animateHealth = true;
     [Tooltip("Duration for health bar transition")]
     [SerializeField] private float healthAnimationDuration = 0.2f;
+    [Tooltip("Enable fade effect on health text when damaged")]
+    [SerializeField] private bool animateHealthText = false;
+    [Tooltip("Duration for health text fade")]
+    [SerializeField] private float healthTextAnimationDuration = 0.3f;
+
+    [Header("Timer Animation")]
+    [Tooltip("Enable pulse animation on timer")]
+    [SerializeField] private bool animateTimer = false;
+    [Tooltip("Pulse frequency (seconds)")]
+    [SerializeField] private float timerPulseInterval = 1f;
+    [Tooltip("Pulse scale strength")]
+    [SerializeField] private float timerPulseStrength = 0.1f;
+
+    [Header("Inventory Animation")]
+    [Tooltip("Enable animation when inventory changes")]
+    [SerializeField] private bool animateInventory = true;
+    [Tooltip("Animation type for inventory changes")]
+    [SerializeField] private InventoryAnimationType inventoryAnimationType = InventoryAnimationType.PunchScale;
+    [Tooltip("Duration for inventory animation")]
+    [SerializeField] private float inventoryAnimationDuration = 0.3f;
+    [Tooltip("Animation strength")]
+    [SerializeField] private float inventoryAnimationStrength = 0.2f;
+
+    public enum InventoryAnimationType
+    {
+        PunchScale,
+        Fade,
+        Bounce
+    }
 
     [Header("Text Prefixes")]
     [SerializeField] private string scorePrefix = "Score: ";
@@ -101,6 +146,10 @@ public class GameUIManager : MonoBehaviour
     // Animation tweens
     private Tween scoreAnimationTween;
     private Tween healthAnimationTween;
+    private Tween healthTextAnimationTween;
+    private Tween timerAnimationTween;
+    private Tween inventoryAnimationTween;
+    private float lastTimerPulse = 0f;
 
     void Start()
     {
@@ -130,6 +179,9 @@ public class GameUIManager : MonoBehaviour
         // Clean up DOTween tweens
         scoreAnimationTween?.Kill();
         healthAnimationTween?.Kill();
+        healthTextAnimationTween?.Kill();
+        timerAnimationTween?.Kill();
+        inventoryAnimationTween?.Kill();
     }
 
     #region UI Creation
@@ -154,13 +206,13 @@ public class GameUIManager : MonoBehaviour
         // Create score display
         if (showScore && scoreText == null)
         {
-            scoreText = CreateTextElement("Score", scorePosition);
+            scoreText = CreateTextElement("Score", scorePosition, scoreFontSize);
         }
 
         // Create health text
         if (showHealthText && healthText == null)
         {
-            healthText = CreateTextElement("HealthText", healthTextPosition);
+            healthText = CreateTextElement("HealthText", healthTextPosition, healthFontSize);
         }
 
         // Create health bar
@@ -172,17 +224,17 @@ public class GameUIManager : MonoBehaviour
         // Create timer
         if (showTimer && timerText == null)
         {
-            timerText = CreateTextElement("Timer", timerPosition);
+            timerText = CreateTextElement("Timer", timerPosition, timerFontSize);
         }
 
         // Create inventory
         if (showInventory && inventoryText == null)
         {
-            inventoryText = CreateTextElement("Inventory", inventoryPosition);
+            inventoryText = CreateTextElement("Inventory", inventoryPosition, inventoryFontSize);
         }
     }
 
-    private TextMeshProUGUI CreateTextElement(string name, Vector2 position)
+    private TextMeshProUGUI CreateTextElement(string name, Vector2 position, int fontSize)
     {
         GameObject textObj = new GameObject(name);
         textObj.transform.SetParent(canvas.transform, false);
@@ -279,9 +331,12 @@ public class GameUIManager : MonoBehaviour
         if (showScore)
         {
             if (scoreText == null)
-                scoreText = CreateTextElement("Score_PREVIEW", scorePosition);
+                scoreText = CreateTextElement("Score_PREVIEW", scorePosition, scoreFontSize);
             else
+            {
                 UpdateTextElementPosition(scoreText, scorePosition);
+                scoreText.fontSize = scoreFontSize;
+            }
             scoreText.text = scorePrefix + "999";
         }
         else if (scoreText != null)
@@ -295,9 +350,12 @@ public class GameUIManager : MonoBehaviour
         if (showHealthText)
         {
             if (healthText == null)
-                healthText = CreateTextElement("HealthText_PREVIEW", healthTextPosition);
+                healthText = CreateTextElement("HealthText_PREVIEW", healthTextPosition, healthFontSize);
             else
+            {
                 UpdateTextElementPosition(healthText, healthTextPosition);
+                healthText.fontSize = healthFontSize;
+            }
             healthText.text = healthPrefix + "100/100";
         }
         else if (healthText != null)
@@ -327,9 +385,12 @@ public class GameUIManager : MonoBehaviour
         if (showTimer)
         {
             if (timerText == null)
-                timerText = CreateTextElement("Timer_PREVIEW", timerPosition);
+                timerText = CreateTextElement("Timer_PREVIEW", timerPosition, timerFontSize);
             else
+            {
                 UpdateTextElementPosition(timerText, timerPosition);
+                timerText.fontSize = timerFontSize;
+            }
             timerText.text = timerPrefix + "01:30";
         }
         else if (timerText != null)
@@ -343,9 +404,12 @@ public class GameUIManager : MonoBehaviour
         if (showInventory)
         {
             if (inventoryText == null)
-                inventoryText = CreateTextElement("Inventory_PREVIEW", inventoryPosition);
+                inventoryText = CreateTextElement("Inventory_PREVIEW", inventoryPosition, inventoryFontSize);
             else
+            {
                 UpdateTextElementPosition(inventoryText, inventoryPosition);
+                inventoryText.fontSize = inventoryFontSize;
+            }
             inventoryText.text = inventoryPrefix + "5";
         }
         else if (inventoryText != null)
@@ -417,22 +481,36 @@ public class GameUIManager : MonoBehaviour
         if (healthText != null)
         {
             healthText.text = healthPrefix + $"{currentHealth}/{maxHealth}";
+
+            // Animate health text if enabled
+            if (animateHealthText)
+            {
+                AnimateHealthText();
+            }
         }
 
         if (healthBar != null && maxHealth > 0)
         {
             float healthPercent = (float)currentHealth / maxHealth;
 
-            // Kill existing animation
-            healthAnimationTween?.Kill();
+            if (animateHealth)
+            {
+                // Kill existing animation
+                healthAnimationTween?.Kill();
 
-            // Animate health bar
-            healthAnimationTween = DOTween.To(
-                () => healthBar.value,
-                x => healthBar.value = x,
-                healthPercent,
-                healthAnimationDuration
-            ).SetUpdate(true);
+                // Animate health bar
+                healthAnimationTween = DOTween.To(
+                    () => healthBar.value,
+                    x => healthBar.value = x,
+                    healthPercent,
+                    healthAnimationDuration
+                ).SetUpdate(true);
+            }
+            else
+            {
+                // Instant update
+                healthBar.value = healthPercent;
+            }
 
             // Update color
             if (healthBarFill != null)
@@ -457,6 +535,13 @@ public class GameUIManager : MonoBehaviour
             int minutes = Mathf.FloorToInt(currentTime / 60f);
             int seconds = Mathf.FloorToInt(currentTime % 60f);
             timerText.text = timerPrefix + $"{minutes:00}:{seconds:00}";
+
+            // Pulse animation at intervals
+            if (animateTimer && Time.time >= lastTimerPulse + timerPulseInterval)
+            {
+                AnimateTimerPulse();
+                lastTimerPulse = Time.time;
+            }
         }
         onUIUpdated.Invoke();
     }
@@ -471,6 +556,12 @@ public class GameUIManager : MonoBehaviour
         if (inventoryText != null)
         {
             inventoryText.text = $"{itemType}: {count}";
+
+            // Animate inventory change if enabled
+            if (animateInventory)
+            {
+                AnimateInventoryChange();
+            }
         }
         onUIUpdated.Invoke();
     }
@@ -484,6 +575,12 @@ public class GameUIManager : MonoBehaviour
         if (inventoryText != null)
         {
             inventoryText.text = inventoryPrefix + count.ToString();
+
+            // Animate inventory change if enabled
+            if (animateInventory)
+            {
+                AnimateInventoryChange();
+            }
         }
         onUIUpdated.Invoke();
     }
@@ -494,18 +591,112 @@ public class GameUIManager : MonoBehaviour
 
     private void AnimateScoreChange()
     {
-        if (scoreText == null) return;
+        if (scoreText == null || !animateScore) return;
 
         // Kill existing animation
         scoreAnimationTween?.Kill();
 
         // Punch scale animation
         scoreAnimationTween = scoreText.transform.DOPunchScale(
-            Vector3.one * 0.2f,
+            Vector3.one * scorePunchStrength,
             scoreAnimationDuration,
             10,
             1
         ).SetUpdate(true);
+    }
+
+    private void AnimateHealthText()
+    {
+        if (healthText == null) return;
+
+        // Kill existing animation
+        healthTextAnimationTween?.Kill();
+
+        // Fade pulse animation
+        Color originalColor = healthText.color;
+        Color fadeColor = new Color(originalColor.r, originalColor.g, originalColor.b, 0.3f);
+
+        healthTextAnimationTween = DOTween.Sequence()
+            .Append(DOTween.To(
+                () => healthText.color,
+                x => healthText.color = x,
+                fadeColor,
+                healthTextAnimationDuration * 0.5f
+            ))
+            .Append(DOTween.To(
+                () => healthText.color,
+                x => healthText.color = x,
+                originalColor,
+                healthTextAnimationDuration * 0.5f
+            ))
+            .SetUpdate(true);
+    }
+
+    private void AnimateTimerPulse()
+    {
+        if (timerText == null) return;
+
+        // Kill existing animation
+        timerAnimationTween?.Kill();
+
+        // Pulse scale animation
+        timerAnimationTween = timerText.transform.DOPunchScale(
+            Vector3.one * timerPulseStrength,
+            0.2f,
+            10,
+            1
+        ).SetUpdate(true);
+    }
+
+    private void AnimateInventoryChange()
+    {
+        if (inventoryText == null) return;
+
+        // Kill existing animation
+        inventoryAnimationTween?.Kill();
+
+        switch (inventoryAnimationType)
+        {
+            case InventoryAnimationType.PunchScale:
+                inventoryAnimationTween = inventoryText.transform.DOPunchScale(
+                    Vector3.one * inventoryAnimationStrength,
+                    inventoryAnimationDuration,
+                    10,
+                    1
+                ).SetUpdate(true);
+                break;
+
+            case InventoryAnimationType.Fade:
+                Color originalColor = inventoryText.color;
+                Color fadeColor = new Color(originalColor.r, originalColor.g, originalColor.b, 0.3f);
+
+                inventoryAnimationTween = DOTween.Sequence()
+                    .Append(DOTween.To(
+                        () => inventoryText.color,
+                        x => inventoryText.color = x,
+                        fadeColor,
+                        inventoryAnimationDuration * 0.5f
+                    ))
+                    .Append(DOTween.To(
+                        () => inventoryText.color,
+                        x => inventoryText.color = x,
+                        originalColor,
+                        inventoryAnimationDuration * 0.5f
+                    ))
+                    .SetUpdate(true);
+                break;
+
+            case InventoryAnimationType.Bounce:
+                Vector3 originalPos = inventoryText.transform.localPosition;
+                Vector3 bouncePos = originalPos + Vector3.up * (inventoryAnimationStrength * 100f);
+
+                inventoryAnimationTween = DOTween.Sequence()
+                    .Append(inventoryText.transform.DOLocalMove(bouncePos, inventoryAnimationDuration * 0.5f))
+                    .Append(inventoryText.transform.DOLocalMove(originalPos, inventoryAnimationDuration * 0.5f))
+                    .SetUpdate(true)
+                    .SetEase(Ease.OutQuad);
+                break;
+        }
     }
 
     #endregion

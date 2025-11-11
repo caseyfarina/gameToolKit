@@ -9,7 +9,8 @@
       "WebSearch",
       "Bash(git remote add:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(cmd //c robocopy \"F:\\Unity Projects 2025\\gameToolKitFarina\\gameToolKit\\Assets\\eventGameToolKit\" \"F:\\Unity Projects 2025\\eventGameToolKit-Package\" //MIR //XD .git)"
     ],
     "deny": [],
     "ask": []
