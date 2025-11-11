@@ -13,6 +13,7 @@ public class ActionAutoSpawner : MonoBehaviour
     public enum SpawnMode
     {
         RandomSphere,
+        RandomCircle,
         SpawnPoints
     }
 
@@ -30,7 +31,7 @@ public class ActionAutoSpawner : MonoBehaviour
     [Tooltip("How to determine spawn position")]
     [SerializeField] private SpawnMode spawnMode = SpawnMode.RandomSphere;
 
-    [Tooltip("Random positional offset range (RandomSphere mode only)")]
+    [Tooltip("Random positional offset range (RandomSphere/RandomCircle modes)")]
     [SerializeField] private float spawnPositionRange = 0f;
 
     [Tooltip("Array of spawn point transforms (SpawnPoints mode only)")]
@@ -159,38 +160,54 @@ public class ActionAutoSpawner : MonoBehaviour
         Vector3 spawnPosition;
         Quaternion spawnRotation;
 
-        if (spawnMode == SpawnMode.SpawnPoints)
+        switch (spawnMode)
         {
-            // Spawn at random spawn point from array
-            if (spawnPoints == null || spawnPoints.Length == 0)
-            {
-                Debug.LogWarning($"ActionAutoSpawner on {gameObject.name}: SpawnPoints mode selected but no spawn points assigned!", this);
-                nextSpawnTime = Random.Range(spawnRateMin, spawnRateMax) + time;
-                return;
-            }
+            case SpawnMode.SpawnPoints:
+                // Spawn at random spawn point from array
+                if (spawnPoints == null || spawnPoints.Length == 0)
+                {
+                    Debug.LogWarning($"ActionAutoSpawner on {gameObject.name}: SpawnPoints mode selected but no spawn points assigned!", this);
+                    nextSpawnTime = Random.Range(spawnRateMin, spawnRateMax) + time;
+                    return;
+                }
 
-            // Choose random spawn point
-            int spawnPointIndex = Random.Range(0, spawnPoints.Length);
-            Transform spawnPoint = spawnPoints[spawnPointIndex];
+                // Choose random spawn point
+                int spawnPointIndex = Random.Range(0, spawnPoints.Length);
+                Transform spawnPoint = spawnPoints[spawnPointIndex];
 
-            if (spawnPoint == null)
-            {
-                Debug.LogWarning($"ActionAutoSpawner on {gameObject.name}: Spawn point at index {spawnPointIndex} is null!", this);
-                nextSpawnTime = Random.Range(spawnRateMin, spawnRateMax) + time;
-                return;
-            }
+                if (spawnPoint == null)
+                {
+                    Debug.LogWarning($"ActionAutoSpawner on {gameObject.name}: Spawn point at index {spawnPointIndex} is null!", this);
+                    nextSpawnTime = Random.Range(spawnRateMin, spawnRateMax) + time;
+                    return;
+                }
 
-            spawnPosition = spawnPoint.position;
-            spawnRotation = spawnPoint.rotation;
-        }
-        else // RandomSphere mode
-        {
-            spawnPosition = transform.position;
-            if (spawnPositionRange > 0f)
-            {
-                spawnPosition += Random.insideUnitSphere * spawnPositionRange;
-            }
-            spawnRotation = transform.rotation;
+                spawnPosition = spawnPoint.position;
+                spawnRotation = spawnPoint.rotation;
+                break;
+
+            case SpawnMode.RandomCircle:
+                // Spawn at random position within circle on XZ plane (same Y as spawner)
+                spawnPosition = transform.position;
+                if (spawnPositionRange > 0f)
+                {
+                    Vector2 randomCircle = Random.insideUnitCircle * spawnPositionRange;
+                    spawnPosition.x += randomCircle.x;
+                    spawnPosition.z += randomCircle.y;
+                }
+                spawnRotation = transform.rotation;
+                break;
+
+            case SpawnMode.RandomSphere:
+            default:
+                // Spawn at random position within sphere
+                spawnPosition = transform.position;
+                if (spawnPositionRange > 0f)
+                {
+                    spawnPosition += Random.insideUnitSphere * spawnPositionRange;
+                }
+                spawnRotation = transform.rotation;
+                break;
         }
 
         // Instantiate the object

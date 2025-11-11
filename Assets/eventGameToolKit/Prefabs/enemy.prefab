@@ -286,11 +286,11 @@ MonoBehaviour:
   playerLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  minMoveInterval: 1
-  maxMoveInterval: 3
+  minMoveInterval: 0.1
+  maxMoveInterval: 0.2
   pauseWhenPlayerClose: 1
   stopDistance: 2
-  rotationSpeed: 10
+  rotationSpeed: 3.82
   groundCheckDistance: 0.2
   groundLayer:
     serializedVersion: 2
