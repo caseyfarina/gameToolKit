@@ -780,6 +780,10 @@ public class CharacterControllerCC : MonoBehaviour
     // FIX 1: Using Time.fixedDeltaTime for CharacterController.Move for physics consistency
     private void ApplyMovement()
     {
+        // Don't move if controller is disabled (e.g., during checkpoint restoration)
+        if (!controller.enabled)
+            return;
+
         // Move character with calculated velocity
         controller.Move(velocity * Time.fixedDeltaTime);
     }
