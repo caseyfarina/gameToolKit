@@ -111,6 +111,12 @@ public class GameTimerManager : MonoBehaviour
             if (currentTime <= 0f)
             {
                 currentTime = 0f;
+
+                // Check thresholds BEFORE stopping (so threshold at 0 can trigger)
+                CheckThresholds(previousTime);
+                CheckPeriodicEvents();
+                onTimerUpdate.Invoke(currentTime);
+
                 StopTimer();
                 return;
             }
