@@ -45,6 +45,9 @@ public class InputCheckpointZone : MonoBehaviour
     private Material originalMaterial;
     private Material materialInstance; // Instance to avoid shared material modification
 
+    // Static flag to disable all checkpoints during restoration
+    private static bool isRestoringCheckpoint = false;
+
     private void Start()
     {
         // Ensure collider is set to trigger
@@ -88,6 +91,12 @@ public class InputCheckpointZone : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        // Don't trigger during checkpoint restoration to prevent re-saving
+        if (isRestoringCheckpoint)
+        {
+            return;
+        }
+
         // Check if correct tag
         if (!other.CompareTag(triggerObjectTag))
         {
@@ -199,6 +208,22 @@ public class InputCheckpointZone : MonoBehaviour
     /// Check if this checkpoint has been activated
     /// </summary>
     public bool IsActivated => hasBeenActivated;
+
+    /// <summary>
+    /// Disable all checkpoint triggers globally (used during restoration)
+    /// </summary>
+    public static void DisableAllCheckpoints()
+    {
+        isRestoringCheckpoint = true;
+    }
+
+    /// <summary>
+    /// Re-enable all checkpoint triggers globally (after restoration completes)
+    /// </summary>
+    public static void EnableAllCheckpoints()
+    {
+        isRestoringCheckpoint = false;
+    }
 
     private void OnDrawGizmos()
     {

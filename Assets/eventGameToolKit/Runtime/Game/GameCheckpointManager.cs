@@ -101,6 +101,9 @@ public class GameCheckpointManager : MonoBehaviour
     {
         Debug.Log("GameCheckpointManager: Starting checkpoint restoration coroutine");
 
+        // Disable all checkpoint triggers to prevent re-triggering during restoration
+        InputCheckpointZone.DisableAllCheckpoints();
+
         // Try to find player immediately
         GameObject player = GetPlayerObject();
 
@@ -203,6 +206,10 @@ public class GameCheckpointManager : MonoBehaviour
                 r.enabled = true;
             }
         }
+
+        // Re-enable checkpoint triggers after restoration is complete
+        InputCheckpointZone.EnableAllCheckpoints();
+        Debug.Log("GameCheckpointManager: Checkpoint restoration complete, re-enabled checkpoint triggers");
     }
 
     /// <summary>

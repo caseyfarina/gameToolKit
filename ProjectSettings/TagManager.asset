@@ -8,6 +8,7 @@ TagManager:
   - projectile
   - enemy
   - health
+  - projectilePowerUp
   layers:
   - Default
   - TransparentFX
