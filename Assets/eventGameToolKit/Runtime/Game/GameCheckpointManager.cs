@@ -66,7 +66,16 @@ public class GameCheckpointManager : MonoBehaviour
 
         if (persistAcrossScenes)
         {
+            // CRITICAL: DontDestroyOnLoad only works on root GameObjects
+            // If this GameObject is a child, unparent it first
+            if (transform.parent != null)
+            {
+                Debug.LogWarning($"GameCheckpointManager: GameObject '{gameObject.name}' is a child object. Moving to root hierarchy for DontDestroyOnLoad to work.", this);
+                transform.SetParent(null);
+            }
+
             DontDestroyOnLoad(gameObject);
+            Debug.Log("GameCheckpointManager: Persisting across scenes (DontDestroyOnLoad)");
         }
 
         // Subscribe to scene loaded event for checkpoint restoration after scene reloads
@@ -90,6 +99,8 @@ public class GameCheckpointManager : MonoBehaviour
 
     private System.Collections.IEnumerator RestoreCheckpointAfterPlayerSpawns()
     {
+        Debug.Log("GameCheckpointManager: Starting checkpoint restoration coroutine");
+
         // Try to find player immediately
         GameObject player = GetPlayerObject();
 
@@ -132,8 +143,13 @@ public class GameCheckpointManager : MonoBehaviour
             yield break;
         }
 
-        // Wait one additional frame to ensure player's Start/Awake has completed
+        Debug.Log($"GameCheckpointManager: Player found, current position: {player.transform.position}, will restore to: {savedPosition}");
+
+        // Wait multiple frames to ensure ALL Start() methods have completed
+        // This is critical - some character controllers initialize position in Start()
         yield return null;
+        yield return null;
+        yield return new WaitForFixedUpdate();
 
         // Now restore checkpoint
         RestoreCheckpoint();
@@ -148,15 +164,21 @@ public class GameCheckpointManager : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
             rb.position = savedPosition;
             rb.rotation = savedRotation;
+            Debug.Log($"GameCheckpointManager: Set Rigidbody position to {savedPosition}");
         }
         else
         {
             player.transform.position = savedPosition;
             player.transform.rotation = savedRotation;
+            Debug.Log($"GameCheckpointManager: Set Transform position to {savedPosition}");
         }
 
-        // Wait one more frame to ensure camera has moved with player
+        // Wait additional frames to ensure position sticks
+        yield return new WaitForFixedUpdate();
         yield return null;
+
+        // Final verification
+        Debug.Log($"GameCheckpointManager: Final player position after restoration: {player.transform.position}");
 
         // Re-enable renderers to make player visible at checkpoint
         if (renderers != null)
