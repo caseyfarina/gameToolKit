@@ -74,6 +74,17 @@ public class InputCheckpointZone : MonoBehaviour
             materialInstance = new Material(originalMaterial);
             checkpointRenderer.material = materialInstance;
         }
+
+        // Reset checkpoint state on scene load
+        // Ensures one-time checkpoints can be reactivated after scene restart
+        hasBeenActivated = false;
+
+        // Re-enable collider if it was disabled by oneTimeUse
+        Collider col = GetComponent<Collider>();
+        if (col != null && !col.enabled)
+        {
+            col.enabled = true;
+        }
     }
 
     private void OnTriggerEnter(Collider other)
