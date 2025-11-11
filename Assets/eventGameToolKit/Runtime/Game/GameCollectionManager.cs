@@ -62,6 +62,9 @@ public class GameCollectionManager : MonoBehaviour
     {
         // Initialize threshold state based on starting value
         wasAboveThreshold = currentValue >= threshold;
+
+        // Fire initial value event to update UI on start
+        onValueChanged.Invoke(currentValue);
     }
 
     /// <summary>

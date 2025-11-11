@@ -39,6 +39,12 @@ public class GameInventorySlot : MonoBehaviour
     public bool IsEmpty => currentValue <= 0;
     public bool IsFull => currentValue >= maxCapacity;
 
+    private void Start()
+    {
+        // Fire initial value event to update UI on start
+        onValueChanged.Invoke(itemType, currentValue);
+    }
+
     /// <summary>
     /// Adds items to the inventory slot up to max capacity
     /// </summary>
