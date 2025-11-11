@@ -14,13 +14,25 @@ public class GameCollectionManager : MonoBehaviour
     [SerializeField] private int threshold = 10;
 
     /// <summary>
-    /// Fires when the collection count reaches or exceeds the threshold value
+    /// Fires when the value crosses the threshold going UP (from below to at/above threshold)
     /// </summary>
     public UnityEvent onThresholdReached;
+    /// <summary>
+    /// Fires when the value crosses the threshold going DOWN (from at/above to below threshold)
+    /// </summary>
+    public UnityEvent onThresholdSurpassed;
     /// <summary>
     /// Fires whenever the collection value changes, passing the new value as an int parameter
     /// </summary>
     public UnityEvent<int> onValueChanged;
+
+    private bool wasAboveThreshold = false;
+
+    private void Start()
+    {
+        // Initialize threshold state based on starting value
+        wasAboveThreshold = currentValue >= threshold;
+    }
 
     /// <summary>
     /// Increases the collection value by the specified amount
@@ -62,10 +74,20 @@ public class GameCollectionManager : MonoBehaviour
 
     private void CheckThreshold()
     {
-        if (currentValue >= threshold)
+        bool isAboveThreshold = currentValue >= threshold;
+
+        // Check for upward crossing (reached threshold)
+        if (isAboveThreshold && !wasAboveThreshold)
         {
             onThresholdReached.Invoke();
         }
+        // Check for downward crossing (surpassed threshold - went back below)
+        else if (!isAboveThreshold && wasAboveThreshold)
+        {
+            onThresholdSurpassed.Invoke();
+        }
+
+        wasAboveThreshold = isAboveThreshold;
     }
 }
 
