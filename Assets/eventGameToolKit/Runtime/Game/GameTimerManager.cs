@@ -303,8 +303,6 @@ public class GameTimerManager : MonoBehaviour
 
     #endregion
 
-    #endregion
-
     #region Time Setting Methods
 
     /// <summary>
