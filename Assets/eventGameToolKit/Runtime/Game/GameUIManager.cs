@@ -210,7 +210,16 @@ public class GameUIManager : MonoBehaviour
             canvasObj.transform.SetParent(transform);
             canvas = canvasObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObj.AddComponent<CanvasScaler>();
+
+            // Add and configure CanvasScaler
+            CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0f; // Match width
+            scaler.referencePixelsPerUnit = 100f;
+
+            // Add GraphicRaycaster
             canvasObj.AddComponent<GraphicRaycaster>();
         }
 
@@ -351,7 +360,14 @@ public class GameUIManager : MonoBehaviour
             canvasObj.hideFlags = HideFlags.DontSave; // Don't save to scene
             canvas = canvasObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObj.AddComponent<CanvasScaler>();
+
+            // Add and configure CanvasScaler
+            CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0f; // Match width
+            scaler.referencePixelsPerUnit = 100f;
         }
         else
         {
