@@ -15,6 +15,7 @@ public class GameStateManager : MonoBehaviour
 
     [Header("UI References")]
     [SerializeField] private GameObject pausePanel;
+    [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject restartButton;
 
     [Header("Events")]
@@ -30,14 +31,20 @@ public class GameStateManager : MonoBehaviour
     /// Fires when the victory state is triggered
     /// </summary>
     public UnityEvent onVictory;
+    /// <summary>
+    /// Fires when the game over state is triggered (player loses/dies)
+    /// </summary>
+    public UnityEvent onGameOver;
 
     private bool isPaused = false;
     private bool hasWon = false;
+    private bool isGameOver = false;
     private GameTimerManager[] timers;
 
     public bool IsPaused => isPaused;
-    public bool IsPlaying => !isPaused && !hasWon;
+    public bool IsPlaying => !isPaused && !hasWon && !isGameOver;
     public bool HasWon => hasWon;
+    public bool IsGameOver => isGameOver;
 
     private void Start()
     {
@@ -146,7 +153,7 @@ public class GameStateManager : MonoBehaviour
     /// </summary>
     public void Victory()
     {
-        if (!hasWon)
+        if (!hasWon && !isGameOver)
         {
             hasWon = true;
             Time.timeScale = 0f; // Pause the game on victory
@@ -156,18 +163,39 @@ public class GameStateManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Trigger game over state (player loses/dies)
+    /// </summary>
+    public void GameOver()
+    {
+        if (!isGameOver && !hasWon)
+        {
+            isGameOver = true;
+            Time.timeScale = 0f; // Pause the game on game over
+            UpdateUI();
+            onGameOver.Invoke();
+            Debug.Log("Game Over!");
+        }
+    }
+
     private void UpdateUI()
     {
-        // Show/hide pause panel (only when paused, not victory)
+        // Show/hide pause panel (only when paused, not victory or game over)
         if (pausePanel != null)
         {
-            pausePanel.SetActive(isPaused);
+            pausePanel.SetActive(isPaused && !hasWon && !isGameOver);
         }
 
-        // Show/hide restart button (when paused OR when won)
+        // Show/hide game over panel (only when game over)
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(isGameOver);
+        }
+
+        // Show/hide restart button (when paused OR when won OR when game over)
         if (restartButton != null)
         {
-            restartButton.SetActive(isPaused || hasWon);
+            restartButton.SetActive(isPaused || hasWon || isGameOver);
         }
     }
 }
