@@ -80,7 +80,6 @@ public class InputCheckpointZone : MonoBehaviour
         hasBeenActivated = false;
 
         // Re-enable collider if it was disabled by oneTimeUse
-        Collider col = GetComponent<Collider>();
         if (col != null && !col.enabled)
         {
             col.enabled = true;
