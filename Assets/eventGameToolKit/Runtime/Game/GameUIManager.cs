@@ -659,8 +659,9 @@ public class GameUIManager : MonoBehaviour
     {
         if (scoreText == null || !animateScore) return;
 
-        // Kill existing animation
+        // Kill existing animation and reset scale
         scoreAnimationTween?.Kill();
+        scoreText.transform.localScale = Vector3.one;
 
         // Punch scale animation
         scoreAnimationTween = scoreText.transform.DOPunchScale(
@@ -702,8 +703,9 @@ public class GameUIManager : MonoBehaviour
     {
         if (timerText == null) return;
 
-        // Kill existing animation
+        // Kill existing animation and reset scale
         timerAnimationTween?.Kill();
+        timerText.transform.localScale = Vector3.one;
 
         // Pulse scale animation
         timerAnimationTween = timerText.transform.DOPunchScale(
@@ -724,6 +726,9 @@ public class GameUIManager : MonoBehaviour
         switch (inventoryAnimationType)
         {
             case InventoryAnimationType.PunchScale:
+                // Reset scale before punch
+                inventoryText.transform.localScale = Vector3.one;
+
                 inventoryAnimationTween = inventoryText.transform.DOPunchScale(
                     Vector3.one * inventoryAnimationStrength,
                     inventoryAnimationDuration,
