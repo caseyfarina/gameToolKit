@@ -187,7 +187,7 @@ public class GameUIManager : MonoBehaviour
     #region UI Creation
 
     /// <summary>
-    /// Creates all enabled UI elements at runtime
+    /// Creates all UI elements at runtime (toggles just enable/disable them)
     /// </summary>
     private void CreateUIElements()
     {
@@ -203,35 +203,55 @@ public class GameUIManager : MonoBehaviour
             canvasObj.AddComponent<GraphicRaycaster>();
         }
 
-        // Create score display
-        if (showScore && scoreText == null)
+        // Create ALL UI elements regardless of toggles
+        if (scoreText == null)
         {
             scoreText = CreateTextElement("Score", scorePosition, scoreFontSize);
         }
 
-        // Create health text
-        if (showHealthText && healthText == null)
+        if (healthText == null)
         {
             healthText = CreateTextElement("HealthText", healthTextPosition, healthFontSize);
         }
 
-        // Create health bar
-        if (showHealthBar && healthBar == null)
+        if (healthBar == null)
         {
             CreateHealthBar();
         }
 
-        // Create timer
-        if (showTimer && timerText == null)
+        if (timerText == null)
         {
             timerText = CreateTextElement("Timer", timerPosition, timerFontSize);
         }
 
-        // Create inventory
-        if (showInventory && inventoryText == null)
+        if (inventoryText == null)
         {
             inventoryText = CreateTextElement("Inventory", inventoryPosition, inventoryFontSize);
         }
+
+        // Apply toggle states (enable/disable based on settings)
+        ApplyToggleStates();
+    }
+
+    /// <summary>
+    /// Enable or disable UI elements based on toggle settings
+    /// </summary>
+    private void ApplyToggleStates()
+    {
+        if (scoreText != null)
+            scoreText.gameObject.SetActive(showScore);
+
+        if (healthText != null)
+            healthText.gameObject.SetActive(showHealthText);
+
+        if (healthBar != null)
+            healthBar.gameObject.SetActive(showHealthBar);
+
+        if (timerText != null)
+            timerText.gameObject.SetActive(showTimer);
+
+        if (inventoryText != null)
+            inventoryText.gameObject.SetActive(showInventory);
     }
 
     private TextMeshProUGUI CreateTextElement(string name, Vector2 position, int fontSize)
@@ -344,7 +364,7 @@ public class GameUIManager : MonoBehaviour
 
         if (healthBar == null && canvas != null)
         {
-            Transform existingBar = canvas.transform.Find("HealthBar");
+            Transform existingBar = canvas.transform.Find("HealthBar_PREVIEW");
             if (existingBar != null)
             {
                 healthBar = existingBar.GetComponent<Slider>();
@@ -368,99 +388,76 @@ public class GameUIManager : MonoBehaviour
                 inventoryText = existingInventory.GetComponent<TextMeshProUGUI>();
         }
 
-        // Create/update UI elements
-        if (showScore)
+        // Create ALL UI elements (don't destroy based on toggles)
+        if (scoreText == null)
         {
-            if (scoreText == null)
-                scoreText = CreateTextElement("Score_PREVIEW", scorePosition, scoreFontSize);
-            else
-            {
-                UpdateTextElementPosition(scoreText, scorePosition);
-                scoreText.fontSize = scoreFontSize;
-                scoreText.gameObject.hideFlags = HideFlags.DontSave;
-            }
-            scoreText.text = scorePrefix + "999";
+            scoreText = CreateTextElement("Score_PREVIEW", scorePosition, scoreFontSize);
+            scoreText.gameObject.hideFlags = HideFlags.DontSave;
         }
-        else if (scoreText != null)
+        else
         {
-            DestroyImmediate(scoreText.gameObject);
-            scoreText = null;
+            UpdateTextElementPosition(scoreText, scorePosition);
+            scoreText.fontSize = scoreFontSize;
+            scoreText.gameObject.hideFlags = HideFlags.DontSave;
         }
+        scoreText.text = scorePrefix + "999";
 
-        if (showHealthText)
+        if (healthText == null)
         {
-            if (healthText == null)
-                healthText = CreateTextElement("HealthText_PREVIEW", healthTextPosition, healthFontSize);
-            else
-            {
-                UpdateTextElementPosition(healthText, healthTextPosition);
-                healthText.fontSize = healthFontSize;
-                healthText.gameObject.hideFlags = HideFlags.DontSave;
-            }
-            healthText.text = healthPrefix + "100/100";
+            healthText = CreateTextElement("HealthText_PREVIEW", healthTextPosition, healthFontSize);
+            healthText.gameObject.hideFlags = HideFlags.DontSave;
         }
-        else if (healthText != null)
+        else
         {
-            DestroyImmediate(healthText.gameObject);
-            healthText = null;
+            UpdateTextElementPosition(healthText, healthTextPosition);
+            healthText.fontSize = healthFontSize;
+            healthText.gameObject.hideFlags = HideFlags.DontSave;
         }
+        healthText.text = healthPrefix + "100/100";
 
-        if (showHealthBar)
+        if (healthBar == null)
         {
-            if (healthBar == null)
+            CreateHealthBar();
+            if (healthBar != null)
             {
-                CreateHealthBar();
-                if (healthBar != null)
-                    healthBar.gameObject.hideFlags = HideFlags.DontSave;
-            }
-            else
-            {
-                UpdateHealthBarPosition();
+                healthBar.gameObject.name = "HealthBar_PREVIEW"; // Rename for consistency
                 healthBar.gameObject.hideFlags = HideFlags.DontSave;
             }
         }
-        else if (healthBar != null)
+        else
         {
-            DestroyImmediate(healthBar.gameObject);
-            healthBar = null;
-            healthBarFill = null;
+            UpdateHealthBarPosition();
+            healthBar.gameObject.hideFlags = HideFlags.DontSave;
         }
 
-        if (showTimer)
+        if (timerText == null)
         {
-            if (timerText == null)
-                timerText = CreateTextElement("Timer_PREVIEW", timerPosition, timerFontSize);
-            else
-            {
-                UpdateTextElementPosition(timerText, timerPosition);
-                timerText.fontSize = timerFontSize;
-                timerText.gameObject.hideFlags = HideFlags.DontSave;
-            }
-            timerText.text = timerPrefix + "01:30";
+            timerText = CreateTextElement("Timer_PREVIEW", timerPosition, timerFontSize);
+            timerText.gameObject.hideFlags = HideFlags.DontSave;
         }
-        else if (timerText != null)
+        else
         {
-            DestroyImmediate(timerText.gameObject);
-            timerText = null;
+            UpdateTextElementPosition(timerText, timerPosition);
+            timerText.fontSize = timerFontSize;
+            timerText.gameObject.hideFlags = HideFlags.DontSave;
         }
+        timerText.text = timerPrefix + "01:30";
 
-        if (showInventory)
+        if (inventoryText == null)
         {
-            if (inventoryText == null)
-                inventoryText = CreateTextElement("Inventory_PREVIEW", inventoryPosition, inventoryFontSize);
-            else
-            {
-                UpdateTextElementPosition(inventoryText, inventoryPosition);
-                inventoryText.fontSize = inventoryFontSize;
-                inventoryText.gameObject.hideFlags = HideFlags.DontSave;
-            }
-            inventoryText.text = inventoryPrefix + "5";
+            inventoryText = CreateTextElement("Inventory_PREVIEW", inventoryPosition, inventoryFontSize);
+            inventoryText.gameObject.hideFlags = HideFlags.DontSave;
         }
-        else if (inventoryText != null)
+        else
         {
-            DestroyImmediate(inventoryText.gameObject);
-            inventoryText = null;
+            UpdateTextElementPosition(inventoryText, inventoryPosition);
+            inventoryText.fontSize = inventoryFontSize;
+            inventoryText.gameObject.hideFlags = HideFlags.DontSave;
         }
+        inventoryText.text = inventoryPrefix + "5";
+
+        // Apply toggle states (enable/disable based on settings)
+        ApplyToggleStates();
     }
 
     private void UpdateTextElementPosition(TextMeshProUGUI text, Vector2 position)
