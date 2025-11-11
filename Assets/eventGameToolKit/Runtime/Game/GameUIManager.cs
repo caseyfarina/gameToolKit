@@ -312,7 +312,7 @@ public class GameUIManager : MonoBehaviour
     private void CreateOrUpdateEditorPreview()
     {
         // Find or create canvas
-        canvas = GetComponentInChildren<Canvas>();
+        canvas = GetComponentInChildren<Canvas>(true); // Include inactive objects
         if (canvas == null)
         {
             GameObject canvasObj = new GameObject("GameUI_Canvas_PREVIEW");
@@ -327,6 +327,47 @@ public class GameUIManager : MonoBehaviour
             canvas.gameObject.hideFlags = HideFlags.DontSave;
         }
 
+        // Find existing preview elements to reuse
+        if (scoreText == null && canvas != null)
+        {
+            Transform existingScore = canvas.transform.Find("Score_PREVIEW");
+            if (existingScore != null)
+                scoreText = existingScore.GetComponent<TextMeshProUGUI>();
+        }
+
+        if (healthText == null && canvas != null)
+        {
+            Transform existingHealth = canvas.transform.Find("HealthText_PREVIEW");
+            if (existingHealth != null)
+                healthText = existingHealth.GetComponent<TextMeshProUGUI>();
+        }
+
+        if (healthBar == null && canvas != null)
+        {
+            Transform existingBar = canvas.transform.Find("HealthBar");
+            if (existingBar != null)
+            {
+                healthBar = existingBar.GetComponent<Slider>();
+                Transform fillTransform = existingBar.Find("Fill Area/Fill");
+                if (fillTransform != null)
+                    healthBarFill = fillTransform.GetComponent<Image>();
+            }
+        }
+
+        if (timerText == null && canvas != null)
+        {
+            Transform existingTimer = canvas.transform.Find("Timer_PREVIEW");
+            if (existingTimer != null)
+                timerText = existingTimer.GetComponent<TextMeshProUGUI>();
+        }
+
+        if (inventoryText == null && canvas != null)
+        {
+            Transform existingInventory = canvas.transform.Find("Inventory_PREVIEW");
+            if (existingInventory != null)
+                inventoryText = existingInventory.GetComponent<TextMeshProUGUI>();
+        }
+
         // Create/update UI elements
         if (showScore)
         {
@@ -336,14 +377,13 @@ public class GameUIManager : MonoBehaviour
             {
                 UpdateTextElementPosition(scoreText, scorePosition);
                 scoreText.fontSize = scoreFontSize;
+                scoreText.gameObject.hideFlags = HideFlags.DontSave;
             }
             scoreText.text = scorePrefix + "999";
         }
         else if (scoreText != null)
         {
-            UnityEditor.EditorApplication.delayCall += () => {
-                if (scoreText != null) DestroyImmediate(scoreText.gameObject);
-            };
+            DestroyImmediate(scoreText.gameObject);
             scoreText = null;
         }
 
@@ -355,29 +395,33 @@ public class GameUIManager : MonoBehaviour
             {
                 UpdateTextElementPosition(healthText, healthTextPosition);
                 healthText.fontSize = healthFontSize;
+                healthText.gameObject.hideFlags = HideFlags.DontSave;
             }
             healthText.text = healthPrefix + "100/100";
         }
         else if (healthText != null)
         {
-            UnityEditor.EditorApplication.delayCall += () => {
-                if (healthText != null) DestroyImmediate(healthText.gameObject);
-            };
+            DestroyImmediate(healthText.gameObject);
             healthText = null;
         }
 
         if (showHealthBar)
         {
             if (healthBar == null)
+            {
                 CreateHealthBar();
+                if (healthBar != null)
+                    healthBar.gameObject.hideFlags = HideFlags.DontSave;
+            }
             else
+            {
                 UpdateHealthBarPosition();
+                healthBar.gameObject.hideFlags = HideFlags.DontSave;
+            }
         }
         else if (healthBar != null)
         {
-            UnityEditor.EditorApplication.delayCall += () => {
-                if (healthBar != null) DestroyImmediate(healthBar.gameObject);
-            };
+            DestroyImmediate(healthBar.gameObject);
             healthBar = null;
             healthBarFill = null;
         }
@@ -390,14 +434,13 @@ public class GameUIManager : MonoBehaviour
             {
                 UpdateTextElementPosition(timerText, timerPosition);
                 timerText.fontSize = timerFontSize;
+                timerText.gameObject.hideFlags = HideFlags.DontSave;
             }
             timerText.text = timerPrefix + "01:30";
         }
         else if (timerText != null)
         {
-            UnityEditor.EditorApplication.delayCall += () => {
-                if (timerText != null) DestroyImmediate(timerText.gameObject);
-            };
+            DestroyImmediate(timerText.gameObject);
             timerText = null;
         }
 
@@ -409,14 +452,13 @@ public class GameUIManager : MonoBehaviour
             {
                 UpdateTextElementPosition(inventoryText, inventoryPosition);
                 inventoryText.fontSize = inventoryFontSize;
+                inventoryText.gameObject.hideFlags = HideFlags.DontSave;
             }
             inventoryText.text = inventoryPrefix + "5";
         }
         else if (inventoryText != null)
         {
-            UnityEditor.EditorApplication.delayCall += () => {
-                if (inventoryText != null) DestroyImmediate(inventoryText.gameObject);
-            };
+            DestroyImmediate(inventoryText.gameObject);
             inventoryText = null;
         }
     }
