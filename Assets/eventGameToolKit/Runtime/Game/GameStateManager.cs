@@ -15,6 +15,7 @@ public class GameStateManager : MonoBehaviour
 
     [Header("UI References")]
     [SerializeField] private GameObject pausePanel;
+    [SerializeField] private GameObject victoryPanel;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject restartButton;
 
@@ -184,6 +185,12 @@ public class GameStateManager : MonoBehaviour
         if (pausePanel != null)
         {
             pausePanel.SetActive(isPaused && !hasWon && !isGameOver);
+        }
+
+        // Show/hide victory panel (only when won)
+        if (victoryPanel != null)
+        {
+            victoryPanel.SetActive(hasWon);
         }
 
         // Show/hide game over panel (only when game over)
