@@ -55,6 +55,9 @@ public class InputCheckpointZone : MonoBehaviour
             Debug.LogWarning($"InputCheckpointZone on {gameObject.name}: Collider was not set as trigger. Automatically fixed.");
         }
 
+        // DEBUG: Log initial state
+        Debug.Log($"InputCheckpointZone '{gameObject.name}' Start(): hasBeenActivated={hasBeenActivated}, oneTimeUse={oneTimeUse}, collider.enabled={col?.enabled}, collider.isTrigger={col?.isTrigger}");
+
         // Find checkpoint persistence if not assigned
         if (checkpointPersistence == null)
         {
@@ -63,8 +66,16 @@ public class InputCheckpointZone : MonoBehaviour
 
             if (checkpointPersistence == null)
             {
-                Debug.LogWarning("InputCheckpointZone: No GameCheckpointManager found in scene! Add one to enable checkpoint saving.");
+                Debug.LogWarning($"InputCheckpointZone '{gameObject.name}': No GameCheckpointManager found in scene! Add one to enable checkpoint saving.");
             }
+            else
+            {
+                Debug.Log($"InputCheckpointZone '{gameObject.name}': Successfully found GameCheckpointManager singleton");
+            }
+        }
+        else
+        {
+            Debug.Log($"InputCheckpointZone '{gameObject.name}': Using assigned checkpointPersistence reference");
         }
 
         // Create material instance to avoid shared material modification
@@ -78,24 +89,30 @@ public class InputCheckpointZone : MonoBehaviour
         // Apply visual feedback if already activated (preserves state across scene reloads)
         if (hasBeenActivated)
         {
+            Debug.Log($"InputCheckpointZone '{gameObject.name}': Already activated, applying visual feedback");
             ApplyVisualFeedback();
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"InputCheckpointZone '{gameObject.name}' OnTriggerEnter: other.name='{other.name}', other.tag='{other.tag}', looking for tag='{triggerObjectTag}'");
+
         // Check if correct tag
         if (!other.CompareTag(triggerObjectTag))
         {
+            Debug.Log($"InputCheckpointZone '{gameObject.name}': Tag mismatch, ignoring trigger");
             return;
         }
 
         // Check if already activated (for one-time use)
         if (oneTimeUse && hasBeenActivated)
         {
+            Debug.Log($"InputCheckpointZone '{gameObject.name}': Already activated (oneTimeUse=true), ignoring trigger");
             return;
         }
 
+        Debug.Log($"InputCheckpointZone '{gameObject.name}': Triggering ActivateCheckpoint()");
         // Activate checkpoint
         ActivateCheckpoint();
     }
@@ -105,16 +122,22 @@ public class InputCheckpointZone : MonoBehaviour
     /// </summary>
     public void ActivateCheckpoint()
     {
+        Debug.Log($"InputCheckpointZone '{gameObject.name}' ActivateCheckpoint() called: oneTimeUse={oneTimeUse}, hasBeenActivated={hasBeenActivated}");
+
         if (oneTimeUse && hasBeenActivated)
         {
+            Debug.Log($"InputCheckpointZone '{gameObject.name}': Already activated (oneTimeUse=true), exiting ActivateCheckpoint()");
             return;
         }
 
         hasBeenActivated = true;
+        Debug.Log($"InputCheckpointZone '{gameObject.name}': Set hasBeenActivated=true");
 
         // Save to persistence system - use CHECKPOINT position, not player position
         if (checkpointPersistence != null)
         {
+            Debug.Log($"InputCheckpointZone '{gameObject.name}': checkpointPersistence found, saving position {transform.position}, saveFullState={saveFullState}");
+
             if (saveFullState)
             {
                 checkpointPersistence.SaveCheckpointFullAtPosition(transform.position);
@@ -125,6 +148,10 @@ public class InputCheckpointZone : MonoBehaviour
             }
 
             Debug.Log($"Checkpoint activated at {transform.position}");
+        }
+        else
+        {
+            Debug.LogWarning($"InputCheckpointZone '{gameObject.name}': checkpointPersistence is NULL! Cannot save checkpoint!");
         }
 
         // Visual feedback
@@ -137,6 +164,7 @@ public class InputCheckpointZone : MonoBehaviour
         // Disable if one-time use
         if (oneTimeUse)
         {
+            Debug.Log($"InputCheckpointZone '{gameObject.name}': oneTimeUse=true, disabling collider");
             GetComponent<Collider>().enabled = false;
         }
     }
