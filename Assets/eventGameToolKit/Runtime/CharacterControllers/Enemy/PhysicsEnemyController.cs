@@ -5,9 +5,10 @@ using System.Collections;
 public enum EnemyJumpMode
 {
     NoJumping = 0,
-    RandomIntervalJump = 1,
-    CollisionJump = 2,
-    CombinedJump = 3
+    RandomJumpDuringChase = 1,
+    RandomJumpAlways = 2,
+    CollisionJump = 3,
+    CombinedJump = 4
 }
 
 /// <summary>
@@ -305,8 +306,8 @@ public class PhysicsEnemyController : MonoBehaviour
 
         bool shouldJump = false;
 
-        // Mode 1: Random Interval Jump (only during chase)
-        if ((jumpMode == EnemyJumpMode.RandomIntervalJump || jumpMode == EnemyJumpMode.CombinedJump) && isChasing)
+        // Mode 1: Random Jump During Chase (only when chasing player)
+        if (jumpMode == EnemyJumpMode.RandomJumpDuringChase && isChasing)
         {
             if (Time.fixedTime >= nextJumpTime)
             {
@@ -315,8 +316,18 @@ public class PhysicsEnemyController : MonoBehaviour
             }
         }
 
-        // Mode 2: Collision Jump (handled by OnCollisionEnter)
-        // Mode 3: Combined (both random and collision)
+        // Mode 2: Random Jump Always (jumps at all times)
+        if (jumpMode == EnemyJumpMode.RandomJumpAlways)
+        {
+            if (Time.fixedTime >= nextJumpTime)
+            {
+                shouldJump = true;
+                SetNextJumpTime();
+            }
+        }
+
+        // Mode 3: Collision Jump (handled by OnCollisionEnter)
+        // Mode 4: Combined (both random and collision)
 
         if (shouldJump)
         {

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using DG.Tweening;
 
 /// <summary>
 /// Spawns a projectile that moves forward in the spawner's local Z direction at a constant speed.
@@ -21,28 +22,93 @@ public class ActionSpawnProjectile : MonoBehaviour
     [Tooltip("Offset from spawner position (useful for spawning ahead of player)")]
     [SerializeField] private Vector3 spawnOffset = Vector3.zero;
 
+    [Header("Cooldown")]
+    [Tooltip("Minimum time between spawns in seconds (0 = no cooldown)")]
+    [SerializeField] private float cooldownTime = 0f;
+
+    private float lastSpawnTime = -Mathf.Infinity;
+
+    [Header("Multi-Shot")]
+    [Tooltip("Number of projectiles to spawn simultaneously (1 = single shot, higher = shotgun/burst)")]
+    [SerializeField] private int projectileCount = 1;
+
+    [Header("Accuracy")]
+    [Tooltip("Random angle deviation in degrees (0 = perfect accuracy, higher = more spread)")]
+    [SerializeField] private float spreadAngle = 0f;
+
+    [Header("Spawn Animation (Optional)")]
+    [Tooltip("Animate projectile scale on spawn using DOTween")]
+    [SerializeField] private bool animateSpawn = false;
+
+    [Tooltip("Duration of spawn scale animation in seconds")]
+    [SerializeField] private float spawnScaleDuration = 0.2f;
+
+    [Tooltip("Starting scale multiplier (animates to 1.0)")]
+    [SerializeField] private float spawnStartScale = 0.1f;
+
     [Header("Events")]
     /// <summary>
-    /// Fires when a projectile is spawned
+    /// Fires when a projectile is spawned, passing the spawned GameObject as a parameter
     /// </summary>
-    public UnityEvent onProjectileSpawned;
+    public UnityEvent<GameObject> onProjectileSpawned;
+
+    /// <summary>
+    /// Fires when spawn is attempted but is on cooldown
+    /// </summary>
+    public UnityEvent onCooldownActive;
 
     /// <summary>
     /// Spawns a projectile moving forward in this object's local Z direction
     /// </summary>
     public void SpawnProjectile()
     {
+        // Check cooldown
+        if (cooldownTime > 0f && Time.time < lastSpawnTime + cooldownTime)
+        {
+            onCooldownActive?.Invoke();
+            return;
+        }
+
         if (projectilePrefab == null)
         {
             Debug.LogWarning($"ActionSpawnProjectile on {gameObject.name}: No projectile prefab assigned!", this);
             return;
         }
 
+        // Update cooldown timer
+        lastSpawnTime = Time.time;
+
+        // Spawn multiple projectiles if configured
+        int count = Mathf.Max(1, projectileCount);
+        for (int i = 0; i < count; i++)
+        {
+            SpawnSingleProjectile();
+        }
+    }
+
+    /// <summary>
+    /// Internal method to spawn a single projectile with spread
+    /// </summary>
+    private void SpawnSingleProjectile()
+    {
         // Calculate spawn position with offset in local space
         Vector3 spawnPosition = transform.position + transform.TransformDirection(spawnOffset);
 
         // Spawn projectile with spawner's rotation
         GameObject projectile = Instantiate(projectilePrefab, spawnPosition, transform.rotation);
+
+        // Calculate direction with spread
+        Vector3 direction = transform.forward;
+        if (spreadAngle > 0f)
+        {
+            // Apply random spread in a cone
+            Quaternion spread = Quaternion.Euler(
+                Random.Range(-spreadAngle, spreadAngle),
+                Random.Range(-spreadAngle, spreadAngle),
+                0f
+            );
+            direction = spread * direction;
+        }
 
         // Add velocity component to make it move forward
         ProjectileVelocity velocity = projectile.GetComponent<ProjectileVelocity>();
@@ -51,8 +117,16 @@ public class ActionSpawnProjectile : MonoBehaviour
             velocity = projectile.AddComponent<ProjectileVelocity>();
         }
 
-        // Set the forward direction and speed
-        velocity.Initialize(transform.forward, projectileSpeed);
+        // Set the direction (with spread) and speed
+        velocity.Initialize(direction, projectileSpeed);
+
+        // Apply DOTween spawn animation if enabled
+        if (animateSpawn)
+        {
+            Vector3 originalScale = projectile.transform.localScale;
+            projectile.transform.localScale = originalScale * spawnStartScale;
+            projectile.transform.DOScale(originalScale, spawnScaleDuration).SetEase(Ease.OutBack);
+        }
 
         // Set up auto-destroy if lifetime is configured
         if (projectileLifetime > 0f)
@@ -60,8 +134,8 @@ public class ActionSpawnProjectile : MonoBehaviour
             Destroy(projectile, projectileLifetime);
         }
 
-        // Fire event
-        onProjectileSpawned?.Invoke();
+        // Fire event with spawned projectile reference
+        onProjectileSpawned?.Invoke(projectile);
     }
 
     /// <summary>
@@ -78,6 +152,56 @@ public class ActionSpawnProjectile : MonoBehaviour
     public void SetProjectileLifetime(float lifetime)
     {
         projectileLifetime = Mathf.Max(0f, lifetime);
+    }
+
+    /// <summary>
+    /// Sets the cooldown time at runtime
+    /// </summary>
+    public void SetCooldownTime(float cooldown)
+    {
+        cooldownTime = Mathf.Max(0f, cooldown);
+    }
+
+    /// <summary>
+    /// Sets the spread angle at runtime (controls accuracy)
+    /// </summary>
+    public void SetSpreadAngle(float angle)
+    {
+        spreadAngle = Mathf.Max(0f, angle);
+    }
+
+    /// <summary>
+    /// Sets the number of projectiles to spawn simultaneously
+    /// </summary>
+    public void SetProjectileCount(int count)
+    {
+        projectileCount = Mathf.Max(1, count);
+    }
+
+    /// <summary>
+    /// Resets the cooldown timer, allowing immediate spawning
+    /// </summary>
+    public void ResetCooldown()
+    {
+        lastSpawnTime = -Mathf.Infinity;
+    }
+
+    /// <summary>
+    /// Checks if the spawner is currently on cooldown
+    /// </summary>
+    public bool IsOnCooldown()
+    {
+        return cooldownTime > 0f && Time.time < lastSpawnTime + cooldownTime;
+    }
+
+    /// <summary>
+    /// Gets the remaining cooldown time in seconds (0 if ready to fire)
+    /// </summary>
+    public float GetRemainingCooldown()
+    {
+        if (cooldownTime <= 0f) return 0f;
+        float remaining = (lastSpawnTime + cooldownTime) - Time.time;
+        return Mathf.Max(0f, remaining);
     }
 
     // Gizmo to show spawn point and direction
@@ -105,6 +229,7 @@ public class ProjectileVelocity : MonoBehaviour
     private Vector3 velocity;
     private Rigidbody rb;
     private bool usePhysics;
+    private bool isInitialized = false;
 
     void Awake()
     {
@@ -125,6 +250,7 @@ public class ProjectileVelocity : MonoBehaviour
     /// </summary>
     public void Initialize(Vector3 direction, float speed)
     {
+        isInitialized = true;
         velocity = direction.normalized * speed;
 
         if (usePhysics && rb != null)
@@ -136,6 +262,13 @@ public class ProjectileVelocity : MonoBehaviour
 
     void Update()
     {
+        // Safety check: warn if not initialized
+        if (!isInitialized)
+        {
+            Debug.LogWarning($"ProjectileVelocity on {gameObject.name} was not initialized! Call Initialize() first or use ActionSpawnProjectile to spawn.", this);
+            return;
+        }
+
         // Only use transform-based movement if no Rigidbody
         if (!usePhysics)
         {
@@ -145,6 +278,9 @@ public class ProjectileVelocity : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Safety check: only update if initialized
+        if (!isInitialized) return;
+
         // Maintain constant velocity for physics-based projectiles
         // (prevents slowdown from drag or collisions)
         if (usePhysics && rb != null)
@@ -158,6 +294,12 @@ public class ProjectileVelocity : MonoBehaviour
     /// </summary>
     public void SetVelocity(Vector3 newVelocity)
     {
+        if (!isInitialized)
+        {
+            Debug.LogWarning($"ProjectileVelocity on {gameObject.name}: Cannot set velocity before initialization!", this);
+            return;
+        }
+
         velocity = newVelocity;
 
         if (usePhysics && rb != null)
@@ -183,5 +325,13 @@ public class ProjectileVelocity : MonoBehaviour
         {
             rb.useGravity = useGravity;
         }
+    }
+
+    /// <summary>
+    /// Checks if the projectile has been properly initialized
+    /// </summary>
+    public bool IsInitialized()
+    {
+        return isInitialized;
     }
 }

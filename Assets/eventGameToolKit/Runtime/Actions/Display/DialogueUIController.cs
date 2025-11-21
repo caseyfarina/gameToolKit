@@ -32,6 +32,7 @@ public class DialogueUIController : MonoBehaviour
     private Vector2 _textPosition;
     private Vector2 _textSize;
     private float _fontSize;
+    private TMP_FontAsset _customFont;
 
     // Public Accessors for UI elements
     public GameObject DialogueCanvas => dialogueCanvas;
@@ -46,7 +47,7 @@ public class DialogueUIController : MonoBehaviour
     /// <summary>
     /// Receives initial settings from ActionDialogueSequence.
     /// </summary>
-    public void Setup(Sprite bg, Vector2 bgPos, Vector2 bgSize, Vector2 leftPos, Vector2 rightPos, Vector2 portraitSize, Vector2 textPos, Vector2 textSize, float fontSize)
+    public void Setup(Sprite bg, Vector2 bgPos, Vector2 bgSize, Vector2 leftPos, Vector2 rightPos, Vector2 portraitSize, Vector2 textPos, Vector2 textSize, float fontSize, TMP_FontAsset customFont)
     {
         _backgroundImage = bg;
         _backgroundPosition = bgPos;
@@ -57,6 +58,7 @@ public class DialogueUIController : MonoBehaviour
         _textPosition = textPos;
         _textSize = textSize;
         _fontSize = fontSize;
+        _customFont = customFont;
 
         // Ensure UI is created if needed, especially in runtime
         if (dialogueCanvas == null && Application.isPlaying)
@@ -68,7 +70,7 @@ public class DialogueUIController : MonoBehaviour
     /// <summary>
     /// Updates all cached settings (used by custom editor / runtime changes).
     /// </summary>
-    public void UpdateSettings(Sprite bg, Vector2 bgPos, Vector2 bgSize, Vector2 leftPos, Vector2 rightPos, Vector2 portraitSize, Vector2 textPos, Vector2 textSize, float fontSize)
+    public void UpdateSettings(Sprite bg, Vector2 bgPos, Vector2 bgSize, Vector2 leftPos, Vector2 rightPos, Vector2 portraitSize, Vector2 textPos, Vector2 textSize, float fontSize, TMP_FontAsset customFont)
     {
         _backgroundImage = bg;
         _backgroundPosition = bgPos;
@@ -79,6 +81,7 @@ public class DialogueUIController : MonoBehaviour
         _textPosition = textPos;
         _textSize = textSize;
         _fontSize = fontSize;
+        _customFont = customFont;
     }
 
     /// <summary>
@@ -105,6 +108,12 @@ public class DialogueUIController : MonoBehaviour
         {
             UpdateRectTransform(dialogueTextComponent.GetComponent<RectTransform>(), _textPosition, _textSize);
             dialogueTextComponent.fontSize = _fontSize;
+
+            // Apply custom font if specified
+            if (_customFont != null)
+            {
+                dialogueTextComponent.font = _customFont;
+            }
         }
     }
 

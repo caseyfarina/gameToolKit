@@ -504,7 +504,8 @@ randomJumpMaxTime = 5f             // Random jump timing (max)
 
 **Jump Modes:**
 - **NoJumping**: Enemy never jumps
-- **RandomIntervalJump**: Jumps randomly while chasing
+- **RandomJumpDuringChase**: Jumps randomly only when chasing player
+- **RandomJumpAlways**: Jumps randomly at all times (patrol, chase, return, idle)
 - **CollisionJump**: Jumps when hitting obstacles
 - **CombinedJump**: Both random and collision jumping
 

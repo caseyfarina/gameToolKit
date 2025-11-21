@@ -1,106 +1,215 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using UnityEngine.Events;
 
 /// <summary>
 /// Displays UI images on screen with fade and scale animation effects.
+/// Creates its own Canvas and Image at runtime - no manual UI setup required.
 /// Common use: Item pickup previews, achievement icons, cutscene frames, tutorial images, or inventory item displays.
 /// </summary>
-[RequireComponent(typeof(Image))]
 public class ActionDisplayImage : MonoBehaviour
 {
-    [Header("Display Settings")]
-    [Tooltip("How long the image stays visible on screen (in seconds)")]
-    [SerializeField] private float timeOnScreen = 3f;
-    
-    [Header("Image Appearance")]
+    [Header("Image Settings")]
     [Tooltip("Default image to display (optional)")]
     [SerializeField] private Sprite defaultImage;
-    
+
+    [Tooltip("Position of the image on screen (0,0 = center)")]
+    [SerializeField] private Vector2 imagePosition = Vector2.zero;
+
+    [Tooltip("Size of the image in pixels")]
+    [SerializeField] private Vector2 imageSize = new Vector2(400, 400);
+
+    [Header("Display Duration")]
+    [Tooltip("How long the image stays visible on screen (in seconds)")]
+    [SerializeField] private float timeOnScreen = 3f;
+
+    [Header("Fade Animation")]
     [Tooltip("Should image fade in/out or appear instantly?")]
     [SerializeField] private bool useFading = true;
-    
+
     [Tooltip("Duration of fade in/out animations")]
     [SerializeField] private float fadeDuration = 0.5f;
-    
-    [Header("Scaling Options")]
+
+    [Header("Scale Animation")]
     [Tooltip("Should the image scale in/out during display?")]
     [SerializeField] private bool useScaling = false;
-    
+
     [Tooltip("Starting scale for scale-in animation")]
     [SerializeField] private Vector3 startScale = Vector3.zero;
-    
+
     [Tooltip("Target scale during display")]
     [SerializeField] private Vector3 targetScale = Vector3.one;
-    
+
     [Tooltip("Duration of scale animations")]
     [SerializeField] private float scaleDuration = 0.5f;
-    
+
+    [Header("Events")]
+    /// <summary>
+    /// Fires when the image starts displaying
+    /// </summary>
+    public UnityEvent onImageDisplayStart;
+
+    /// <summary>
+    /// Fires when the image finishes displaying and hides
+    /// </summary>
+    public UnityEvent onImageDisplayComplete;
+
+    // Runtime UI references
+    private Canvas canvas;
+    private GameObject imageCanvas;
     private Image imageComponent;
-    private RectTransform rectTransform;
+    private RectTransform imageRectTransform;
     private Sequence displaySequence;
-    private Color originalColor;
-    private Vector3 originalScale;
-    
+    private Color originalColor = Color.white;
+
     private void Start()
     {
-        // Get required components
-        imageComponent = GetComponent<Image>();
-        rectTransform = GetComponent<RectTransform>();
-        
-        if (imageComponent == null)
+        // Create UI at runtime
+        if (Application.isPlaying)
         {
-            Debug.LogError("ActionDisplayImage requires an Image component!");
-            return;
+            CreateImageUI();
         }
-        
-        // Store original values
-        originalColor = imageComponent.color;
-        originalScale = rectTransform.localScale;
-        
-        // Set default image if specified
-        if (defaultImage != null)
-        {
-            imageComponent.sprite = defaultImage;
-        }
-        
-        // Make image invisible initially
-        SetImageVisibility(0f);
     }
-    
+
     /// <summary>
-    /// Display image on screen for the specified duration
-    /// This method is designed to be called from UnityEvents with a Sprite parameter
+    /// Creates the canvas and image element at runtime
     /// </summary>
-    /// <param name="imageToDisplay">The sprite to display</param>
-    public void DisplayImage(Sprite imageToDisplay)
+    private void CreateImageUI()
     {
-        if (imageComponent == null)
+        // Create Canvas container
+        imageCanvas = new GameObject("ImageCanvas");
+        imageCanvas.transform.SetParent(transform);
+
+        canvas = imageCanvas.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 100;
+
+        CanvasScaler scaler = imageCanvas.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+
+        imageCanvas.AddComponent<GraphicRaycaster>();
+
+        // Create Image GameObject
+        GameObject imageObj = new GameObject("DisplayImage");
+        imageObj.transform.SetParent(imageCanvas.transform);
+
+        imageRectTransform = imageObj.AddComponent<RectTransform>();
+        imageRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        imageRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        imageRectTransform.pivot = new Vector2(0.5f, 0.5f);
+        imageRectTransform.anchoredPosition = imagePosition;
+        imageRectTransform.sizeDelta = imageSize;
+
+        imageComponent = imageObj.AddComponent<Image>();
+        imageComponent.sprite = defaultImage;
+        imageComponent.color = new Color(1f, 1f, 1f, 0f); // Start invisible
+
+        // Store original color
+        originalColor = new Color(1f, 1f, 1f, 1f);
+
+        // Hide canvas initially
+        imageCanvas.SetActive(false);
+    }
+
+    /// <summary>
+    /// Display image on screen for the configured duration (uses timeOnScreen parameter)
+    /// Image will automatically hide after the duration with animations
+    /// </summary>
+    public void DisplayImageTimed(Sprite imageToDisplay)
+    {
+        if (!Application.isPlaying)
         {
-            Debug.LogWarning("Image component is missing!");
+            Debug.LogWarning("DisplayImageTimed can only be called at runtime!");
             return;
         }
-        
+
+        if (imageComponent == null)
+        {
+            Debug.LogWarning("Image component is missing! Canvas may not have been created.");
+            return;
+        }
+
         if (imageToDisplay == null)
         {
             Debug.LogWarning("No sprite provided to display!");
             return;
         }
-        
+
         // Stop any currently running display sequence
         if (displaySequence != null && displaySequence.IsActive())
         {
             displaySequence.Kill();
         }
 
-        // Start the new display sequence
-        StartCoroutine(DisplayImageSequence(imageToDisplay));
+        // Set the image sprite
+        imageComponent.sprite = imageToDisplay;
+
+        // Show canvas
+        imageCanvas.SetActive(true);
+
+        // Start animation sequence with auto-hide
+        AnimateImageDisplay(true);
     }
-    
+
     /// <summary>
-    /// Display the default image (if set) for the specified duration
+    /// Display image on screen indefinitely (stays visible until HideImage is called)
+    /// Image will play fade-in/scale-in animations but will NOT auto-hide
+    /// </summary>
+    public void DisplayImage(Sprite imageToDisplay)
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("DisplayImage can only be called at runtime!");
+            return;
+        }
+
+        if (imageComponent == null)
+        {
+            Debug.LogWarning("Image component is missing! Canvas may not have been created.");
+            return;
+        }
+
+        if (imageToDisplay == null)
+        {
+            Debug.LogWarning("No sprite provided to display!");
+            return;
+        }
+
+        // Stop any currently running display sequence
+        if (displaySequence != null && displaySequence.IsActive())
+        {
+            displaySequence.Kill();
+        }
+
+        // Set the image sprite
+        imageComponent.sprite = imageToDisplay;
+
+        // Show canvas
+        imageCanvas.SetActive(true);
+
+        // Start animation sequence WITHOUT auto-hide
+        AnimateImageDisplay(false);
+    }
+
+    /// <summary>
+    /// Display the default image (if set) for the configured duration
+    /// </summary>
+    public void DisplayDefaultImageTimed()
+    {
+        if (defaultImage != null)
+        {
+            DisplayImageTimed(defaultImage);
+        }
+        else
+        {
+            Debug.LogWarning("No default image set!");
+        }
+    }
+
+    /// <summary>
+    /// Display the default image (if set) indefinitely (stays until HideImage is called)
     /// </summary>
     public void DisplayDefaultImage()
     {
@@ -113,24 +222,22 @@ public class ActionDisplayImage : MonoBehaviour
             Debug.LogWarning("No default image set!");
         }
     }
-    
+
     /// <summary>
     /// Display image with custom duration (for advanced use)
     /// </summary>
-    /// <param name="imageToDisplay">The sprite to display</param>
-    /// <param name="customDuration">How long to show the image</param>
-    public void DisplayImage(Sprite imageToDisplay, float customDuration)
+    public void DisplayImageTimed(Sprite imageToDisplay, float customDuration)
     {
         float originalDuration = timeOnScreen;
         timeOnScreen = customDuration;
-        DisplayImage(imageToDisplay);
+        DisplayImageTimed(imageToDisplay);
         timeOnScreen = originalDuration;
     }
-    
-    private IEnumerator DisplayImageSequence(Sprite imageToDisplay)
+
+    private void AnimateImageDisplay(bool autoHide)
     {
-        // Set the image sprite
-        imageComponent.sprite = imageToDisplay;
+        // Fire start event
+        onImageDisplayStart?.Invoke();
 
         // Calculate animation durations
         float actualFadeDuration = useFading ? fadeDuration : 0f;
@@ -140,16 +247,20 @@ public class ActionDisplayImage : MonoBehaviour
         // Set initial states
         if (useFading)
         {
-            SetImageVisibility(0f);
+            imageComponent.color = new Color(originalColor.r, originalColor.g, originalColor.b, 0f);
         }
         else
         {
-            SetImageVisibility(originalColor.a);
+            imageComponent.color = originalColor;
         }
 
         if (useScaling)
         {
-            rectTransform.localScale = startScale;
+            imageRectTransform.localScale = startScale;
+        }
+        else
+        {
+            imageRectTransform.localScale = Vector3.one;
         }
 
         // Create the animation sequence
@@ -158,59 +269,115 @@ public class ActionDisplayImage : MonoBehaviour
         // Animate in (fade and/or scale)
         if (useFading)
         {
-            // Use DOTween.To to animate the alpha value of the Image color
-            displaySequence.Join(DOTween.To(() => imageComponent.color, x => imageComponent.color = x,
-                new Color(originalColor.r, originalColor.g, originalColor.b, originalColor.a), actualFadeDuration));
+            displaySequence.Join(DOTween.To(
+                () => imageComponent.color,
+                x => imageComponent.color = x,
+                new Color(originalColor.r, originalColor.g, originalColor.b, originalColor.a),
+                actualFadeDuration
+            ));
         }
 
         if (useScaling)
         {
-            displaySequence.Join(rectTransform.DOScale(targetScale, actualScaleDuration));
+            displaySequence.Join(imageRectTransform.DOScale(targetScale, actualScaleDuration));
         }
 
-        // Wait for display time (minus animation durations)
-        float waitTime = Mathf.Max(0f, timeOnScreen - (maxAnimationDuration * 2f));
-        displaySequence.AppendInterval(waitTime);
+        // If autoHide is true, add wait time and animate out
+        if (autoHide)
+        {
+            // Wait for display time (minus animation durations)
+            float waitTime = Mathf.Max(0f, timeOnScreen - (maxAnimationDuration * 2f));
+            displaySequence.AppendInterval(waitTime);
+
+            // Animate out (fade and/or scale)
+            if (useFading)
+            {
+                displaySequence.Append(DOTween.To(
+                    () => imageComponent.color,
+                    x => imageComponent.color = x,
+                    new Color(originalColor.r, originalColor.g, originalColor.b, 0f),
+                    actualFadeDuration
+                ));
+            }
+
+            if (useScaling)
+            {
+                displaySequence.Join(imageRectTransform.DOScale(startScale, actualScaleDuration));
+            }
+
+            // Cleanup when complete
+            displaySequence.OnComplete(() =>
+            {
+                imageCanvas.SetActive(false);
+                imageRectTransform.localScale = Vector3.one;
+                displaySequence = null;
+                onImageDisplayComplete?.Invoke();
+            });
+        }
+        else
+        {
+            // For indefinite display, just cleanup the sequence after fade-in completes
+            displaySequence.OnComplete(() =>
+            {
+                displaySequence = null;
+            });
+        }
+    }
+
+    /// <summary>
+    /// Hide the currently displayed image with fade-out/scale-out animations
+    /// Use this to manually hide images displayed with DisplayImage()
+    /// </summary>
+    public void HideImage()
+    {
+        if (!Application.isPlaying || imageCanvas == null || !imageCanvas.activeSelf)
+        {
+            return;
+        }
+
+        // Stop any currently running display sequence
+        if (displaySequence != null && displaySequence.IsActive())
+        {
+            displaySequence.Kill();
+        }
+
+        // Calculate animation durations
+        float actualFadeDuration = useFading ? fadeDuration : 0f;
+        float actualScaleDuration = useScaling ? scaleDuration : 0f;
+
+        // Create hide animation sequence
+        displaySequence = DOTween.Sequence();
 
         // Animate out (fade and/or scale)
         if (useFading)
         {
-            // Use DOTween.To to animate the alpha value of the Image color to 0
-            displaySequence.Append(DOTween.To(() => imageComponent.color, x => imageComponent.color = x,
-                new Color(originalColor.r, originalColor.g, originalColor.b, 0f), actualFadeDuration));
+            displaySequence.Append(DOTween.To(
+                () => imageComponent.color,
+                x => imageComponent.color = x,
+                new Color(originalColor.r, originalColor.g, originalColor.b, 0f),
+                actualFadeDuration
+            ));
         }
 
         if (useScaling)
         {
-            displaySequence.Join(rectTransform.DOScale(startScale, actualScaleDuration));
+            displaySequence.Join(imageRectTransform.DOScale(startScale, actualScaleDuration));
         }
 
-        // Reset to original scale when complete
+        // Cleanup when complete
         displaySequence.OnComplete(() =>
         {
-            if (useScaling)
-            {
-                rectTransform.localScale = originalScale;
-            }
+            imageCanvas.SetActive(false);
+            imageRectTransform.localScale = Vector3.one;
             displaySequence = null;
+            onImageDisplayComplete?.Invoke();
         });
+    }
 
-        yield break;
-    }
-    private void SetImageVisibility(float alpha)
-    {
-        if (imageComponent != null)
-        {
-            Color newColor = originalColor;
-            newColor.a = alpha;
-            imageComponent.color = newColor;
-        }
-    }
-    
     /// <summary>
-    /// Immediately hide any currently displayed image
+    /// Immediately hide the image without animations (instant hide)
     /// </summary>
-    public void HideImage()
+    public void HideImageImmediate()
     {
         if (displaySequence != null && displaySequence.IsActive())
         {
@@ -218,15 +385,24 @@ public class ActionDisplayImage : MonoBehaviour
             displaySequence = null;
         }
 
-        SetImageVisibility(0f);
-
-        // Reset scale if using scaling
-        if (useScaling && rectTransform != null)
+        if (imageCanvas != null)
         {
-            rectTransform.localScale = originalScale;
+            imageCanvas.SetActive(false);
         }
+
+        if (imageRectTransform != null)
+        {
+            imageRectTransform.localScale = Vector3.one;
+        }
+
+        if (imageComponent != null)
+        {
+            imageComponent.color = new Color(originalColor.r, originalColor.g, originalColor.b, 0f);
+        }
+
+        onImageDisplayComplete?.Invoke();
     }
-    
+
     /// <summary>
     /// Set the display duration for future image displays
     /// </summary>
@@ -234,7 +410,7 @@ public class ActionDisplayImage : MonoBehaviour
     {
         timeOnScreen = Mathf.Max(0.1f, newDuration);
     }
-    
+
     /// <summary>
     /// Set the default image to use with DisplayDefaultImage()
     /// </summary>
@@ -242,13 +418,45 @@ public class ActionDisplayImage : MonoBehaviour
     {
         defaultImage = newDefaultImage;
     }
-    
+
+    /// <summary>
+    /// Set the image position at runtime
+    /// </summary>
+    public void SetImagePosition(Vector2 newPosition)
+    {
+        imagePosition = newPosition;
+        if (imageRectTransform != null)
+        {
+            imageRectTransform.anchoredPosition = newPosition;
+        }
+    }
+
+    /// <summary>
+    /// Set the image size at runtime
+    /// </summary>
+    public void SetImageSize(Vector2 newSize)
+    {
+        imageSize = newSize;
+        if (imageRectTransform != null)
+        {
+            imageRectTransform.sizeDelta = newSize;
+        }
+    }
+
     /// <summary>
     /// Check if an image is currently being displayed
     /// </summary>
     public bool IsDisplaying()
     {
         return displaySequence != null && displaySequence.IsActive();
+    }
+
+    /// <summary>
+    /// Get the currently displayed sprite
+    /// </summary>
+    public Sprite GetCurrentSprite()
+    {
+        return imageComponent != null ? imageComponent.sprite : null;
     }
 
     private void OnDestroy()
@@ -258,13 +466,11 @@ public class ActionDisplayImage : MonoBehaviour
         {
             displaySequence.Kill();
         }
-    }
-    
-    /// <summary>
-    /// Get the currently displayed sprite
-    /// </summary>
-    public Sprite GetCurrentSprite()
-    {
-        return imageComponent != null ? imageComponent.sprite : null;
+
+        // Clean up created UI
+        if (imageCanvas != null)
+        {
+            Destroy(imageCanvas);
+        }
     }
 }
