@@ -51,6 +51,7 @@ public class ActionDialogueSequenceEditor : Editor
         EditorGUILayout.LabelField("Playback Settings", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("playOnStart"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("loop"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("enableClickThrough"));
 
         // Animation Settings header
         EditorGUILayout.Space();
@@ -126,66 +127,6 @@ public class ActionDialogueSequenceEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Visual Settings", EditorStyles.boldLabel);
 
-        // Preview Controls
-        ActionDialogueSequence dialogue = (ActionDialogueSequence)target;
-        int lineCount = serializedObject.FindProperty("dialogueLines").arraySize;
-
-        if (lineCount > 0)
-        {
-            // Preview line selector
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Preview Line:", GUILayout.Width(80));
-
-            // Clamp preview index to valid range
-            previewLineIndex = Mathf.Clamp(previewLineIndex, 0, lineCount - 1);
-
-            int newPreviewIndex = EditorGUILayout.IntSlider(previewLineIndex, 0, lineCount - 1);
-
-            // If preview is showing and index changed, update preview
-            if (newPreviewIndex != previewLineIndex)
-            {
-                previewLineIndex = newPreviewIndex;
-                if (showPreview)
-                {
-                    UpdatePreview();
-                }
-            }
-
-            EditorGUILayout.EndHorizontal();
-        }
-
-        // Preview Button
-        EditorGUILayout.BeginHorizontal();
-        GUILayout.FlexibleSpace();
-
-        GUI.enabled = lineCount > 0; // Disable if no lines
-        string buttonText = showPreview ? "Hide Canvas Preview" : "Show Canvas Preview";
-        Color originalColor = GUI.backgroundColor;
-        GUI.backgroundColor = showPreview ? new Color(1f, 0.7f, 0.7f) : new Color(0.7f, 1f, 0.7f);
-
-        if (GUILayout.Button(buttonText, GUILayout.Height(30), GUILayout.Width(200)))
-        {
-            showPreview = !showPreview;
-            if (showPreview)
-            {
-                ShowPreview();
-            }
-            else
-            {
-                HidePreview();
-            }
-        }
-
-        GUI.backgroundColor = originalColor;
-        GUI.enabled = true;
-        GUILayout.FlexibleSpace();
-        EditorGUILayout.EndHorizontal();
-
-        if (lineCount == 0)
-        {
-            EditorGUILayout.HelpBox("Add dialogue lines to enable preview", MessageType.Info);
-        }
-
         EditorGUILayout.Space(5);
 
         // Background Image
@@ -214,7 +155,121 @@ public class ActionDialogueSequenceEditor : Editor
         EditorGUILayout.PropertyField(serializedObject.FindProperty("textPosition"), new GUIContent("Text Position"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("textSize"), new GUIContent("Text Box Size"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("fontSize"), new GUIContent("Font Size"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("customFont"), new GUIContent("Custom Font"));
         EditorGUI.indentLevel--;
+
+        // Decision System header
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Decision System (Optional)", EditorStyles.boldLabel);
+
+        SerializedProperty enableDecisionProp = serializedObject.FindProperty("enableDecision");
+        EditorGUILayout.PropertyField(enableDecisionProp);
+
+        // Show decision settings if enabled
+        if (enableDecisionProp.boolValue)
+        {
+            EditorGUI.indentLevel++;
+
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("decisionChoices"), new GUIContent("Decision Choices"));
+
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField("Decision Panel Settings", EditorStyles.miniBoldLabel);
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("decisionPanelPosition"), new GUIContent("Panel Position"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("decisionButtonSize"), new GUIContent("Button Size"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("decisionButtonSpacing"), new GUIContent("Button Spacing"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("decisionImageSize"), new GUIContent("Choice Image Size"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("decisionFontSize"), new GUIContent("Font Size"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("decisionButtonOpacity"), new GUIContent("Button Opacity"));
+            EditorGUI.indentLevel--;
+
+            EditorGUI.indentLevel--;
+        }
+
+        // Editor Preview Controls
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Editor Preview", EditorStyles.boldLabel);
+
+        int lineCount = serializedObject.FindProperty("dialogueLines").arraySize;
+        bool hasDecisions = enableDecisionProp.boolValue && serializedObject.FindProperty("decisionChoices").arraySize > 0;
+
+        // Calculate max preview index (lines + optional decision)
+        int maxPreviewIndex = lineCount > 0 ? lineCount - 1 : 0;
+        if (hasDecisions && lineCount > 0)
+        {
+            maxPreviewIndex = lineCount; // One extra for decision preview
+        }
+
+        if (lineCount == 0)
+        {
+            EditorGUILayout.HelpBox("Add dialogue lines to enable preview.", MessageType.Info);
+        }
+        else
+        {
+            // Preview slider
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Preview Line", GUILayout.Width(100));
+
+            int newPreviewIndex = EditorGUILayout.IntSlider(previewLineIndex, 0, maxPreviewIndex);
+
+            // Show label for what's being previewed
+            if (hasDecisions && newPreviewIndex == lineCount)
+            {
+                EditorGUILayout.LabelField("(Decision)", GUILayout.Width(80));
+            }
+            else if (lineCount > 0)
+            {
+                EditorGUILayout.LabelField($"(Line {newPreviewIndex + 1})", GUILayout.Width(80));
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            if (newPreviewIndex != previewLineIndex)
+            {
+                previewLineIndex = newPreviewIndex;
+                if (showPreview)
+                {
+                    UpdatePreview();
+                }
+            }
+
+            // Show help text if decisions are enabled
+            if (hasDecisions)
+            {
+                EditorGUILayout.HelpBox("Slide preview to the right to see the decision panel.", MessageType.Info);
+            }
+        }
+
+        // Show/Hide Preview button
+        EditorGUILayout.BeginHorizontal();
+
+        GUI.enabled = lineCount > 0;
+
+        if (!showPreview)
+        {
+            if (GUILayout.Button("Show Canvas Preview", GUILayout.Height(30)))
+            {
+                showPreview = true;
+                ShowPreview();
+            }
+        }
+        else
+        {
+            if (GUILayout.Button("Hide Canvas Preview", GUILayout.Height(30)))
+            {
+                showPreview = false;
+                HidePreview();
+            }
+        }
+
+        EditorGUILayout.EndHorizontal();
+
+        GUI.enabled = true;
+
+        if (showPreview)
+        {
+            EditorGUILayout.HelpBox("Preview is visible in the Scene view. Adjust Visual Settings to see changes in real-time.", MessageType.Info);
+        }
 
         // Dialogue Events header
         EditorGUILayout.Space();
@@ -222,6 +277,12 @@ public class ActionDialogueSequenceEditor : Editor
         EditorGUILayout.PropertyField(serializedObject.FindProperty("onDialogueStart"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("onDialogueComplete"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("onLineChanged"));
+
+        // Decision event (only show if decision system is enabled)
+        if (enableDecisionProp.boolValue)
+        {
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("onDecisionStart"));
+        }
 
         // Check if any properties changed
         bool changed = serializedObject.ApplyModifiedProperties();

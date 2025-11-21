@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -29,6 +30,32 @@ public struct DialogueLine
 }
 
 /// <summary>
+/// Decision choice data structure for player decisions at the end of dialogue.
+/// Each choice represents a clickable button with optional image and event callback.
+/// </summary>
+[System.Serializable]
+public struct DecisionChoice
+{
+    /// <summary>
+    /// Text to display on the button
+    /// </summary>
+    [Tooltip("Text to display on the button")]
+    public string choiceText;
+
+    /// <summary>
+    /// Optional image to display with this choice (shown on left side of button)
+    /// </summary>
+    [Tooltip("Optional image to display with this choice")]
+    public Sprite choiceImage;
+
+    /// <summary>
+    /// Event fired when this choice is selected by the player
+    /// </summary>
+    [Tooltip("Event fired when this choice is selected")]
+    public UnityEvent onChoiceSelected;
+}
+
+/// <summary>
 /// Streamlined dialogue system that handles sequential playback using a separate UI controller and DOTween for animation.
 /// </summary>
 public class ActionDialogueSequence : MonoBehaviour
@@ -53,6 +80,9 @@ public class ActionDialogueSequence : MonoBehaviour
 
     [Tooltip("Loop back to beginning after last line (if false, fires onComplete)")]
     [SerializeField] private bool loop = false;
+
+    [Tooltip("Allow player to click or press any key to advance to next dialogue line")]
+    [SerializeField] private bool enableClickThrough = false;
 
     [Header("Animation Settings - General")]
     [SerializeField] private ImageAnimation imageAnimation = ImageAnimation.SlideUpFromBottom;
@@ -84,11 +114,44 @@ public class ActionDialogueSequence : MonoBehaviour
     [SerializeField] private Vector2 textSize = new Vector2(1200f, 200f);
     [SerializeField] private float fontSize = 48f;
 
+    [Tooltip("Optional custom font for all dialogue and decision text (leave empty for default)")]
+    [SerializeField] private TMP_FontAsset customFont;
+
+    [Header("Decision System (Optional)")]
+    [Tooltip("Enable player decision at the end of dialogue")]
+    [SerializeField] private bool enableDecision = false;
+
+    [Tooltip("Array of choices for the player to select from")]
+    [SerializeField] private DecisionChoice[] decisionChoices = new DecisionChoice[0];
+
+    [Tooltip("Position of the decision panel on screen")]
+    [SerializeField] private Vector2 decisionPanelPosition = new Vector2(0f, -200f);
+
+    [Tooltip("Size of each decision button")]
+    [SerializeField] private Vector2 decisionButtonSize = new Vector2(400f, 100f);
+
+    [Tooltip("Vertical spacing between decision buttons")]
+    [SerializeField] private float decisionButtonSpacing = 20f;
+
+    [Tooltip("Size of optional images displayed with each choice")]
+    [SerializeField] private Vector2 decisionImageSize = new Vector2(80f, 80f);
+
+    [Tooltip("Font size for decision button text")]
+    [SerializeField] private float decisionFontSize = 36f;
+
+    [Tooltip("Background opacity for decision buttons (0 = transparent, 1 = opaque)")]
+    [Range(0f, 1f)]
+    [SerializeField] private float decisionButtonOpacity = 0.9f;
 
     [Header("Dialogue Events")]
     public UnityEvent onDialogueStart;
     public UnityEvent onDialogueComplete;
     public UnityEvent<int> onLineChanged;
+
+    /// <summary>
+    /// Fires when the decision panel is displayed
+    /// </summary>
+    public UnityEvent onDecisionStart;
 
 
     // Playback state
@@ -138,7 +201,8 @@ public class ActionDialogueSequence : MonoBehaviour
             portraitSize,
             textPosition,
             textSize,
-            fontSize
+            fontSize,
+            customFont
         );
     }
 
@@ -147,6 +211,29 @@ public class ActionDialogueSequence : MonoBehaviour
         if (playOnStart)
         {
             StartDialogue();
+        }
+    }
+
+    private void Update()
+    {
+        // Handle click-through input when enabled
+        if (enableClickThrough && isPlaying)
+        {
+            // Check for mouse click
+            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                NextDialogue();
+            }
+            // Check for any key press (keyboard)
+            else if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
+            {
+                NextDialogue();
+            }
+            // Check for gamepad south button (A/X)
+            else if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
+            {
+                NextDialogue();
+            }
         }
     }
 
@@ -209,6 +296,15 @@ public class ActionDialogueSequence : MonoBehaviour
 
         isPlaying = false;
         isTyping = false;
+        decisionMade = true; // Force decision to complete if active
+
+        // Clean up decision panel if it exists
+        if (decisionPanel != null)
+        {
+            Destroy(decisionPanel);
+            decisionButtons.Clear();
+        }
+
         uiController.SetCanvasActive(false);
 
         // Kill any active DOTween animations targeting this object or UI elements
@@ -250,10 +346,21 @@ public class ActionDialogueSequence : MonoBehaviour
                 }
                 else
                 {
-                    // Dialogue complete
+                    // Dialogue complete - check if we should show decision
                     isPlaying = false;
-                    onDialogueComplete?.Invoke();
-                    uiController.SetCanvasActive(false);
+
+                    if (enableDecision && decisionChoices.Length > 0)
+                    {
+                        // Show decision panel and wait for player choice
+                        yield return StartCoroutine(ShowDecisionPanel());
+                    }
+                    else
+                    {
+                        // No decision - complete normally
+                        onDialogueComplete?.Invoke();
+                        uiController.SetCanvasActive(false);
+                    }
+
                     yield break;
                 }
             }
@@ -605,7 +712,7 @@ public class ActionDialogueSequence : MonoBehaviour
         }
 
         // Pass settings and create UI structure
-        uiController.Setup(backgroundImage, backgroundPosition, backgroundSize, leftPosition, rightPosition, portraitSize, textPosition, textSize, fontSize);
+        uiController.Setup(backgroundImage, backgroundPosition, backgroundSize, leftPosition, rightPosition, portraitSize, textPosition, textSize, fontSize, customFont);
         uiController.CreateDialogueUI(transform);
 
         // Update with sample content
@@ -633,18 +740,46 @@ public class ActionDialogueSequence : MonoBehaviour
             return;
 
         // Apply visual settings updates
-        uiController.UpdateSettings(backgroundImage, backgroundPosition, backgroundSize, leftPosition, rightPosition, portraitSize, textPosition, textSize, fontSize);
+        uiController.UpdateSettings(backgroundImage, backgroundPosition, backgroundSize, leftPosition, rightPosition, portraitSize, textPosition, textSize, fontSize, customFont);
         uiController.ApplySettings();
 
-        // Apply content updates
-        if (dialogueLines.Length > 0 && lineIndex >= 0 && lineIndex < dialogueLines.Length)
+        // Check if we're previewing decision (lineIndex == dialogueLines.Length)
+        bool isDecisionPreview = enableDecision && decisionChoices.Length > 0 && lineIndex == dialogueLines.Length;
+
+        if (isDecisionPreview)
         {
-            DialogueLine selectedLine = dialogueLines[lineIndex];
-            uiController.UpdateContentForPreview(selectedLine.dialogueText, selectedLine.characterImage, selectedLine.orientation);
+            // Hide dialogue content, show decision panel
+            uiController.UpdateContentForPreview("", null, DialogueLine.Orientation.Left);
+
+            // Clean up existing decision preview
+            if (decisionPanel != null)
+            {
+                DestroyImmediate(decisionPanel);
+                decisionButtons.Clear();
+            }
+
+            // Create decision preview
+            CreateDecisionPanelPreview();
         }
         else
         {
-            uiController.UpdateContentForPreview("Add dialogue lines to preview content", null, DialogueLine.Orientation.Left);
+            // Clean up decision preview if it exists
+            if (decisionPanel != null)
+            {
+                DestroyImmediate(decisionPanel);
+                decisionButtons.Clear();
+            }
+
+            // Show dialogue line content
+            if (dialogueLines.Length > 0 && lineIndex >= 0 && lineIndex < dialogueLines.Length)
+            {
+                DialogueLine selectedLine = dialogueLines[lineIndex];
+                uiController.UpdateContentForPreview(selectedLine.dialogueText, selectedLine.characterImage, selectedLine.orientation);
+            }
+            else
+            {
+                uiController.UpdateContentForPreview("Add dialogue lines to preview content", null, DialogueLine.Orientation.Left);
+            }
         }
     }
 
@@ -655,5 +790,396 @@ public class ActionDialogueSequence : MonoBehaviour
             cachedWaits[duration] = new WaitForSeconds(duration);
         }
         return cachedWaits[duration];
+    }
+
+    // ================================= DECISION SYSTEM =================================
+
+    private GameObject decisionPanel;
+    private List<GameObject> decisionButtons = new List<GameObject>();
+    private bool decisionMade = false;
+    private int selectedDecisionIndex = 0;
+
+    /// <summary>
+    /// Shows the decision panel with all choices and waits for player selection
+    /// </summary>
+    private IEnumerator ShowDecisionPanel()
+    {
+        onDecisionStart?.Invoke();
+        decisionMade = false;
+        selectedDecisionIndex = 0;
+
+        // Create decision panel
+        CreateDecisionPanel();
+
+        // Highlight first button
+        UpdateDecisionHighlight();
+
+        // Wait for player to make a choice
+        while (!decisionMade)
+        {
+            // Handle keyboard/gamepad navigation
+            HandleDecisionInput();
+            yield return null;
+        }
+
+        // Clean up decision UI
+        CleanupDecisionPanel();
+
+        // Fire dialogue complete after decision is made
+        onDialogueComplete?.Invoke();
+        uiController.SetCanvasActive(false);
+    }
+
+    /// <summary>
+    /// Creates the decision panel with buttons for each choice
+    /// </summary>
+    private void CreateDecisionPanel()
+    {
+        if (uiController.DialogueCanvas == null) return;
+
+        // Create panel container
+        decisionPanel = new GameObject("DecisionPanel");
+        decisionPanel.transform.SetParent(uiController.DialogueCanvas.transform, false);
+
+        RectTransform panelRect = decisionPanel.AddComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.anchoredPosition = decisionPanelPosition;
+
+        // Calculate total height needed for all buttons
+        float totalHeight = (decisionButtonSize.y * decisionChoices.Length) + (decisionButtonSpacing * (decisionChoices.Length - 1));
+        panelRect.sizeDelta = new Vector2(decisionButtonSize.x, totalHeight);
+
+        // Create buttons for each choice
+        for (int i = 0; i < decisionChoices.Length; i++)
+        {
+            GameObject buttonObj = CreateDecisionButton(decisionPanel.transform, decisionChoices[i], i);
+            decisionButtons.Add(buttonObj);
+
+            // Position button
+            RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
+            float yOffset = (totalHeight / 2f) - (decisionButtonSize.y / 2f) - (i * (decisionButtonSize.y + decisionButtonSpacing));
+            buttonRect.anchoredPosition = new Vector2(0f, yOffset);
+        }
+
+        // Fade in decision panel
+        CanvasGroup canvasGroup = decisionPanel.AddComponent<CanvasGroup>();
+        canvasGroup.alpha = 0f;
+        DOTween.To(() => canvasGroup.alpha, x => canvasGroup.alpha = x, 1f, 0.3f);
+    }
+
+    /// <summary>
+    /// Creates a single decision button with text, optional image, and click handler
+    /// </summary>
+    private GameObject CreateDecisionButton(Transform parent, DecisionChoice choice, int choiceIndex)
+    {
+        // Create button GameObject
+        GameObject buttonObj = new GameObject($"DecisionButton_{choiceIndex}");
+        buttonObj.transform.SetParent(parent, false);
+
+        RectTransform buttonRect = buttonObj.AddComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+        buttonRect.pivot = new Vector2(0.5f, 0.5f);
+        buttonRect.sizeDelta = decisionButtonSize;
+
+        // Add button background image
+        Image buttonImage = buttonObj.AddComponent<Image>();
+        buttonImage.color = new Color(0.2f, 0.2f, 0.2f, decisionButtonOpacity);
+
+        // Add Button component
+        Button button = buttonObj.AddComponent<Button>();
+
+        // Create color block for hover/press effects
+        ColorBlock colors = button.colors;
+        colors.normalColor = new Color(0.2f, 0.2f, 0.2f, decisionButtonOpacity);
+        colors.highlightedColor = new Color(0.3f, 0.3f, 0.3f, Mathf.Min(1f, decisionButtonOpacity + 0.1f));
+        colors.pressedColor = new Color(0.15f, 0.15f, 0.15f, decisionButtonOpacity);
+        button.colors = colors;
+
+        // Set up click handler
+        int capturedIndex = choiceIndex; // Capture for closure
+        button.onClick.AddListener(() => OnDecisionSelected(capturedIndex));
+
+        // Add optional image (left side)
+        if (choice.choiceImage != null)
+        {
+            GameObject imageObj = new GameObject("ChoiceImage");
+            imageObj.transform.SetParent(buttonObj.transform, false);
+
+            RectTransform imageRect = imageObj.AddComponent<RectTransform>();
+            imageRect.anchorMin = new Vector2(0f, 0.5f);
+            imageRect.anchorMax = new Vector2(0f, 0.5f);
+            imageRect.pivot = new Vector2(0f, 0.5f);
+            imageRect.anchoredPosition = new Vector2(10f, 0f);
+            imageRect.sizeDelta = decisionImageSize;
+
+            Image choiceImageComponent = imageObj.AddComponent<Image>();
+            choiceImageComponent.sprite = choice.choiceImage;
+        }
+
+        // Add text
+        GameObject textObj = new GameObject("ChoiceText");
+        textObj.transform.SetParent(buttonObj.transform, false);
+
+        RectTransform textRect = textObj.AddComponent<RectTransform>();
+        textRect.anchorMin = new Vector2(0f, 0f);
+        textRect.anchorMax = new Vector2(1f, 1f);
+        textRect.pivot = new Vector2(0.5f, 0.5f);
+
+        // Offset text based on whether there's an image
+        float textOffset = choice.choiceImage != null ? decisionImageSize.x + 20f : 10f;
+        textRect.offsetMin = new Vector2(textOffset, 10f);
+        textRect.offsetMax = new Vector2(-10f, -10f);
+
+        TextMeshProUGUI textComponent = textObj.AddComponent<TextMeshProUGUI>();
+        textComponent.text = choice.choiceText;
+        textComponent.fontSize = decisionFontSize;
+        textComponent.color = Color.white;
+        textComponent.alignment = TextAlignmentOptions.Center;
+
+        // Apply custom font if specified
+        if (customFont != null)
+        {
+            textComponent.font = customFont;
+        }
+
+        return buttonObj;
+    }
+
+    /// <summary>
+    /// Called when a decision button is clicked
+    /// </summary>
+    private void OnDecisionSelected(int choiceIndex)
+    {
+        if (choiceIndex < 0 || choiceIndex >= decisionChoices.Length) return;
+
+        // Fire the choice's UnityEvent
+        decisionChoices[choiceIndex].onChoiceSelected?.Invoke();
+
+        // Mark decision as made
+        decisionMade = true;
+    }
+
+    /// <summary>
+    /// Cleans up the decision panel UI
+    /// </summary>
+    private void CleanupDecisionPanel()
+    {
+        if (decisionPanel != null)
+        {
+            // Fade out before destroying
+            CanvasGroup canvasGroup = decisionPanel.GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                DOTween.To(() => canvasGroup.alpha, x => canvasGroup.alpha = x, 0f, 0.2f)
+                    .OnComplete(() =>
+                    {
+                        if (decisionPanel != null)
+                        {
+                            Destroy(decisionPanel);
+                        }
+                    });
+            }
+            else
+            {
+                Destroy(decisionPanel);
+            }
+        }
+
+        decisionButtons.Clear();
+    }
+
+    /// <summary>
+    /// Handles keyboard/gamepad input for decision navigation
+    /// </summary>
+    private void HandleDecisionInput()
+    {
+        // Check for UI input actions
+        if (Keyboard.current != null)
+        {
+            // Up arrow or W key
+            if (Keyboard.current.upArrowKey.wasPressedThisFrame || Keyboard.current.wKey.wasPressedThisFrame)
+            {
+                selectedDecisionIndex--;
+                if (selectedDecisionIndex < 0)
+                    selectedDecisionIndex = decisionChoices.Length - 1;
+                UpdateDecisionHighlight();
+            }
+            // Down arrow or S key
+            else if (Keyboard.current.downArrowKey.wasPressedThisFrame || Keyboard.current.sKey.wasPressedThisFrame)
+            {
+                selectedDecisionIndex++;
+                if (selectedDecisionIndex >= decisionChoices.Length)
+                    selectedDecisionIndex = 0;
+                UpdateDecisionHighlight();
+            }
+            // Enter or Space to submit
+            else if (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.spaceKey.wasPressedThisFrame)
+            {
+                OnDecisionSelected(selectedDecisionIndex);
+            }
+        }
+
+        // Check for gamepad input
+        if (Gamepad.current != null)
+        {
+            // D-pad or left stick up
+            if (Gamepad.current.dpad.up.wasPressedThisFrame || Gamepad.current.leftStick.up.wasPressedThisFrame)
+            {
+                selectedDecisionIndex--;
+                if (selectedDecisionIndex < 0)
+                    selectedDecisionIndex = decisionChoices.Length - 1;
+                UpdateDecisionHighlight();
+            }
+            // D-pad or left stick down
+            else if (Gamepad.current.dpad.down.wasPressedThisFrame || Gamepad.current.leftStick.down.wasPressedThisFrame)
+            {
+                selectedDecisionIndex++;
+                if (selectedDecisionIndex >= decisionChoices.Length)
+                    selectedDecisionIndex = 0;
+                UpdateDecisionHighlight();
+            }
+            // South button (A on Xbox, X on PlayStation) to submit
+            else if (Gamepad.current.buttonSouth.wasPressedThisFrame)
+            {
+                OnDecisionSelected(selectedDecisionIndex);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Updates the visual highlight on the currently selected decision button
+    /// </summary>
+    private void UpdateDecisionHighlight()
+    {
+        for (int i = 0; i < decisionButtons.Count; i++)
+        {
+            if (decisionButtons[i] == null) continue;
+
+            Image buttonImage = decisionButtons[i].GetComponent<Image>();
+            if (buttonImage != null)
+            {
+                if (i == selectedDecisionIndex)
+                {
+                    // Highlighted - brighter color
+                    buttonImage.color = new Color(0.4f, 0.4f, 0.4f, 1f);
+                }
+                else
+                {
+                    // Normal - darker color
+                    buttonImage.color = new Color(0.2f, 0.2f, 0.2f, 0.9f);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates decision panel for preview (similar to CreateDecisionPanel but for edit mode)
+    /// </summary>
+    private void CreateDecisionPanelPreview()
+    {
+        if (uiController.DialogueCanvas == null) return;
+        if (decisionChoices.Length == 0) return;
+
+        // Create panel container
+        decisionPanel = new GameObject("DecisionPanel_PREVIEW");
+        decisionPanel.transform.SetParent(uiController.DialogueCanvas.transform, false);
+        decisionPanel.hideFlags = HideFlags.DontSave;
+
+        RectTransform panelRect = decisionPanel.AddComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.anchoredPosition = decisionPanelPosition;
+
+        // Calculate total height needed for all buttons
+        float totalHeight = (decisionButtonSize.y * decisionChoices.Length) + (decisionButtonSpacing * (decisionChoices.Length - 1));
+        panelRect.sizeDelta = new Vector2(decisionButtonSize.x, totalHeight);
+
+        // Create buttons for each choice
+        for (int i = 0; i < decisionChoices.Length; i++)
+        {
+            GameObject buttonObj = CreateDecisionButtonPreview(decisionPanel.transform, decisionChoices[i], i);
+            decisionButtons.Add(buttonObj);
+
+            // Position button
+            RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
+            float yOffset = (totalHeight / 2f) - (decisionButtonSize.y / 2f) - (i * (decisionButtonSize.y + decisionButtonSpacing));
+            buttonRect.anchoredPosition = new Vector2(0f, yOffset);
+        }
+
+        // Full opacity for preview
+        CanvasGroup canvasGroup = decisionPanel.AddComponent<CanvasGroup>();
+        canvasGroup.alpha = 1f;
+    }
+
+    /// <summary>
+    /// Creates a single decision button for preview (no click handler needed)
+    /// </summary>
+    private GameObject CreateDecisionButtonPreview(Transform parent, DecisionChoice choice, int choiceIndex)
+    {
+        // Create button GameObject
+        GameObject buttonObj = new GameObject($"DecisionButton_PREVIEW_{choiceIndex}");
+        buttonObj.transform.SetParent(parent, false);
+        buttonObj.hideFlags = HideFlags.DontSave;
+
+        RectTransform buttonRect = buttonObj.AddComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+        buttonRect.pivot = new Vector2(0.5f, 0.5f);
+        buttonRect.sizeDelta = decisionButtonSize;
+
+        // Add button background image
+        Image buttonImage = buttonObj.AddComponent<Image>();
+        buttonImage.color = new Color(0.2f, 0.2f, 0.2f, decisionButtonOpacity);
+
+        // Add optional image (left side)
+        if (choice.choiceImage != null)
+        {
+            GameObject imageObj = new GameObject("ChoiceImage_PREVIEW");
+            imageObj.transform.SetParent(buttonObj.transform, false);
+            imageObj.hideFlags = HideFlags.DontSave;
+
+            RectTransform imageRect = imageObj.AddComponent<RectTransform>();
+            imageRect.anchorMin = new Vector2(0f, 0.5f);
+            imageRect.anchorMax = new Vector2(0f, 0.5f);
+            imageRect.pivot = new Vector2(0f, 0.5f);
+            imageRect.anchoredPosition = new Vector2(10f, 0f);
+            imageRect.sizeDelta = decisionImageSize;
+
+            Image choiceImageComponent = imageObj.AddComponent<Image>();
+            choiceImageComponent.sprite = choice.choiceImage;
+        }
+
+        // Add text
+        GameObject textObj = new GameObject("ChoiceText_PREVIEW");
+        textObj.transform.SetParent(buttonObj.transform, false);
+        textObj.hideFlags = HideFlags.DontSave;
+
+        RectTransform textRect = textObj.AddComponent<RectTransform>();
+        textRect.anchorMin = new Vector2(0f, 0f);
+        textRect.anchorMax = new Vector2(1f, 1f);
+        textRect.pivot = new Vector2(0.5f, 0.5f);
+
+        // Offset text based on whether there's an image
+        float textOffset = choice.choiceImage != null ? decisionImageSize.x + 20f : 10f;
+        textRect.offsetMin = new Vector2(textOffset, 10f);
+        textRect.offsetMax = new Vector2(-10f, -10f);
+
+        TextMeshProUGUI textComponent = textObj.AddComponent<TextMeshProUGUI>();
+        textComponent.text = string.IsNullOrEmpty(choice.choiceText) ? $"Choice {choiceIndex + 1}" : choice.choiceText;
+        textComponent.fontSize = decisionFontSize;
+        textComponent.color = Color.white;
+        textComponent.alignment = TextAlignmentOptions.Center;
+
+        // Apply custom font if specified
+        if (customFont != null)
+        {
+            textComponent.font = customFont;
+        }
+
+        return buttonObj;
     }
 }
