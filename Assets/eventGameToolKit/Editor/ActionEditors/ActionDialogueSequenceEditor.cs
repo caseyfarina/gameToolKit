@@ -155,6 +155,8 @@ public class ActionDialogueSequenceEditor : Editor
         EditorGUILayout.PropertyField(serializedObject.FindProperty("textPosition"), new GUIContent("Text Position"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("textSize"), new GUIContent("Text Box Size"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("fontSize"), new GUIContent("Font Size"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("textAlignment"), new GUIContent("Text Alignment"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("textColor"), new GUIContent("Text Color"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("customFont"), new GUIContent("Custom Font"));
         EditorGUI.indentLevel--;
 

@@ -3,7 +3,8 @@ using UnityEngine.Events;
 
 /// <summary>
 /// Checkpoint trigger zone that saves player position when entered.
-/// Automatically integrates with GameCheckpointManager for scene reload survival.
+/// Integrates with GameCheckpointManager (or any ISpawnPointProvider) for scene reload survival.
+/// 
 /// Common use: Platformer checkpoints, racing lap markers, save points, respawn locations.
 /// </summary>
 [RequireComponent(typeof(Collider))]
@@ -19,66 +20,64 @@ public class InputCheckpointZone : MonoBehaviour
     [Tooltip("Save full game state (score, health) or just position?")]
     [SerializeField] private bool saveFullState = false;
 
+    [Header("Spawn Point Configuration")]
+    [Tooltip("Offset from checkpoint position where player will respawn")]
+    [SerializeField] private Vector3 spawnOffset = Vector3.zero;
+
+    [Tooltip("Use the checkpoint's rotation for respawn orientation")]
+    [SerializeField] private bool useCheckpointRotation = false;
+
     [Header("Persistence")]
     [Tooltip("Reference to GameCheckpointManager. If null, searches automatically.")]
-    [SerializeField] private GameCheckpointManager checkpointPersistence;
+    [SerializeField] private GameCheckpointManager checkpointManager;
 
     [Header("Visual Feedback")]
-    [Tooltip("Object to disable when checkpoint is activated (e.g., particle effect)")]
+    [Tooltip("Object to disable when checkpoint is activated")]
     [SerializeField] private GameObject visualEffect;
 
-    [Tooltip("Material to change when activated")]
+    [Tooltip("Renderer to change material when activated")]
     [SerializeField] private Renderer checkpointRenderer;
+    
+    [Tooltip("Material to apply when activated")]
     [SerializeField] private Material activatedMaterial;
 
     [Header("Events")]
     /// <summary>
-    /// Fires when the checkpoint is activated by the player entering the zone
+    /// Fires when the checkpoint is activated
     /// </summary>
     public UnityEvent onCheckpointActivated;
-    /// <summary>
-    /// Fires when checkpoint position is saved, passing the checkpoint's position as a Vector3 parameter
-    /// </summary>
-    public UnityEvent<Vector3> onCheckpointPositionSaved;  // Passes checkpoint position
 
-    [SerializeField] [HideInInspector] private bool hasBeenActivated = false;
+    /// <summary>
+    /// Fires when checkpoint position is saved, passing the position
+    /// </summary>
+    public UnityEvent<Vector3> onCheckpointPositionSaved;
+
+    private bool hasBeenActivated = false;
     private Material originalMaterial;
-    private Material materialInstance; // Instance to avoid shared material modification
+    private Material materialInstance;
 
     private void Start()
     {
-        // Ensure collider is set to trigger
+        // Ensure collider is a trigger
         Collider col = GetComponent<Collider>();
         if (col != null && !col.isTrigger)
         {
             col.isTrigger = true;
-            Debug.LogWarning($"InputCheckpointZone on {gameObject.name}: Collider was not set as trigger. Automatically fixed.");
+            Debug.LogWarning($"InputCheckpointZone '{gameObject.name}': Collider set to trigger automatically.");
         }
 
-        // DEBUG: Log initial state
-        Debug.Log($"InputCheckpointZone '{gameObject.name}' Start(): hasBeenActivated={hasBeenActivated}, oneTimeUse={oneTimeUse}, collider.enabled={col?.enabled}, collider.isTrigger={col?.isTrigger}");
-
-        // Find checkpoint persistence if not assigned
-        if (checkpointPersistence == null)
+        // Find checkpoint manager if not assigned
+        if (checkpointManager == null)
         {
-            // Use singleton instance (works across DontDestroyOnLoad)
-            checkpointPersistence = GameCheckpointManager.Instance;
+            checkpointManager = GameCheckpointManager.Instance;
 
-            if (checkpointPersistence == null)
+            if (checkpointManager == null)
             {
-                Debug.LogWarning($"InputCheckpointZone '{gameObject.name}': No GameCheckpointManager found in scene! Add one to enable checkpoint saving.");
-            }
-            else
-            {
-                Debug.Log($"InputCheckpointZone '{gameObject.name}': Successfully found GameCheckpointManager singleton");
+                Debug.LogWarning($"InputCheckpointZone '{gameObject.name}': No GameCheckpointManager found!");
             }
         }
-        else
-        {
-            Debug.Log($"InputCheckpointZone '{gameObject.name}': Using assigned checkpointPersistence reference");
-        }
 
-        // Create material instance to avoid shared material modification
+        // Create material instance
         if (checkpointRenderer != null)
         {
             originalMaterial = checkpointRenderer.sharedMaterial;
@@ -86,101 +85,67 @@ public class InputCheckpointZone : MonoBehaviour
             checkpointRenderer.material = materialInstance;
         }
 
-        // Apply visual feedback if already activated (preserves state across scene reloads)
+        // Restore visual state if already activated
         if (hasBeenActivated)
         {
-            Debug.Log($"InputCheckpointZone '{gameObject.name}': Already activated, applying visual feedback");
             ApplyVisualFeedback();
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log($"InputCheckpointZone '{gameObject.name}' OnTriggerEnter: other.name='{other.name}', other.tag='{other.tag}', looking for tag='{triggerObjectTag}'");
+        if (!other.CompareTag(triggerObjectTag)) return;
+        if (oneTimeUse && hasBeenActivated) return;
 
-        // Check if correct tag
-        if (!other.CompareTag(triggerObjectTag))
-        {
-            Debug.Log($"InputCheckpointZone '{gameObject.name}': Tag mismatch, ignoring trigger");
-            return;
-        }
-
-        // Check if already activated (for one-time use)
-        if (oneTimeUse && hasBeenActivated)
-        {
-            Debug.Log($"InputCheckpointZone '{gameObject.name}': Already activated (oneTimeUse=true), ignoring trigger");
-            return;
-        }
-
-        Debug.Log($"InputCheckpointZone '{gameObject.name}': Triggering ActivateCheckpoint()");
-        // Activate checkpoint
         ActivateCheckpoint();
     }
 
     /// <summary>
-    /// Activate this checkpoint (can be called manually via events)
+    /// Activate this checkpoint. Can be called manually via UnityEvents.
     /// </summary>
     public void ActivateCheckpoint()
     {
-        Debug.Log($"InputCheckpointZone '{gameObject.name}' ActivateCheckpoint() called: oneTimeUse={oneTimeUse}, hasBeenActivated={hasBeenActivated}");
-
-        if (oneTimeUse && hasBeenActivated)
-        {
-            Debug.Log($"InputCheckpointZone '{gameObject.name}': Already activated (oneTimeUse=true), exiting ActivateCheckpoint()");
-            return;
-        }
+        if (oneTimeUse && hasBeenActivated) return;
 
         hasBeenActivated = true;
-        Debug.Log($"InputCheckpointZone '{gameObject.name}': Set hasBeenActivated=true");
 
-        // Save to persistence system - use CHECKPOINT position, not player position
-        if (checkpointPersistence != null)
+        // Calculate spawn position with offset
+        Vector3 spawnPosition = transform.position + transform.TransformDirection(spawnOffset);
+        Quaternion spawnRotation = useCheckpointRotation ? transform.rotation : Quaternion.identity;
+
+        // Save to checkpoint manager
+        if (checkpointManager != null)
         {
-            Debug.Log($"InputCheckpointZone '{gameObject.name}': checkpointPersistence found, saving position {transform.position}, saveFullState={saveFullState}");
-
             if (saveFullState)
             {
-                checkpointPersistence.SaveCheckpointFullAtPosition(transform.position);
+                checkpointManager.SaveCheckpointFullAtPosition(spawnPosition);
             }
             else
             {
-                checkpointPersistence.SaveCheckpointAtPosition(transform.position);
+                checkpointManager.SaveCheckpointAtPositionAndRotation(spawnPosition, spawnRotation);
             }
 
-            Debug.Log($"Checkpoint activated at {transform.position}");
-        }
-        else
-        {
-            Debug.LogWarning($"InputCheckpointZone '{gameObject.name}': checkpointPersistence is NULL! Cannot save checkpoint!");
+            Debug.Log($"InputCheckpointZone: Saved checkpoint at {spawnPosition}");
         }
 
-        // Visual feedback
         ApplyVisualFeedback();
 
-        // Fire events
         onCheckpointActivated.Invoke();
-        onCheckpointPositionSaved.Invoke(transform.position);
+        onCheckpointPositionSaved.Invoke(spawnPosition);
 
-        // Disable if one-time use
         if (oneTimeUse)
         {
-            Debug.Log($"InputCheckpointZone '{gameObject.name}': oneTimeUse=true, disabling collider");
             GetComponent<Collider>().enabled = false;
         }
     }
 
-    /// <summary>
-    /// Apply visual feedback when checkpoint is activated
-    /// </summary>
     private void ApplyVisualFeedback()
     {
-        // Disable visual effect (like particles)
         if (visualEffect != null)
         {
             visualEffect.SetActive(false);
         }
 
-        // Change material
         if (checkpointRenderer != null && activatedMaterial != null)
         {
             checkpointRenderer.material = activatedMaterial;
@@ -188,14 +153,13 @@ public class InputCheckpointZone : MonoBehaviour
     }
 
     /// <summary>
-    /// Reset checkpoint to inactive state (for testing or reusable checkpoints)
+    /// Reset checkpoint to inactive state.
     /// </summary>
     public void ResetCheckpoint()
     {
         hasBeenActivated = false;
         GetComponent<Collider>().enabled = true;
 
-        // Restore visual state
         if (visualEffect != null)
         {
             visualEffect.SetActive(true);
@@ -203,16 +167,14 @@ public class InputCheckpointZone : MonoBehaviour
 
         if (checkpointRenderer != null && materialInstance != null && originalMaterial != null)
         {
-            // Copy original material properties to instance
             materialInstance.CopyPropertiesFromMaterial(originalMaterial);
         }
 
-        Debug.Log($"Checkpoint at {transform.position} has been reset");
+        Debug.Log($"InputCheckpointZone '{gameObject.name}': Reset");
     }
 
     private void OnDestroy()
     {
-        // Clean up material instance
         if (materialInstance != null)
         {
             Destroy(materialInstance);
@@ -220,13 +182,17 @@ public class InputCheckpointZone : MonoBehaviour
     }
 
     /// <summary>
-    /// Check if this checkpoint has been activated
+    /// Whether this checkpoint has been activated.
     /// </summary>
     public bool IsActivated => hasBeenActivated;
 
+    /// <summary>
+    /// The world position where the player will spawn.
+    /// </summary>
+    public Vector3 SpawnPosition => transform.position + transform.TransformDirection(spawnOffset);
+
     private void OnDrawGizmos()
     {
-        // Draw checkpoint zone in editor
         Collider col = GetComponent<Collider>();
         if (col != null)
         {
@@ -234,22 +200,35 @@ public class InputCheckpointZone : MonoBehaviour
             Gizmos.matrix = transform.localToWorldMatrix;
 
             if (col is BoxCollider box)
-            {
                 Gizmos.DrawWireCube(box.center, box.size);
-            }
             else if (col is SphereCollider sphere)
-            {
                 Gizmos.DrawWireSphere(sphere.center, sphere.radius);
-            }
             else if (col is CapsuleCollider capsule)
-            {
                 Gizmos.DrawWireSphere(capsule.center, capsule.radius);
-            }
         }
 
-        // Draw checkpoint icon above trigger
+        // Draw spawn position
+        Gizmos.matrix = Matrix4x4.identity;
+        Vector3 spawnPos = transform.position + transform.TransformDirection(spawnOffset);
+
+        // Flag icon
         Gizmos.color = Color.cyan;
-        Gizmos.DrawLine(transform.position, transform.position + Vector3.up * 2f);
-        Gizmos.DrawWireSphere(transform.position + Vector3.up * 2f, 0.3f);
+        Gizmos.DrawLine(spawnPos, spawnPos + Vector3.up * 2f);
+        Gizmos.DrawWireSphere(spawnPos + Vector3.up * 2f, 0.3f);
+
+        // Spawn offset indicator
+        if (spawnOffset != Vector3.zero)
+        {
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(spawnPos, 0.5f);
+            Gizmos.DrawLine(transform.position, spawnPos);
+        }
+
+        // Rotation indicator
+        if (useCheckpointRotation)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawRay(spawnPos, transform.forward * 1.5f);
+        }
     }
 }

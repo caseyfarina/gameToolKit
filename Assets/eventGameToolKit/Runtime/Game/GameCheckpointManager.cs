@@ -5,15 +5,19 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// Persistent checkpoint system that survives scene reloads using DontDestroyOnLoad.
 /// Stores player position and optionally game state (score, health, inventory).
+/// 
+/// ARCHITECTURE: This manager implements ISpawnPointProvider, making it a passive data holder.
+/// Instead of actively teleporting players (which causes race conditions), it answers
+/// "where should I spawn?" when players initialize. This eliminates timing issues entirely.
+/// 
+/// The player's character controller checks for ISpawnPointProvider during Start() and
+/// spawns at the correct position before physics ever runs.
+/// 
 /// Common use: Platformer checkpoints, racing game lap markers, save points in adventure games.
 /// </summary>
-public class GameCheckpointManager : MonoBehaviour
+public class GameCheckpointManager : MonoBehaviour, ISpawnPointProvider
 {
     private static GameCheckpointManager instance;
-
-    [Header("Player Reference")]
-    [Tooltip("The player GameObject to respawn. If null, searches for tag 'Player'")]
-    [SerializeField] private GameObject playerObject;
 
     [Header("Checkpoint Settings")]
     [Tooltip("Should checkpoint data persist across scene reloads?")]
@@ -33,25 +37,65 @@ public class GameCheckpointManager : MonoBehaviour
     /// Fires when a checkpoint is saved
     /// </summary>
     public UnityEvent onCheckpointSaved;
+    
     /// <summary>
-    /// Fires when the player is restored to a checkpoint position
+    /// Fires when the player spawns at a checkpoint (called by player, not by this manager)
     /// </summary>
     public UnityEvent onCheckpointRestored;
+    
     /// <summary>
     /// Fires when checkpoint position is saved, passing the saved position as a Vector3 parameter
     /// </summary>
-    public UnityEvent<Vector3> onPositionSaved;  // Passes saved position
+    public UnityEvent<Vector3> onPositionSaved;
 
     // Saved checkpoint data
     private bool hasCheckpoint = false;
     private Vector3 savedPosition;
     private Quaternion savedRotation;
+    private string savedSceneName;
     private int savedScore = 0;
     private int savedHealth = 100;
 
-    // Public properties
+    #region ISpawnPointProvider Implementation
+
+    /// <summary>
+    /// Returns true if a checkpoint has been saved and is available for spawning.
+    /// </summary>
+    public bool HasSpawnPoint => hasCheckpoint;
+
+    /// <summary>
+    /// The saved checkpoint position. Only valid if HasSpawnPoint is true.
+    /// </summary>
+    public Vector3 SpawnPosition => savedPosition;
+
+    /// <summary>
+    /// The saved checkpoint rotation. Only valid if HasSpawnPoint is true.
+    /// </summary>
+    public Quaternion SpawnRotation => savedRotation;
+
+    /// <summary>
+    /// Called by the player after spawning at the checkpoint.
+    /// Fires the onCheckpointRestored event for UI/audio feedback.
+    /// </summary>
+    public void OnSpawnPointUsed()
+    {
+        Debug.Log($"GameCheckpointManager: Player spawned at checkpoint {savedPosition}");
+        onCheckpointRestored.Invoke();
+        
+        // Restore game data if configured
+        RestoreScore();
+        RestoreHealth();
+    }
+
+    #endregion
+
+    #region Public Properties (Legacy Compatibility)
+
     public bool HasCheckpoint => hasCheckpoint;
     public Vector3 SavedPosition => savedPosition;
+    public Quaternion SavedRotation => savedRotation;
+
+    #endregion
 
     private void Awake()
     {
@@ -66,233 +110,93 @@ public class GameCheckpointManager : MonoBehaviour
 
         if (persistAcrossScenes)
         {
-            // CRITICAL: DontDestroyOnLoad only works on root GameObjects
-            // If this GameObject is a child, unparent it first
+            // DontDestroyOnLoad only works on root GameObjects
             if (transform.parent != null)
             {
-                Debug.LogWarning($"GameCheckpointManager: GameObject '{gameObject.name}' is a child object. Moving to root hierarchy for DontDestroyOnLoad to work.", this);
+                Debug.LogWarning($"GameCheckpointManager: Moving to root hierarchy for DontDestroyOnLoad.", this);
                 transform.SetParent(null);
             }
 
             DontDestroyOnLoad(gameObject);
-            Debug.Log("GameCheckpointManager: Persisting across scenes (DontDestroyOnLoad)");
         }
-
-        // Subscribe to scene loaded event for checkpoint restoration after scene reloads
-        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     private void OnDestroy()
     {
-        // Unsubscribe from scene loaded event to prevent memory leaks
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
-
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        // Restore checkpoint whenever a scene loads
-        if (hasCheckpoint)
+        if (instance == this)
         {
-            StartCoroutine(RestoreCheckpointAfterPlayerSpawns());
+            instance = null;
         }
     }
 
-    private System.Collections.IEnumerator RestoreCheckpointAfterPlayerSpawns()
-    {
-        Debug.Log("GameCheckpointManager: Starting checkpoint restoration coroutine");
-
-        // Try to find player immediately
-        GameObject player = GetPlayerObject();
-
-        // If player exists, hide it immediately to prevent camera flash
-        Renderer[] renderers = null;
-        if (player != null)
-        {
-            renderers = player.GetComponentsInChildren<Renderer>();
-            foreach (Renderer r in renderers)
-            {
-                r.enabled = false;
-            }
-        }
-
-        // Wait for end of frame to ensure all objects are spawned and initialized
-        yield return new WaitForEndOfFrame();
-
-        // Try to find player up to 10 times if not found yet (10 frames max)
-        int attempts = 0;
-        while (player == null && attempts < 10)
-        {
-            player = GetPlayerObject();
-            if (player != null)
-            {
-                // Hide newly found player
-                renderers = player.GetComponentsInChildren<Renderer>();
-                foreach (Renderer r in renderers)
-                {
-                    r.enabled = false;
-                }
-                break;
-            }
-            attempts++;
-            yield return null;
-        }
-
-        if (player == null)
-        {
-            Debug.LogError("GameCheckpointManager: Could not find player after 10 attempts! Make sure player has 'Player' tag.");
-            yield break;
-        }
-
-        Debug.Log($"GameCheckpointManager: Player found, current position: {player.transform.position}, will restore to: {savedPosition}");
-
-        // Wait multiple frames to ensure ALL Start() methods have completed
-        // This is critical - some character controllers initialize position in Start()
-        yield return null;
-        yield return null;
-        yield return new WaitForFixedUpdate();
-
-        // Now restore checkpoint
-        RestoreCheckpoint();
-
-        // Wait for physics to process the new position
-        yield return new WaitForFixedUpdate();
-
-        // Check for CharacterController (requires special handling)
-        CharacterController cc = player.GetComponent<CharacterController>();
-        Rigidbody rb = player.GetComponent<Rigidbody>();
-
-        if (cc != null)
-        {
-            // CharacterController requires disabling before setting position
-            cc.enabled = false;
-            player.transform.position = savedPosition;
-            player.transform.rotation = savedRotation;
-            Debug.Log($"GameCheckpointManager: Set CharacterController position to {savedPosition}");
-
-            // Wait a frame before re-enabling
-            yield return null;
-            cc.enabled = true;
-        }
-        else if (rb != null)
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.position = savedPosition;
-            rb.rotation = savedRotation;
-            Debug.Log($"GameCheckpointManager: Set Rigidbody position to {savedPosition}");
-        }
-        else
-        {
-            player.transform.position = savedPosition;
-            player.transform.rotation = savedRotation;
-            Debug.Log($"GameCheckpointManager: Set Transform position to {savedPosition}");
-        }
-
-        // Wait additional frames to ensure position sticks
-        yield return new WaitForFixedUpdate();
-        yield return null;
-
-        // Final verification
-        Debug.Log($"GameCheckpointManager: Final player position after restoration: {player.transform.position}");
-
-        // Re-enable renderers to make player visible at checkpoint
-        if (renderers != null)
-        {
-            foreach (Renderer r in renderers)
-            {
-                r.enabled = true;
-            }
-        }
-
-        Debug.Log("GameCheckpointManager: Checkpoint restoration complete");
-    }
+    #region Checkpoint Saving Methods
 
     /// <summary>
-    /// Save current player position as checkpoint
+    /// Save current player position as checkpoint.
+    /// Finds player by tag.
     /// </summary>
     public void SaveCheckpointPosition()
     {
-        GameObject player = GetPlayerObject();
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player == null)
         {
             Debug.LogWarning("GameCheckpointManager: No player found to save checkpoint!");
             return;
         }
 
-        savedPosition = player.transform.position;
-        savedRotation = player.transform.rotation;
-        hasCheckpoint = true;
-
-        Debug.Log($"Checkpoint saved at {savedPosition}");
-
-        onPositionSaved.Invoke(savedPosition);
-        onCheckpointSaved.Invoke();
+        SaveCheckpointAtPositionAndRotation(player.transform.position, player.transform.rotation);
     }
 
     /// <summary>
-    /// Save specific position as checkpoint (for checkpoint zones)
+    /// Save specific position as checkpoint (for checkpoint zones).
+    /// Uses identity rotation.
     /// </summary>
     public void SaveCheckpointAtPosition(Vector3 position)
     {
-        savedPosition = position;
-        savedRotation = Quaternion.identity; // Default rotation
-        hasCheckpoint = true;
-
-        Debug.Log($"Checkpoint saved at {savedPosition}");
-
-        onPositionSaved.Invoke(savedPosition);
-        onCheckpointSaved.Invoke();
+        SaveCheckpointAtPositionAndRotation(position, Quaternion.identity);
     }
 
     /// <summary>
-    /// Save specific position and rotation as checkpoint
+    /// Save specific position and rotation as checkpoint.
     /// </summary>
     public void SaveCheckpointAtPositionAndRotation(Vector3 position, Quaternion rotation)
     {
         savedPosition = position;
         savedRotation = rotation;
+        savedSceneName = SceneManager.GetActiveScene().name;
         hasCheckpoint = true;
 
-        Debug.Log($"Checkpoint saved at {savedPosition} with rotation {savedRotation.eulerAngles}");
+        Debug.Log($"GameCheckpointManager: Checkpoint saved at {savedPosition}");
 
         onPositionSaved.Invoke(savedPosition);
         onCheckpointSaved.Invoke();
     }
 
     /// <summary>
-    /// Save checkpoint with position and optional game data
+    /// Save checkpoint with position and optional game data (score, health).
     /// </summary>
     public void SaveCheckpointFull()
     {
         SaveCheckpointPosition();
-
-        // Save score if enabled
-        if (saveScore && scoreManager != null)
-        {
-            savedScore = scoreManager.GetCurrentValue();
-        }
-
-        // Save health if enabled
-        if (saveHealth && healthManager != null)
-        {
-            savedHealth = healthManager.CurrentHealth;
-        }
+        SaveGameData();
     }
 
     /// <summary>
-    /// Save checkpoint at specific position with optional game data
+    /// Save checkpoint at specific position with optional game data.
     /// </summary>
     public void SaveCheckpointFullAtPosition(Vector3 position)
     {
         SaveCheckpointAtPosition(position);
+        SaveGameData();
+    }
 
-        // Save score if enabled
+    private void SaveGameData()
+    {
         if (saveScore && scoreManager != null)
         {
             savedScore = scoreManager.GetCurrentValue();
         }
 
-        // Save health if enabled
         if (saveHealth && healthManager != null)
         {
             savedHealth = healthManager.CurrentHealth;
@@ -300,7 +204,7 @@ public class GameCheckpointManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Save score value manually (for event wiring)
+    /// Save score value manually (for event wiring).
     /// </summary>
     public void SaveScore(int score)
     {
@@ -308,58 +212,20 @@ public class GameCheckpointManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Save health value manually (for event wiring)
+    /// Save health value manually (for event wiring).
     /// </summary>
     public void SaveHealth(int health)
     {
         savedHealth = health;
     }
 
-    /// <summary>
-    /// Restore player to checkpoint position
-    /// </summary>
-    public void RestoreCheckpoint()
-    {
-        if (!hasCheckpoint)
-        {
-            Debug.Log("No checkpoint to restore");
-            return;
-        }
+    #endregion
 
-        GameObject player = GetPlayerObject();
-        if (player == null)
-        {
-            Debug.LogWarning("GameCheckpointManager: No player found to restore!");
-            return;
-        }
-
-        // Get Rigidbody
-        Rigidbody rb = player.GetComponent<Rigidbody>();
-
-        // Stop all physics
-        if (rb != null)
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.Sleep(); // Put rigidbody to sleep to prevent immediate physics updates
-        }
-
-        // Restore position and rotation
-        player.transform.position = savedPosition;
-        player.transform.rotation = savedRotation;
-
-        // Wake rigidbody after position is set
-        if (rb != null)
-        {
-            rb.WakeUp();
-        }
-
-        Debug.Log($"Checkpoint restored to {savedPosition}, player is now at {player.transform.position}");
-        onCheckpointRestored.Invoke();
-    }
+    #region Checkpoint Restoration Methods
 
     /// <summary>
-    /// Restore saved score to the score manager
+    /// Restore saved score to the score manager.
+    /// Called automatically when player spawns at checkpoint if saveScore is enabled.
     /// </summary>
     public void RestoreScore()
     {
@@ -370,7 +236,8 @@ public class GameCheckpointManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Restore saved health to the health manager
+    /// Restore saved health to the health manager.
+    /// Called automatically when player spawns at checkpoint if saveHealth is enabled.
     /// </summary>
     public void RestoreHealth()
     {
@@ -381,55 +248,69 @@ public class GameCheckpointManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Restore all saved data (position, score, health)
+    /// Manual teleport for same-scene respawns (e.g., player death without scene reload).
+    /// For scene reloads, the player automatically uses ISpawnPointProvider.
     /// </summary>
-    public void RestoreAll()
+    public void TeleportPlayerToCheckpoint()
     {
-        RestoreCheckpoint();
+        if (!hasCheckpoint)
+        {
+            Debug.Log("GameCheckpointManager: No checkpoint to restore");
+            return;
+        }
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null)
+        {
+            Debug.LogWarning("GameCheckpointManager: No player found!");
+            return;
+        }
+
+        // Try to use player's TeleportTo method if available
+        player.SendMessage("TeleportTo", savedPosition, SendMessageOptions.DontRequireReceiver);
+        
+        // Verify it worked, fallback to direct manipulation if not
+        if (Vector3.Distance(player.transform.position, savedPosition) > 0.1f)
+        {
+            CharacterController cc = player.GetComponent<CharacterController>();
+            if (cc != null)
+            {
+                cc.enabled = false;
+                player.transform.position = savedPosition;
+                player.transform.rotation = savedRotation;
+                cc.enabled = true;
+            }
+            else
+            {
+                player.transform.position = savedPosition;
+                player.transform.rotation = savedRotation;
+            }
+        }
+        else
+        {
+            player.transform.rotation = savedRotation;
+        }
+        
+        Debug.Log($"GameCheckpointManager: Player teleported to checkpoint {savedPosition}");
+        onCheckpointRestored.Invoke();
+        
         RestoreScore();
         RestoreHealth();
     }
 
     /// <summary>
-    /// Clear checkpoint data
+    /// Clear checkpoint data.
     /// </summary>
     public void ClearCheckpoint()
     {
         hasCheckpoint = false;
-        Debug.Log("Checkpoint cleared");
+        Debug.Log("GameCheckpointManager: Checkpoint cleared");
     }
 
-    /// <summary>
-    /// Get or find the player object
-    /// </summary>
-    private GameObject GetPlayerObject()
-    {
-        // Always search by tag after scene loads - don't rely on cached reference
-        // The cached reference becomes invalid when scene reloads (player gets destroyed/recreated)
-        try
-        {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-
-            if (player != null)
-            {
-                playerObject = player; // Update cache
-                Debug.Log($"GameCheckpointManager: Found player '{player.name}' at {player.transform.position}");
-                return player;
-            }
-        }
-        catch (UnityException)
-        {
-            // Tag doesn't exist
-            Debug.LogError("GameCheckpointManager: 'Player' tag doesn't exist! Add it in Tag Manager.");
-            return null;
-        }
-
-        Debug.LogWarning("GameCheckpointManager: Could not find player! Make sure player is tagged as 'Player'");
-        return null;
-    }
+    #endregion
 
     /// <summary>
-    /// Get the singleton instance
+    /// Get the singleton instance.
     /// </summary>
     public static GameCheckpointManager Instance => instance;
 }

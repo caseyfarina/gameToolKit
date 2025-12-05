@@ -114,6 +114,12 @@ public class ActionDialogueSequence : MonoBehaviour
     [SerializeField] private Vector2 textSize = new Vector2(1200f, 200f);
     [SerializeField] private float fontSize = 48f;
 
+    [Tooltip("Text alignment for dialogue text")]
+    [SerializeField] private TextAlignmentOptions textAlignment = TextAlignmentOptions.Left;
+
+    [Tooltip("Text color for dialogue text")]
+    [SerializeField] private Color textColor = Color.white;
+
     [Tooltip("Optional custom font for all dialogue and decision text (leave empty for default)")]
     [SerializeField] private TMP_FontAsset customFont;
 
@@ -202,6 +208,8 @@ public class ActionDialogueSequence : MonoBehaviour
             textPosition,
             textSize,
             fontSize,
+            textAlignment,
+            textColor,
             customFont
         );
     }
@@ -541,25 +549,25 @@ public class ActionDialogueSequence : MonoBehaviour
         switch (textAnimation)
         {
             case TextAnimation.None:
-                textComp.color = Color.white;
+                textComp.color = textColor;
                 break;
 
             case TextAnimation.TypeOn:
-                textComp.color = Color.white;
+                textComp.color = textColor;
                 textComp.maxVisibleCharacters = 0;
                 yield return StartCoroutine(TypewriterEffect(line.dialogueText));
                 break;
 
             case TextAnimation.FadeIn:
                 textComp.maxVisibleCharacters = MAX_VISIBLE_CHARACTERS;
-                // FIX: Set color channels (RGB) to white before fading the alpha.
-                textComp.color = new Color(1f, 1f, 1f, 0f); // Set to transparent white
+                // Start with transparent version of textColor
+                textComp.color = new Color(textColor.r, textColor.g, textColor.b, 0f);
                 seq.Append(DOTween.To(() => textComp.color, x => textComp.color = x,
-                    Color.white, textFadeInDuration).SetEase(Ease.Linear));
+                    textColor, textFadeInDuration).SetEase(Ease.Linear));
                 break;
 
             case TextAnimation.SlideUpFromBottom:
-                textComp.color = Color.white;
+                textComp.color = textColor;
                 Vector2 startPos = finalPosition - new Vector2(0f, textSlideDistance);
                 textRect.anchoredPosition = startPos;
                 seq.Append(DOTween.To(() => textRect.anchoredPosition, x => textRect.anchoredPosition = x,
@@ -712,7 +720,7 @@ public class ActionDialogueSequence : MonoBehaviour
         }
 
         // Pass settings and create UI structure
-        uiController.Setup(backgroundImage, backgroundPosition, backgroundSize, leftPosition, rightPosition, portraitSize, textPosition, textSize, fontSize, customFont);
+        uiController.Setup(backgroundImage, backgroundPosition, backgroundSize, leftPosition, rightPosition, portraitSize, textPosition, textSize, fontSize, textAlignment, textColor, customFont);
         uiController.CreateDialogueUI(transform);
 
         // Update with sample content
@@ -740,7 +748,7 @@ public class ActionDialogueSequence : MonoBehaviour
             return;
 
         // Apply visual settings updates
-        uiController.UpdateSettings(backgroundImage, backgroundPosition, backgroundSize, leftPosition, rightPosition, portraitSize, textPosition, textSize, fontSize, customFont);
+        uiController.UpdateSettings(backgroundImage, backgroundPosition, backgroundSize, leftPosition, rightPosition, portraitSize, textPosition, textSize, fontSize, textAlignment, textColor, customFont);
         uiController.ApplySettings();
 
         // Check if we're previewing decision (lineIndex == dialogueLines.Length)
@@ -936,8 +944,8 @@ public class ActionDialogueSequence : MonoBehaviour
         TextMeshProUGUI textComponent = textObj.AddComponent<TextMeshProUGUI>();
         textComponent.text = choice.choiceText;
         textComponent.fontSize = decisionFontSize;
-        textComponent.color = Color.white;
-        textComponent.alignment = TextAlignmentOptions.Center;
+        textComponent.color = textColor;
+        textComponent.alignment = textAlignment;
 
         // Apply custom font if specified
         if (customFont != null)
@@ -1171,8 +1179,8 @@ public class ActionDialogueSequence : MonoBehaviour
         TextMeshProUGUI textComponent = textObj.AddComponent<TextMeshProUGUI>();
         textComponent.text = string.IsNullOrEmpty(choice.choiceText) ? $"Choice {choiceIndex + 1}" : choice.choiceText;
         textComponent.fontSize = decisionFontSize;
-        textComponent.color = Color.white;
-        textComponent.alignment = TextAlignmentOptions.Center;
+        textComponent.color = textColor;
+        textComponent.alignment = textAlignment;
 
         // Apply custom font if specified
         if (customFont != null)

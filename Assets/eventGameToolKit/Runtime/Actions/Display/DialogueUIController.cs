@@ -32,6 +32,8 @@ public class DialogueUIController : MonoBehaviour
     private Vector2 _textPosition;
     private Vector2 _textSize;
     private float _fontSize;
+    private TextAlignmentOptions _textAlignment;
+    private Color _textColor;
     private TMP_FontAsset _customFont;
 
     // Public Accessors for UI elements
@@ -47,7 +49,7 @@ public class DialogueUIController : MonoBehaviour
     /// <summary>
     /// Receives initial settings from ActionDialogueSequence.
     /// </summary>
-    public void Setup(Sprite bg, Vector2 bgPos, Vector2 bgSize, Vector2 leftPos, Vector2 rightPos, Vector2 portraitSize, Vector2 textPos, Vector2 textSize, float fontSize, TMP_FontAsset customFont)
+    public void Setup(Sprite bg, Vector2 bgPos, Vector2 bgSize, Vector2 leftPos, Vector2 rightPos, Vector2 portraitSize, Vector2 textPos, Vector2 textSize, float fontSize, TextAlignmentOptions textAlignment, Color textColor, TMP_FontAsset customFont)
     {
         _backgroundImage = bg;
         _backgroundPosition = bgPos;
@@ -58,6 +60,8 @@ public class DialogueUIController : MonoBehaviour
         _textPosition = textPos;
         _textSize = textSize;
         _fontSize = fontSize;
+        _textAlignment = textAlignment;
+        _textColor = textColor;
         _customFont = customFont;
 
         // Ensure UI is created if needed, especially in runtime
@@ -70,7 +74,7 @@ public class DialogueUIController : MonoBehaviour
     /// <summary>
     /// Updates all cached settings (used by custom editor / runtime changes).
     /// </summary>
-    public void UpdateSettings(Sprite bg, Vector2 bgPos, Vector2 bgSize, Vector2 leftPos, Vector2 rightPos, Vector2 portraitSize, Vector2 textPos, Vector2 textSize, float fontSize, TMP_FontAsset customFont)
+    public void UpdateSettings(Sprite bg, Vector2 bgPos, Vector2 bgSize, Vector2 leftPos, Vector2 rightPos, Vector2 portraitSize, Vector2 textPos, Vector2 textSize, float fontSize, TextAlignmentOptions textAlignment, Color textColor, TMP_FontAsset customFont)
     {
         _backgroundImage = bg;
         _backgroundPosition = bgPos;
@@ -81,6 +85,8 @@ public class DialogueUIController : MonoBehaviour
         _textPosition = textPos;
         _textSize = textSize;
         _fontSize = fontSize;
+        _textAlignment = textAlignment;
+        _textColor = textColor;
         _customFont = customFont;
     }
 
@@ -108,6 +114,7 @@ public class DialogueUIController : MonoBehaviour
         {
             UpdateRectTransform(dialogueTextComponent.GetComponent<RectTransform>(), _textPosition, _textSize);
             dialogueTextComponent.fontSize = _fontSize;
+            dialogueTextComponent.alignment = _textAlignment;
 
             // Apply custom font if specified
             if (_customFont != null)
@@ -184,9 +191,15 @@ public class DialogueUIController : MonoBehaviour
 
         dialogueTextComponent = textObj.AddComponent<TextMeshProUGUI>();
         dialogueTextComponent.fontSize = _fontSize;
-        dialogueTextComponent.alignment = TextAlignmentOptions.Center;
+        dialogueTextComponent.alignment = _textAlignment;
         dialogueTextComponent.color = Color.clear;
         dialogueTextComponent.text = "";
+
+        // Apply custom font if specified
+        if (_customFont != null)
+        {
+            dialogueTextComponent.font = _customFont;
+        }
 
         // Hide canvas initially for runtime
         if (Application.isPlaying)
@@ -234,7 +247,7 @@ public class DialogueUIController : MonoBehaviour
 
         // Update Text
         dialogueTextComponent.text = string.IsNullOrEmpty(text) ? "Sample dialogue text" : text;
-        dialogueTextComponent.color = Color.white;
+        dialogueTextComponent.color = _textColor;
         dialogueTextComponent.maxVisibleCharacters = MAX_VISIBLE_CHARACTERS;
 
         // Hide both portraits first
@@ -252,7 +265,7 @@ public class DialogueUIController : MonoBehaviour
         }
         else
         {
-            dialogueTextComponent.color = ColorFaded;
+            dialogueTextComponent.color = new Color(_textColor.r, _textColor.g, _textColor.b, 0.5f);
         }
     }
 

@@ -26,7 +26,7 @@ public class ActionDisplayText : MonoBehaviour
     [SerializeField] private float fontSize = 48f;
 
     [Tooltip("Text alignment")]
-    [SerializeField] private TextAlignmentOptions textAlignment = TextAlignmentOptions.Center;
+    [SerializeField] private TextAlignmentOptions textAlignment = TextAlignmentOptions.Left;
 
     [Tooltip("Text color")]
     [SerializeField] private Color textColor = Color.white;

@@ -11,7 +11,9 @@
       "Bash(git commit:*)",
       "Bash(git push)",
       "Bash(cmd //c robocopy \"F:\\Unity Projects 2025\\gameToolKitFarina\\gameToolKit\\Assets\\eventGameToolKit\" \"F:\\Unity Projects 2025\\eventGameToolKit-Package\" //MIR //XD .git)",
-      "Bash(python parse_events.py:*)"
+      "Bash(python parse_events.py:*)",
+      "Bash(wc:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []
