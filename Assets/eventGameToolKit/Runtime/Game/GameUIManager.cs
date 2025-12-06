@@ -47,6 +47,9 @@ public class GameUIManager : MonoBehaviour
     [SerializeField] private Vector2 inventoryPosition = new Vector2(60, -200);
 
     [Header("UI Styling")]
+    [Tooltip("Custom font for all UI text (leave empty for TMP default)")]
+    [SerializeField] private TMP_FontAsset customFont;
+
     [Tooltip("Font size for score text")]
     [SerializeField] private int scoreFontSize = 40;
 
@@ -60,12 +63,12 @@ public class GameUIManager : MonoBehaviour
     [SerializeField] private int inventoryFontSize = 40;
 
     [Tooltip("Text color")]
-    [SerializeField] private Color textColor = Color.white;
+    [SerializeField] private Color textColor = new Color(0.6f, 0.85f, 0.92f, 1f); // Light cyan/blue
 
     [Tooltip("Health bar colors")]
-    [SerializeField] private Color healthColorHigh = Color.green;
-    [SerializeField] private Color healthColorMid = Color.yellow;
-    [SerializeField] private Color healthColorLow = Color.red;
+    [SerializeField] private Color healthColorHigh = new Color(0.25f, 0.9f, 0.1f, 1f); // Bright green
+    [SerializeField] private Color healthColorMid = new Color(1f, 0.95f, 0.2f, 1f); // Yellow
+    [SerializeField] private Color healthColorLow = new Color(0.9f, 0.15f, 0.1f, 1f); // Red
 
     [Header("Score Animation")]
     [Tooltip("Enable punch animation when score changes")]
@@ -287,6 +290,8 @@ public class GameUIManager : MonoBehaviour
         rectTransform.sizeDelta = new Vector2(400, 50);
 
         TextMeshProUGUI text = textObj.AddComponent<TextMeshProUGUI>();
+        if (customFont != null)
+            text.font = customFont;
         text.fontSize = fontSize;
         text.color = textColor;
         text.text = $"{name}: 0";
@@ -427,6 +432,7 @@ public class GameUIManager : MonoBehaviour
             scoreText.fontSize = scoreFontSize;
             scoreText.gameObject.hideFlags = HideFlags.DontSave;
         }
+        ApplyCustomFont(scoreText);
         scoreText.text = scorePrefix + "999";
 
         if (healthText == null)
@@ -440,6 +446,7 @@ public class GameUIManager : MonoBehaviour
             healthText.fontSize = healthFontSize;
             healthText.gameObject.hideFlags = HideFlags.DontSave;
         }
+        ApplyCustomFont(healthText);
         healthText.text = healthPrefix + "100/100";
 
         if (healthBar == null)
@@ -468,6 +475,7 @@ public class GameUIManager : MonoBehaviour
             timerText.fontSize = timerFontSize;
             timerText.gameObject.hideFlags = HideFlags.DontSave;
         }
+        ApplyCustomFont(timerText);
         timerText.text = timerPrefix + "01:30";
 
         if (inventoryText == null)
@@ -481,6 +489,7 @@ public class GameUIManager : MonoBehaviour
             inventoryText.fontSize = inventoryFontSize;
             inventoryText.gameObject.hideFlags = HideFlags.DontSave;
         }
+        ApplyCustomFont(inventoryText);
         inventoryText.text = inventoryPrefix + "5";
 
         // Apply toggle states (enable/disable based on settings)
@@ -784,6 +793,14 @@ public class GameUIManager : MonoBehaviour
     #endregion
 
     #region Helper Methods
+
+    private void ApplyCustomFont(TextMeshProUGUI text)
+    {
+        if (text != null && customFont != null)
+        {
+            text.font = customFont;
+        }
+    }
 
     private void UpdateAllDisplays()
     {

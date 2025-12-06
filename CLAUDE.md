@@ -93,6 +93,31 @@ Assets/
 | DOTween FREE | - | Animation tweening |
 | Adobe Substance 3D | - | Material authoring |
 
+### DOTween FREE Compatibility
+
+**CRITICAL: This project uses DOTween FREE, not DOTween Pro.**
+
+**IMPORTANT: Due to asmdef conflicts, avoid DOTween module-specific extensions in package code.** Use `DOTween.To()` instead - it's just as good and has no assembly reference issues.
+
+| Avoid (asmdef conflicts) | Use Instead |
+|--------------------------|-------------|
+| `audioSource.DOFade()` | `DOTween.To(() => source.volume, x => source.volume = x, target, duration)` |
+| `rigidbody.DOMove()` | `DOTween.To()` or `transform.DOMove()` |
+| `spriteRenderer.DOFade()` | `DOTween.To(() => sr.color, x => sr.color = x, target, duration)` |
+
+**Safe to use (core DOTween, no module dependencies):**
+- `transform.DOMove()`, `DORotate()`, `DOScale()`, `DOPunchScale()`
+- `rectTransform.DOAnchorPos()`
+- `canvasGroup.DOFade()`, `image.DOFade()`, `image.DOColor()`
+- `DOTween.To()` for any value type (universal, always works)
+- `DOTween.Sequence()` for chaining
+- `.SetUpdate()`, `.SetEase()`, `.OnComplete()`, `.Kill()`
+
+**DOTween Pro Only (DO NOT USE):**
+- `text.DOText()` (TextMesh Pro module)
+- Path tweening
+- DeAudio, DeUnityExtended
+
 ## Educational Design Philosophy
 
 ### UnityEvent-Driven Architecture

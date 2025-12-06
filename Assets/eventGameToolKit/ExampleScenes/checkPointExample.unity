@@ -159,6 +159,7 @@ MonoBehaviour:
   healthBarSize: {x: 430.8, y: 20}
   timerPosition: {x: 60, y: -66.9}
   inventoryPosition: {x: 60, y: -65.1}
+  customFont: {fileID: 0}
   scoreFontSize: 40
   healthFontSize: 40
   timerFontSize: 40
@@ -426,6 +427,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -479,8 +481,9 @@ GameObject:
   - component: {fileID: 272819943}
   - component: {fileID: 272819942}
   - component: {fileID: 272819941}
+  - component: {fileID: 272819944}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: checkPoint2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -495,11 +498,11 @@ Transform:
   m_GameObject: {fileID: 272819939}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.42999983, y: 0.09, z: -0.008140087}
+  m_LocalPosition: {x: 6.52, y: 1.24, z: 5.46}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1864367785}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &272819941
 BoxCollider:
@@ -516,7 +519,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -578,6 +581,33 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 272819939}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &272819944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 272819939}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd7d02d873cfdb54fbbc060407d25671, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EventGameToolkit.Runtime::InputCheckpointZone
+  triggerObjectTag: Player
+  oneTimeUse: 0
+  saveFullState: 0
+  spawnOffset: {x: 0, y: 0, z: 0}
+  useCheckpointRotation: 0
+  checkpointManager: {fileID: 0}
+  visualEffect: {fileID: 0}
+  checkpointRenderer: {fileID: 0}
+  activatedMaterial: {fileID: 2100000, guid: ea1723905dfdb874c8a2013b83dab5a1, type: 2}
+  onCheckpointActivated:
+    m_PersistentCalls:
+      m_Calls: []
+  onCheckpointPositionSaved:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &301756644
 GameObject:
   m_ObjectHideFlags: 0
@@ -894,6 +924,87 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 690014628}
   m_CullTransparentMesh: 1
+--- !u!1 &694890303 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 982044181878859162, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
+  m_PrefabInstance: {fileID: 1231405135}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &694890304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 694890303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 612585906fe82d74ba0da93dbce58ae0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EventGameToolkit.Runtime::CharacterControllerCC
+  moveSpeed: 8
+  maxVelocity: 8
+  speedChangeRate: 10
+  airControlFactor: 0.5
+  enableSprint: 0
+  sprintSpeedMultiplier: 1.5
+  jumpHeight: 1.2
+  jumpTimeout: 0.5
+  groundCheckDistance: 0.1
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  dodgeDistance: 5
+  dodgeSpeed: 20
+  dodgeCooldown: 1
+  allowAirDodge: 0
+  rotationSmoothTime: 0.12
+  controller: {fileID: 0}
+  gravity: -20
+  terminalVelocity: -50
+  groundStickForce: -1.5
+  maxSlopeAngle: 45
+  slopeCheckDistance: 1
+  slopeSlideSpeed: 5
+  platformDetectionMode: 0
+  platformLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  platformTag: Untagged
+  applyVerticalMovement: 1
+  useSpawnPointProviders: 1
+  characterAnimator: {fileID: 0}
+  characterMesh: {fileID: 0}
+  idleTimeBeforeEmote: 0
+  onGrounded:
+    m_PersistentCalls:
+      m_Calls: []
+  onJump:
+    m_PersistentCalls:
+      m_Calls: []
+  onLanding:
+    m_PersistentCalls:
+      m_Calls: []
+  onStartMoving:
+    m_PersistentCalls:
+      m_Calls: []
+  onStopMoving:
+    m_PersistentCalls:
+      m_Calls: []
+  onSteepSlope:
+    m_PersistentCalls:
+      m_Calls: []
+  onDodge:
+    m_PersistentCalls:
+      m_Calls: []
+  onDodgeCooldownReady:
+    m_PersistentCalls:
+      m_Calls: []
+  onTeleport:
+    m_PersistentCalls:
+      m_Calls: []
+  onSpawnPointUsed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &955638383
 GameObject:
   m_ObjectHideFlags: 0
@@ -980,8 +1091,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 955638383}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.016807556, y: 0.9731485, z: -0.07547176, w: -0.21680275}
-  m_LocalPosition: {x: 3.8726254, y: 1.0842096, z: 7.4261694}
+  m_LocalRotation: {x: 0.29548648, y: -0.17637236, z: 0.055603657, w: 0.9372773}
+  m_LocalPosition: {x: 6.7767544, y: 12.962567, z: -17.34248}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1160,6 +1271,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -1213,26 +1325,14 @@ GameObject:
   - component: {fileID: 1192411896}
   - component: {fileID: 1192411895}
   - component: {fileID: 1192411894}
-  - component: {fileID: 1192411893}
+  - component: {fileID: 1192411898}
   m_Layer: 0
-  m_Name: Sphere
+  m_Name: checkPoint1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1192411893
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1192411892}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 89662c2c58c966a4f8c41e7646e84098, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: EventGameToolkit.Runtime::CheckpointSystem.Checkpoint
 --- !u!135 &1192411894
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -1319,12 +1419,39 @@ Transform:
   m_GameObject: {fileID: 1192411892}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.59932, y: 0.95, z: 4.86535}
+  m_LocalPosition: {x: -4.29, y: 0.95, z: -0.41}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1192411898
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1192411892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd7d02d873cfdb54fbbc060407d25671, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EventGameToolkit.Runtime::InputCheckpointZone
+  triggerObjectTag: Player
+  oneTimeUse: 0
+  saveFullState: 0
+  spawnOffset: {x: 0, y: 0, z: 0}
+  useCheckpointRotation: 0
+  checkpointManager: {fileID: 0}
+  visualEffect: {fileID: 0}
+  checkpointRenderer: {fileID: 0}
+  activatedMaterial: {fileID: 2100000, guid: ea1723905dfdb874c8a2013b83dab5a1, type: 2}
+  onCheckpointActivated:
+    m_PersistentCalls:
+      m_Calls: []
+  onCheckpointPositionSaved:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &1231405135
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1336,6 +1463,10 @@ PrefabInstance:
     - target: {fileID: 982044181878859162, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
       propertyPath: m_Name
       value: playerWithCharacterController
+      objectReference: {fileID: 0}
+    - target: {fileID: 3879264973800253335, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
+      propertyPath: m_DefaultActionMap
+      value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 7954006609252710534, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1385,10 +1516,14 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0.535
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6486436437444190957, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 982044181878859162, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 694890304}
   m_SourcePrefab: {fileID: 100100000, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
 --- !u!1 &1318718272
 GameObject:
@@ -1606,129 +1741,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 1774423847}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7e3b9b3011ad47449a736e7446c4e94, type: 3}
+  m_Script: {fileID: 11500000, guid: d700c578f02b9704099d2c09a89f9fe9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: EventGameToolkit.Runtime::CheckpointSystem.CheckpointManager
---- !u!1 &1864367783
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1864367785}
-  - component: {fileID: 1864367784}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1864367784
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1864367783}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad95d1105ab98dd44a8cc98a975504ae, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: EventGameToolkit.Runtime::ActionAnimateTransform
-  targetTransform: {fileID: 0}
-  duration: 3
-  durationRandomness: 0
-  curveMappings:
-  - property: 4
-    curve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 0.116524085
-        value: 0.9976472
-        inSlope: 0.45406377
-        outSlope: -0.031454116
-        tangentMode: 1
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 0.088575915
-      - serializedVersion: 3
-        time: 0.9090909
-        value: 1.0009234
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    minValue: 0
-    maxValue: 90
-    mode: 0
-    enabled: 1
-    initialValue: 0
-  playOnStart: 1
-  loop: 1
-  pingPong: 0
-  usePhysicsUpdate: 0
-  startDelay: 0
-  startDelayRandomness: 0
-  loopDelay: 0
-  useUnscaledTime: 0
-  isPlaying: 0
-  currentTime: 0
-  debugEvents: 0
-  onAnimationStart:
+  m_EditorClassIdentifier: EventGameToolkit.Runtime::GameCheckpointManager
+  persistAcrossScenes: 1
+  saveScore: 0
+  scoreManager: {fileID: 0}
+  saveHealth: 0
+  healthManager: {fileID: 0}
+  onCheckpointSaved:
     m_PersistentCalls:
       m_Calls: []
-  onAnimationComplete:
+  onCheckpointRestored:
     m_PersistentCalls:
       m_Calls: []
-  onAnimationLoop:
+  onPositionSaved:
     m_PersistentCalls:
       m_Calls: []
-  onAnimationUpdate:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!4 &1864367785
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1864367783}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6.09, y: 1.15, z: 5.46814}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 272819940}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1867609274
 GameObject:
   m_ObjectHideFlags: 0
@@ -1824,6 +1853,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -1877,4 +1907,4 @@ SceneRoots:
   - {fileID: 500711540}
   - {fileID: 1019942057}
   - {fileID: 1192411897}
-  - {fileID: 1864367785}
+  - {fileID: 272819940}

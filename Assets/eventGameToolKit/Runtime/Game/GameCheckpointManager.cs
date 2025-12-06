@@ -236,6 +236,28 @@ public class GameCheckpointManager : MonoBehaviour, ISpawnPointProvider
     }
 
     /// <summary>
+    /// Called by ActionRespawnPlayer when full state restoration is requested.
+    /// (Fixes error CS1061: '...RestoreAll' not found)
+    /// </summary>
+    public void RestoreAll()
+    {
+        // A full restore should restore game data AND teleport the player.
+        RestoreScore();
+        RestoreHealth();
+        TeleportPlayerToCheckpoint();
+    }
+
+    /// <summary>
+    /// Called by ActionRespawnPlayer when only minimal restoration is requested.
+    /// (Fixes error CS1061: '...RestoreCheckpoint' not found)
+    /// </summary>
+    public void RestoreCheckpoint()
+    {
+        // A minimal restore only teleports the player, leaving score/health as they are.
+        TeleportPlayerToCheckpoint();
+    }
+
+    /// <summary>
     /// Restore saved health to the health manager.
     /// Called automatically when player spawns at checkpoint if saveHealth is enabled.
     /// </summary>

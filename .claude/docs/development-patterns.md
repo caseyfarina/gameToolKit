@@ -904,24 +904,79 @@ public void Spawn()
 
 ## DOTween Usage
 
-**All animations use DOTween FREE**:
+**CRITICAL: This project uses DOTween FREE, not DOTween Pro.**
+
+### Asmdef Constraint
+
+**IMPORTANT:** Due to assembly definition (asmdef) conflicts, avoid DOTween module-specific extensions (Audio, Physics, Sprites) in package code. These modules exist in separate assemblies that would need to be referenced in the package's asmdef, creating unnecessary dependencies.
+
+**Use `DOTween.To()` instead** - it's part of core DOTween, works identically, and has no assembly reference issues.
+
+### Avoid These (asmdef conflicts)
+
+| Module Extension | Use Instead |
+|------------------|-------------|
+| `audioSource.DOFade()` | `DOTween.To(() => source.volume, x => source.volume = x, target, duration)` |
+| `audioSource.DOPitch()` | `DOTween.To(() => source.pitch, x => source.pitch = x, target, duration)` |
+| `rigidbody.DOMove()` | `transform.DOMove()` or `DOTween.To()` |
+| `spriteRenderer.DOFade()` | `DOTween.To(() => sr.color, x => sr.color = x, target, duration)` |
+
+### Safe to Use (Core DOTween)
 
 ```csharp
-// ✅ CORRECT - DOTween FREE compatible
-DOTween.To(
-    () => image.color,
-    x => image.color = x,
-    targetColor,
-    duration
-);
+// Transform tweens (core - no module needed)
+transform.DOMove(target, duration);
+transform.DORotate(euler, duration);
+transform.DOScale(scale, duration);
+transform.DOPunchScale(punch, duration);
 
-// ❌ WRONG - Requires DOTween Pro
-image.DOFade(0f, duration);
+// RectTransform tweens (core)
+rectTransform.DOAnchorPos(pos, duration);
+
+// UI tweens (core)
+canvasGroup.DOFade(alpha, duration);
+image.DOFade(alpha, duration);
+image.DOColor(color, duration);
+
+// Generic value tweening - UNIVERSAL, works for ANY value type
+DOTween.To(() => myValue, x => myValue = x, targetValue, duration);
+
+// Sequences
+DOTween.Sequence()
+    .Append(transform.DOMove(pos1, 1f))
+    .Join(transform.DORotate(rot1, 1f))
+    .AppendCallback(() => Debug.Log("Done!"));
+
+// Tween modifiers
+tween.SetUpdate(true);  // Unscaled time
+tween.SetEase(Ease.OutQuad);
+tween.OnComplete(() => { });
+tween.Kill();
 ```
 
-**Why**: Students don't need to purchase DOTween Pro.
+### AudioSource Fading Pattern
 
-See [Changelog](changelog.md) for DOTween FREE refactoring details.
+Standard pattern used throughout the codebase:
+
+```csharp
+private Tween FadeAudioSource(AudioSource source, float targetVolume, float duration)
+{
+    return DOTween.To(() => source.volume, x => source.volume = x, targetVolume, duration);
+}
+
+// Usage
+musicFadeTween = FadeAudioSource(musicSource, 0f, 2f)
+    .SetUpdate(true)
+    .OnComplete(() => musicSource.Stop());
+```
+
+### DOTween Pro Only (DO NOT USE)
+
+- `text.DOText()` (TextMesh Pro module)
+- Path tweening
+- DeAudio, DeUnityExtended
+
+See [Changelog](changelog.md) for DOTween-related updates.
 
 ---
 
