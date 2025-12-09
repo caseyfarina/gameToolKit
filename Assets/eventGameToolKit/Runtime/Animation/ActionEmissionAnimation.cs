@@ -58,6 +58,7 @@ public class ActionEmissionAnimation : MonoBehaviour
     private Tween emissionTween;
     private float currentProgress;
     private bool isValidSetup = false;
+    private bool emissionEnabled = false;
     private static readonly int EmissionColorID = Shader.PropertyToID("_EmissionColor");
 
     private void Awake()
@@ -139,8 +140,12 @@ public class ActionEmissionAnimation : MonoBehaviour
         // Kill any existing tween
         emissionTween?.Kill();
 
-        // Enable emission keyword if not already enabled
-        targetMaterial.EnableKeyword("_EMISSION");
+        // Enable emission keyword once (avoid repeated calls)
+        if (!emissionEnabled)
+        {
+            targetMaterial.EnableKeyword("_EMISSION");
+            emissionEnabled = true;
+        }
 
         // Reset progress
         currentProgress = 0f;
