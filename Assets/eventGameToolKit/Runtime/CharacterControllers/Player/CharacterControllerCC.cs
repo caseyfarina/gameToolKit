@@ -13,6 +13,21 @@ public enum PlatformDetectionMode
 }
 
 /// <summary>
+/// Movement space modes for character controller input interpretation
+/// </summary>
+public enum MovementSpace
+{
+    /// <summary>Default - movement relative to main camera (standard third-person controls)</summary>
+    CameraRelative,
+    /// <summary>Movement relative to world axes (Up = +Z, Right = +X)</summary>
+    WorldSpace,
+    /// <summary>Movement relative to a custom Transform reference</summary>
+    TransformRelative,
+    /// <summary>Tank controls - left/right rotates character, forward/back moves in facing direction</summary>
+    TankControls
+}
+
+/// <summary>
 /// CharacterController-based humanoid character controller with slope detection, dodge mechanics, 
 /// animation support, and built-in moving platform support.
 /// 
@@ -83,6 +98,14 @@ public class CharacterControllerCC : MonoBehaviour
     [Header("Spawn Settings")]
     [Tooltip("Check for spawn point providers (checkpoints, spawn managers) on Awake")]
     [SerializeField] private bool useSpawnPointProviders = true;
+
+    [Header("Movement Space")]
+    [Tooltip("How input directions are interpreted. CameraRelative (default) uses the main camera for direction.")]
+    [SerializeField] private MovementSpace movementSpace = MovementSpace.CameraRelative;
+    [Tooltip("Reference Transform for TransformRelative mode. If null, falls back to WorldSpace.")]
+    [SerializeField] private Transform movementReference;
+    [Tooltip("Turn speed in degrees per second for TankControls mode.")]
+    [SerializeField] private float tankTurnSpeed = 180f;
 
     [Header("Animation")]
     [SerializeField] private Animator characterAnimator;
@@ -475,22 +498,78 @@ public class CharacterControllerCC : MonoBehaviour
 
     #region Movement Handling
 
+    /// <summary>
+    /// Calculates world-space movement direction based on the configured MovementSpace.
+    /// </summary>
+    private Vector3 GetMovementDirection(Vector2 input)
+    {
+        if (input == Vector2.zero) return Vector3.zero;
+
+        Vector3 forward, right;
+
+        switch (movementSpace)
+        {
+            case MovementSpace.WorldSpace:
+                forward = Vector3.forward;
+                right = Vector3.right;
+                break;
+
+            case MovementSpace.TransformRelative:
+                if (movementReference != null)
+                {
+                    forward = movementReference.forward;
+                    right = movementReference.right;
+                }
+                else
+                {
+                    // Fallback to world space if no reference set
+                    forward = Vector3.forward;
+                    right = Vector3.right;
+                }
+                break;
+
+            case MovementSpace.TankControls:
+                // Tank controls: only forward/back movement, left/right is for turning
+                forward = transform.forward;
+                forward.y = 0f;
+                forward.Normalize();
+                // Only use Y input (forward/back), ignore X (used for rotation)
+                return forward * input.y;
+
+            case MovementSpace.CameraRelative:
+            default:
+                if (mainCamera != null)
+                {
+                    forward = mainCamera.transform.forward;
+                    right = mainCamera.transform.right;
+                }
+                else
+                {
+                    forward = Vector3.forward;
+                    right = Vector3.right;
+                }
+                break;
+        }
+
+        // Flatten to horizontal plane and normalize
+        forward.y = 0f;
+        right.y = 0f;
+        forward.Normalize();
+        right.Normalize();
+
+        return (right * input.x + forward * input.y).normalized;
+    }
+
     private void HandleDodge()
     {
         if (dodgeRequested)
         {
             dodgeRequested = false;
-            Vector3 inputDirection = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
+            Vector3 targetDirection = GetMovementDirection(moveInput);
 
-            if (inputDirection != Vector3.zero)
+            if (targetDirection != Vector3.zero)
             {
-                Vector3 cameraForward = mainCamera.transform.forward;
-                Vector3 cameraRight = mainCamera.transform.right;
-                cameraForward.y = 0f;
-                cameraRight.y = 0f;
-                cameraForward.Normalize();
-                cameraRight.Normalize();
-                dodgeDirection = (cameraRight * inputDirection.x + cameraForward * inputDirection.z).normalized;
+                dodgeDirection = targetDirection;
             }
             else if (lastMoveDirection != Vector3.zero)
             {
@@ -534,10 +613,10 @@ public class CharacterControllerCC : MonoBehaviour
     {
         if (isDodging) return;
 
-        Vector3 inputDirection = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
+        Vector3 targetDirection = GetMovementDirection(moveInput);
         float targetSpeed = moveSpeed;
 
-        if (inputDirection != Vector3.zero)
+        if (targetDirection != Vector3.zero)
         {
             float effectiveMaxVelocity = maxVelocity;
 
@@ -549,14 +628,6 @@ public class CharacterControllerCC : MonoBehaviour
 
             if (!isGrounded) targetSpeed *= airControlFactor;
 
-            Vector3 cameraForward = mainCamera.transform.forward;
-            Vector3 cameraRight = mainCamera.transform.right;
-            cameraForward.y = 0f;
-            cameraRight.y = 0f;
-            cameraForward.Normalize();
-            cameraRight.Normalize();
-
-            Vector3 targetDirection = (cameraRight * inputDirection.x + cameraForward * inputDirection.z).normalized;
             Vector3 targetVelocity = targetDirection * targetSpeed;
             Vector3 currentHorizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
 
@@ -668,18 +739,21 @@ public class CharacterControllerCC : MonoBehaviour
 
     private void HandleRotation()
     {
-        Vector3 inputDirection = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
-
-        if (inputDirection != Vector3.zero)
+        // TankControls uses left/right input for direct rotation
+        if (movementSpace == MovementSpace.TankControls)
         {
-            Vector3 cameraForward = mainCamera.transform.forward;
-            Vector3 cameraRight = mainCamera.transform.right;
-            cameraForward.y = 0f;
-            cameraRight.y = 0f;
-            cameraForward.Normalize();
-            cameraRight.Normalize();
+            if (moveInput.x != 0f)
+            {
+                float turnAmount = moveInput.x * tankTurnSpeed * Time.deltaTime;
+                transform.Rotate(0f, turnAmount, 0f);
+            }
+            return;
+        }
 
-            Vector3 targetDirection = (cameraRight * inputDirection.x + cameraForward * inputDirection.z).normalized;
+        Vector3 targetDirection = GetMovementDirection(moveInput);
+
+        if (targetDirection != Vector3.zero)
+        {
             float targetRotation = Mathf.Atan2(targetDirection.x, targetDirection.z) * Mathf.Rad2Deg;
 
             float rotation = Mathf.SmoothDampAngle(
@@ -771,6 +845,21 @@ public class CharacterControllerCC : MonoBehaviour
     public void SetSlopeSlideSpeed(float newSlideSpeed) => slopeSlideSpeed = newSlideSpeed;
     public void ResetVelocity() => velocity = Vector3.zero;
 
+    /// <summary>
+    /// Sets how input directions are interpreted (CameraRelative, WorldSpace, TransformRelative, TankControls).
+    /// </summary>
+    public void SetMovementSpace(MovementSpace space) => movementSpace = space;
+
+    /// <summary>
+    /// Sets the reference Transform for TransformRelative movement mode.
+    /// </summary>
+    public void SetMovementReference(Transform reference) => movementReference = reference;
+
+    /// <summary>
+    /// Sets the turn speed for TankControls mode (degrees per second).
+    /// </summary>
+    public void SetTankTurnSpeed(float turnSpeed) => tankTurnSpeed = turnSpeed;
+
     #endregion
 
     #region Public Properties
@@ -785,6 +874,8 @@ public class CharacterControllerCC : MonoBehaviour
     public float CurrentSpeed => new Vector3(velocity.x, 0f, velocity.z).magnitude;
     public bool IsSprinting => isSprinting && enableSprint;
     public Vector3 Velocity => velocity;
+    public MovementSpace CurrentMovementSpace => movementSpace;
+    public Transform MovementReference => movementReference;
 
     #endregion
 

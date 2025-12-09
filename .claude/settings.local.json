@@ -13,7 +13,11 @@
       "Bash(cmd //c robocopy \"F:\\Unity Projects 2025\\gameToolKitFarina\\gameToolKit\\Assets\\eventGameToolKit\" \"F:\\Unity Projects 2025\\eventGameToolKit-Package\" //MIR //XD .git)",
       "Bash(python parse_events.py:*)",
       "Bash(wc:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(git clone:*)",
+      "Bash(cmd:*)",
+      "Bash(dir \"C:\\Users\\casey\\Documents\\unityProjects\" /AD /B)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []

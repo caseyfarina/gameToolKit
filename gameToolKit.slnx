@@ -1,0 +1,9 @@
+﻿<Solution>
+  <Project Path="EventGameToolkit.Editor.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="EventGameToolkit.Runtime.csproj" />
+  <Project Path="Unity.RenderPipelines.Core.Samples.Editor.csproj" />
+  <Project Path="DOTween.Modules.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="Unity.RenderPipelines.Core.Samples.Runtime.csproj" />
+</Solution>
