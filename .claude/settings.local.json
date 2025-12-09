@@ -17,7 +17,8 @@
       "Bash(git clone:*)",
       "Bash(cmd:*)",
       "Bash(dir \"C:\\Users\\casey\\Documents\\unityProjects\" /AD /B)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(dir \"C:\\Users\\casey\\Documents\\unityProjects\" //AD //B)"
     ],
     "deny": [],
     "ask": []
