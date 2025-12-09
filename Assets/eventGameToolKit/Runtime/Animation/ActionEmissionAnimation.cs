@@ -57,36 +57,59 @@ public class ActionEmissionAnimation : MonoBehaviour
     private Material targetMaterial;
     private Tween emissionTween;
     private float currentProgress;
+    private bool isValidSetup = false;
     private static readonly int EmissionColorID = Shader.PropertyToID("_EmissionColor");
 
     private void Awake()
     {
+        ValidateSetup();
+    }
+
+    private void ValidateSetup()
+    {
+        isValidSetup = false;
+
         if (targetRenderer == null)
         {
             targetRenderer = GetComponent<Renderer>();
         }
 
-        if (targetRenderer != null)
+        if (targetRenderer == null)
         {
-            // Get material instance to avoid modifying shared material
-            Material[] materials = targetRenderer.materials;
-            if (materialIndex >= 0 && materialIndex < materials.Length)
-            {
-                targetMaterial = materials[materialIndex];
-            }
-            else
-            {
-                Debug.LogWarning($"ActionEmissionAnimation: Material index {materialIndex} out of range on {gameObject.name}");
-                if (materials.Length > 0)
-                {
-                    targetMaterial = materials[0];
-                }
-            }
+            Debug.LogWarning($"ActionEmissionAnimation: No Renderer found on {gameObject.name}. Add a Renderer component or assign one in the Inspector.");
+            return;
         }
-        else
+
+        // Get material instance to avoid modifying shared material
+        Material[] materials = targetRenderer.materials;
+        if (materials.Length == 0)
         {
-            Debug.LogWarning($"ActionEmissionAnimation: No Renderer found on {gameObject.name}");
+            Debug.LogWarning($"ActionEmissionAnimation: Renderer on {gameObject.name} has no materials assigned.");
+            return;
         }
+
+        if (materialIndex < 0 || materialIndex >= materials.Length)
+        {
+            Debug.LogWarning($"ActionEmissionAnimation: Material index {materialIndex} out of range on {gameObject.name}. Using index 0 instead.");
+            materialIndex = 0;
+        }
+
+        targetMaterial = materials[materialIndex];
+
+        if (targetMaterial == null)
+        {
+            Debug.LogWarning($"ActionEmissionAnimation: Material at index {materialIndex} is null on {gameObject.name}.");
+            return;
+        }
+
+        // Check if material has emission property
+        if (!targetMaterial.HasProperty(EmissionColorID))
+        {
+            Debug.LogWarning($"ActionEmissionAnimation: Material '{targetMaterial.name}' on {gameObject.name} does not have an _EmissionColor property. Make sure you're using a shader that supports emission (e.g., URP/Lit).");
+            return;
+        }
+
+        isValidSetup = true;
     }
 
     private void Start()
@@ -107,9 +130,9 @@ public class ActionEmissionAnimation : MonoBehaviour
     /// </summary>
     public void Play()
     {
-        if (targetMaterial == null)
+        if (!isValidSetup)
         {
-            Debug.LogWarning($"ActionEmissionAnimation: No material to animate on {gameObject.name}");
+            // Silently fail - warning was already logged in ValidateSetup
             return;
         }
 
@@ -180,13 +203,14 @@ public class ActionEmissionAnimation : MonoBehaviour
     /// </summary>
     public void SetIntensity(float normalizedIntensity)
     {
+        if (!isValidSetup) return;
         emissionTween?.Kill();
         ApplyEmission(Mathf.Clamp01(normalizedIntensity));
     }
 
     private void ApplyEmission(float progress)
     {
-        if (targetMaterial == null) return;
+        if (!isValidSetup || targetMaterial == null) return;
 
         // Sample the curve at current progress
         float curveValue = intensityCurve.Evaluate(progress);
@@ -232,4 +256,9 @@ public class ActionEmissionAnimation : MonoBehaviour
     /// Returns the current emission intensity (0-1 normalized)
     /// </summary>
     public float CurrentIntensity => intensityCurve.Evaluate(currentProgress);
+
+    /// <summary>
+    /// Returns true if the component is properly configured (has valid Renderer and material with emission support)
+    /// </summary>
+    public bool IsValidSetup => isValidSetup;
 }
