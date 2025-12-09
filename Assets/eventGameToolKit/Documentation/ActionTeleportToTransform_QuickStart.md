@@ -236,16 +236,6 @@ Wire: `onTeleportStarted → PlayChargingSound()`
 
 ---
 
-### Scenario 4: Random Destination Teleporter
-
-**Goal:** Teleport to one of several random locations.
-
-**Setup:**
-1. Create multiple exit Transforms
-2. Create a script that picks random Transform
-3. Call `SetDestination(randomTransform)` then `TeleportPlayer()`
-
----
 
 ### Scenario 5: Teleporter with UI Feedback
 
