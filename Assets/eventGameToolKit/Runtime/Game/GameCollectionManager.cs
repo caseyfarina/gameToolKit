@@ -6,19 +6,30 @@ using UnityEngine.Events;
 /// <summary>
 /// Tracks a numeric value (score, coins, items) with threshold-based event triggers.
 /// Does NOT handle display - wire onValueChanged to GameUIManager for visual updates.
+///
+/// MULTI-SCENE SUPPORT: Optionally assign an IntVariable asset to persist value across scene loads.
+/// If no IntVariable is assigned, value is stored locally (single-scene behavior).
+///
 /// Common use: Score systems, collectible counters, resource tracking, or objective progress meters.
 /// </summary>
 public class GameCollectionManager : MonoBehaviour
 {
     [Header("Value Settings")]
-    [Tooltip("Current value (score, coins, items, etc.)")]
-    [SerializeField] private int currentValue = 0;
+    [Tooltip("Starting value for single-scene mode (score, coins, items, etc.)")]
+    [SerializeField] private int startingValue = 0;
 
     [Tooltip("Minimum allowed value (0 = no minimum)")]
     [SerializeField] private int minValue = 0;
 
     [Tooltip("Maximum allowed value (0 = no maximum)")]
     [SerializeField] private int maxValue = 0;
+
+    [Header("Multi-Scene Persistence (Optional)")]
+    [Tooltip("Optional: Assign an IntVariable asset to persist value across scene loads. Leave empty for single-scene games.")]
+    [SerializeField] private IntVariable valueVariable;
+
+    // Local storage for single-scene mode
+    private int localValue;
 
     [Header("Threshold Settings")]
     [Tooltip("Threshold value for event triggers")]
@@ -58,9 +69,32 @@ public class GameCollectionManager : MonoBehaviour
 
     private bool wasAboveThreshold = false;
 
+    /// <summary>
+    /// Current value. Uses IntVariable if assigned, otherwise local storage.
+    /// </summary>
+    private int currentValue
+    {
+        get => valueVariable != null ? valueVariable.Value : localValue;
+        set
+        {
+            if (valueVariable != null)
+                valueVariable.Value = value;
+            else
+                localValue = value;
+        }
+    }
+
     private void Start()
     {
-        // Initialize threshold state based on starting value
+        // Initialize value based on mode
+        if (valueVariable == null)
+        {
+            // Single-scene mode: use local starting value
+            localValue = startingValue;
+        }
+        // Multi-scene mode: IntVariable handles its own initialization from defaultValue
+
+        // Initialize threshold state based on current value
         wasAboveThreshold = currentValue >= threshold;
 
         // Fire initial value event to update UI on start

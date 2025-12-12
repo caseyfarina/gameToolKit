@@ -4,14 +4,25 @@ using UnityEngine.Events;
 /// <summary>
 /// Manages health with damage and healing mechanics, firing events at critical thresholds.
 /// Does NOT handle display - wire onHealthChanged to GameUIManager for visual updates.
+///
+/// MULTI-SCENE SUPPORT: Optionally assign an IntVariable asset to persist health across scene loads.
+/// If no IntVariable is assigned, health is stored locally (single-scene behavior).
+///
 /// Common use: Player or enemy health systems, destructible objects, shield mechanics, or boss health bars.
 /// </summary>
 public class GameHealthManager : MonoBehaviour
 {
     [Header("Health Settings")]
     [SerializeField] private int maxHealth = 100;
-    [SerializeField] private int currentHealth = 100;
+    [SerializeField] private int startingHealth = 100;
     [SerializeField] private int lowHealthThreshold = 25;
+
+    [Header("Multi-Scene Persistence (Optional)")]
+    [Tooltip("Optional: Assign an IntVariable asset to persist health across scene loads. Leave empty for single-scene games.")]
+    [SerializeField] private IntVariable healthVariable;
+
+    // Local storage for single-scene mode
+    private int localHealth;
 
     [Header("Health Events")]
     /// <summary>
@@ -46,6 +57,21 @@ public class GameHealthManager : MonoBehaviour
     private bool isLowHealth = false;
     private bool isDead = false;
 
+    /// <summary>
+    /// Current health value. Uses IntVariable if assigned, otherwise local storage.
+    /// </summary>
+    private int currentHealth
+    {
+        get => healthVariable != null ? healthVariable.Value : localHealth;
+        set
+        {
+            if (healthVariable != null)
+                healthVariable.Value = value;
+            else
+                localHealth = value;
+        }
+    }
+
     public int MaxHealth => maxHealth;
     public int CurrentHealth => currentHealth;
     public int LowHealthThreshold => lowHealthThreshold;
@@ -55,7 +81,20 @@ public class GameHealthManager : MonoBehaviour
 
     private void Start()
     {
-        // Ensure health starts within valid range
+        // Initialize health based on mode
+        if (healthVariable != null)
+        {
+            // Multi-scene mode: IntVariable handles its own initialization from defaultValue
+            // Only set starting health if the variable hasn't been modified yet
+            // (i.e., this is the first scene load, not a scene transition)
+        }
+        else
+        {
+            // Single-scene mode: use local starting health
+            localHealth = startingHealth;
+        }
+
+        // Ensure health is within valid range
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
         CheckHealthStates();
         // Fire initial health event

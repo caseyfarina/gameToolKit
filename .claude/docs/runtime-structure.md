@@ -305,11 +305,38 @@ Controllers for player and enemy characters.
 
 ---
 
-## Game Management Components (9 scripts)
+## Game Management Components (11 scripts)
 
 **Location**: `Runtime/Game/`
 
-Manager systems for health, score, audio, state, etc.
+Manager systems for health, score, audio, state, scene loading, etc.
+
+### GameSceneManager.cs
+- **NEW**: Multi-scene game management with persistent player/UI
+- Additive scene loading for seamless transitions
+- Bootstrap scene pattern support
+- Automatic previous scene unloading
+- Pre/post load delays for fade transitions
+- SpawnPoint integration for player positioning
+- DontDestroyOnLoad singleton pattern
+- LoadScene(sceneName) - load with default spawn point
+- LoadSceneAtSpawnPoint(sceneName, spawnId) - load with specific entry point
+- LoadSceneSingle(sceneName) - non-additive loading (for menus)
+- ReloadCurrentScene() - restart current level
+- 5 UnityEvents: onSceneLoadStarted, onSceneLoadCompleted, onSceneLoadFailed, onSceneLoading, onLoadProgress
+- See [Multi-Scene Setup Quick Start](../MultiSceneSetup_QuickStart.md)
+
+### SpawnPoint.cs
+- **NEW**: Marks spawn locations in level scenes
+- Implements ISpawnPointProvider (lower priority than checkpoints)
+- Optional Spawn ID for multiple entry points per scene
+- Default spawn point flag for automatic selection
+- Spawn offset from transform position
+- Priority system: Checkpoint > Specific SpawnPoint ID > Default SpawnPoint
+- Static RequestSpawnId() for GameSceneManager integration
+- Gizmos show player silhouette and direction
+- 1 UnityEvent: onPlayerSpawned
+- See [Multi-Scene Setup Quick Start](../MultiSceneSetup_QuickStart.md)
 
 ### GameCollectionManager.cs
 - Score/collection system
@@ -494,7 +521,8 @@ Core interfaces for extensible systems.
 
 ### ISpawnPointProvider
 - Interface for any system that can provide spawn points
-- Implemented by GameCheckpointManager, but can be used by:
+- Implemented by GameCheckpointManager and SpawnPoint
+- Can also be used for:
   - Wave spawn systems
   - Multiplayer spawn selectors
   - Random spawn point managers
@@ -513,20 +541,20 @@ Core interfaces for extensible systems.
 
 ## Script Count Summary
 
-**Total: 52 Scripts + 1 Interface**
+**Total: 54 Scripts + 1 Interface**
 
 - **Input Components**: 8 scripts
 - **Action Components**: 16 scripts (+ 1 helper)
 - **Animation Components**: 1 script
 - **Character Controllers**: 6 scripts
-- **Game Managers**: 9 scripts
+- **Game Managers**: 11 scripts (includes GameSceneManager, SpawnPoint)
 - **Physics Components**: 5 scripts
 - **Puzzle Components**: 2 scripts
 - **UI Components**: 1 script
 - **Utilities**: 3 scripts
 - **Interfaces**: 1 interface (ISpawnPointProvider)
 
-**XML Documentation Compliance**: 46/46 educational scripts (100%)
+**XML Documentation Compliance**: 48/48 educational scripts (100%)
 (Utilities excluded from doc generator)
 
 ---
