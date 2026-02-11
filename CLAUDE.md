@@ -231,7 +231,7 @@ Example generators are available in **Tools > Examples** menu. They follow consi
 
 ## Quick Reference
 
-**46 Educational Scripts (100% XML Documented)**
+**47 Educational Scripts (100% XML Documented)**
 - 8 Input components
 - 16 Action components
 - 7 Physics components
@@ -239,7 +239,7 @@ Example generators are available in **Tools > Examples** menu. They follow consi
 - 2 Puzzle components
 - 1 UI component
 - 1 Animation component
-- 2 Root character controllers
+- 3 Root character controllers
 
 For complete script inventory with features, see **[Runtime Structure](.claude/docs/runtime-structure.md)**.
 

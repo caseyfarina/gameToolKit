@@ -4,6 +4,65 @@ Recent updates, refactorings, and improvements to the eventGameToolKit.
 
 ---
 
+## February 2026 - First-Person Character Controller
+
+### New: CharacterControllerFP
+
+Added a complete first-person character controller to complement the existing third-person CharacterControllerCC. Enables students to create FPS games, walking simulators, exploration games, and horror games using the same no-code UnityEvent pattern.
+
+#### Files Added
+
+1. **CharacterControllerFP.cs** (`Runtime/CharacterControllers/Player/`)
+   - CharacterController-based first-person controller
+   - Mouse and gamepad look with separate sensitivity settings
+   - Camera pitch/yaw with configurable vertical look limit
+   - Cursor lock/unlock management with toggle key
+   - Smooth movement with acceleration/deceleration (character-relative)
+   - Optional sprint functionality
+   - Full slope detection, gravity, and moving platform support
+   - Spawn point provider integration (same as CharacterControllerCC)
+   - Animator integration with 5 parameters (Speed, Grounded, VerticalVelocity, IsWalking, IsSprinting)
+   - 9 UnityEvents including onCursorLockChanged(bool)
+   - TeleportTo() for portals and respawns
+   - Debug gizmos for ground check, platform detection, slope normal, and camera direction
+
+2. **FirstPersonPatternSetup.cs** (`Editor/SetupGenerators/`)
+   - Setup generator: Tools > Setup Patterns > First-Person Controller Pattern
+   - Creates complete first-person player with camera child at eye height
+   - Generates ground plane, 3 obstacles, and an elevated platform with ramp
+   - Auto-configures CharacterController, camera near clip plane, and field of view
+
+3. **CharacterControllerFP_Documentation.md** (`Documentation/`)
+   - Complete setup guide following CharacterControllerCC_Documentation.md structure
+   - Quick Start with setup generator and manual options
+   - Parameter reference tables for all settings
+   - Cinemachine POV camera integration notes
+   - 4 common scenarios (walking sim, FPS, exploration, menu toggle)
+   - 8 troubleshooting entries
+   - Best practices and technical notes
+
+#### Key Differences from CharacterControllerCC
+
+| Feature | CharacterControllerCC | CharacterControllerFP |
+|---------|----------------------|----------------------|
+| Perspective | Third-person | First-person |
+| Look System | Rotation via movement direction | Mouse/gamepad look input |
+| Movement Space | Camera-relative, world, tank, custom | Always character-relative |
+| Dodge Mechanic | Yes | No |
+| Idle Emote Timer | Yes | No |
+| Cursor Management | No | Yes (lock/unlock/toggle) |
+| Camera | External (Cinemachine recommended) | Child Transform at eye height |
+
+#### Educational Impact
+
+- Students can now create first-person games using familiar no-code patterns
+- Reuses same UnityEvent architecture as all other toolkit components
+- Includes setup generator for instant playable setup
+- Same spawn point and platform systems ensure consistency across controller types
+- Script count: 47 educational scripts (100% XML documented)
+
+---
+
 ## December 2025 - Checkpoint System Replacement with ISpawnPointProvider
 
 ### Complete Checkpoint System Overhaul

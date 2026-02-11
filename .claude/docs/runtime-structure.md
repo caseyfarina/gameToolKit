@@ -14,7 +14,7 @@ Runtime/
 │   ├── Scene/           # Scene management
 │   └── Spawning/        # Object instantiation
 ├── Animation/           # Transform animations (1 script)
-├── CharacterControllers/ # Player and enemy controllers (6 scripts)
+├── CharacterControllers/ # Player and enemy controllers (7 scripts)
 │   ├── Enemy/           # AI enemy controllers
 │   └── Player/          # Player controllers
 ├── Game/                # Game managers (9 scripts)
@@ -238,15 +238,35 @@ Event targets that perform actions when triggered.
 
 ---
 
-## Character Controllers (6 scripts)
+## Character Controllers (7 scripts)
 
 **Location**: `Runtime/CharacterControllers/`
 
 Controllers for player and enemy characters.
 
-### Player Controllers (4 scripts)
+### Player Controllers (5 scripts)
 
 **Location**: `CharacterControllers/Player/`
+
+#### CharacterControllerFP.cs
+- CharacterController-based first-person controller
+- **Auto-requires**: CharacterController + PlayerInput components
+- **Auto-configures**: PlayerInput with "Player" action map via Reset()
+- **Spawn System**: Checks for ISpawnPointProvider in Awake() before physics runs
+- Mouse and gamepad look with separate sensitivity settings
+- Camera pitch (up/down) on camera Transform, yaw (left/right) on character body
+- Vertical look limit prevents over-rotation
+- Smooth movement with acceleration/deceleration (character-relative forward/strafe)
+- Optional sprint functionality with speed multiplier
+- Height-based jumping with physics formula and anti-spam timeout
+- Robust slope detection with automatic sliding on steep surfaces
+- Moving platform support (Tag/Layer/Both detection modes)
+- Cursor lock/unlock management with toggle key and events
+- Animator integration with 5 parameters (Speed, Grounded, VerticalVelocity, IsWalking, IsSprinting)
+- TeleportTo() method for portals, cutscenes, respawns
+- 9 UnityEvents for no-code interaction (includes onCursorLockChanged)
+- Extensive debug gizmos
+- **Documentation**: See CharacterControllerFP_Documentation.md
 
 #### CharacterControllerCC.cs
 - CharacterController-based humanoid controller (Unity TPC style)
@@ -513,12 +533,12 @@ Core interfaces for extensible systems.
 
 ## Script Count Summary
 
-**Total: 52 Scripts + 1 Interface**
+**Total: 53 Scripts + 1 Interface**
 
 - **Input Components**: 8 scripts
 - **Action Components**: 16 scripts (+ 1 helper)
 - **Animation Components**: 1 script
-- **Character Controllers**: 6 scripts
+- **Character Controllers**: 7 scripts
 - **Game Managers**: 9 scripts
 - **Physics Components**: 5 scripts
 - **Puzzle Components**: 2 scripts
@@ -526,7 +546,7 @@ Core interfaces for extensible systems.
 - **Utilities**: 3 scripts
 - **Interfaces**: 1 interface (ISpawnPointProvider)
 
-**XML Documentation Compliance**: 46/46 educational scripts (100%)
+**XML Documentation Compliance**: 47/47 educational scripts (100%)
 (Utilities excluded from doc generator)
 
 ---
