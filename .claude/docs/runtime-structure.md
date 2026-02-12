@@ -30,7 +30,7 @@ Runtime/
 
 ---
 
-## Input Components (8 scripts)
+## Input Components (9 scripts)
 
 **Location**: `Runtime/Input/`
 
@@ -72,11 +72,18 @@ Event sources triggered by player input or game state.
 
 ### InputMouseInteraction.cs
 - Mouse-based interaction system using New Input System
-- Two detection modes: ScreenMouse (free cursor) and CenterScreen (locked cursor / FPS)
+- Raycasts from mouse cursor position (requires free/visible cursor)
 - Click, hover, enter/exit detection via Physics.Raycast
-- Independent cursor appearance control (Visible/Invisible, custom cursor texture)
-- Works with CharacterControllerFP (CenterScreen mode bypasses CursorLockMode.Locked)
-- Visual feedback: material swap, scale animation with easing
+- Visual feedback: material swap, scale animation with DOTween
+- 6 UnityEvents: onMouseClick, onMouseDown, onMouseUp, onMouseEnter, onMouseExit, onMouseHover
+- For FPS games with locked cursor, use InputFPMouseInteraction instead
+
+### InputFPMouseInteraction.cs
+- First-person interaction system using New Input System
+- Raycasts from camera center (works with locked cursor / CharacterControllerFP reticle)
+- Configurable target camera, max raycast distance, interaction layer
+- Click, hover, enter/exit detection via Physics.Raycast
+- Visual feedback: material swap, scale animation with DOTween
 - 6 UnityEvents: onMouseClick, onMouseDown, onMouseUp, onMouseEnter, onMouseExit, onMouseHover
 
 ### InputCollisionEnter.cs
@@ -537,9 +544,9 @@ Core interfaces for extensible systems.
 
 ## Script Count Summary
 
-**Total: 53 Scripts + 1 Interface**
+**Total: 54 Scripts + 1 Interface**
 
-- **Input Components**: 8 scripts
+- **Input Components**: 9 scripts
 - **Action Components**: 16 scripts (+ 1 helper)
 - **Animation Components**: 1 script
 - **Character Controllers**: 7 scripts
@@ -557,7 +564,7 @@ Core interfaces for extensible systems.
 
 ## Custom Editor Scripts
 
-10 scripts have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)):
+11 scripts have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)):
 
 - ActionDialogueSequence
 - ActionDecalSequence
@@ -565,6 +572,7 @@ Core interfaces for extensible systems.
 - ActionDisplayImage
 - ActionDisplayText
 - ActionPlatformAnimator
+- InputFPMouseInteraction
 - InputMouseInteraction
 - PhysicsPlatformAnimator
 - PuzzleSwitch

@@ -93,6 +93,20 @@ public class CharacterControllerFP : MonoBehaviour
     [Tooltip("Key to toggle cursor lock/unlock")]
     [SerializeField] private KeyCode cursorToggleKey = KeyCode.Escape;
 
+    [Header("Reticle")]
+    /// <summary>
+    /// Optional crosshair texture drawn at screen center when the cursor is locked.
+    /// Used with InputMouseInteraction (CenterScreen mode) so the player can see where they are aiming.
+    /// </summary>
+    [Tooltip("Crosshair texture drawn at screen center when cursor is locked (optional)")]
+    [SerializeField] private Texture2D reticleTexture;
+
+    /// <summary>
+    /// Size of the reticle in pixels (width and height)
+    /// </summary>
+    [Tooltip("Size of the reticle in pixels")]
+    [SerializeField] private float reticleSize = 32f;
+
     [Header("Jump Settings")]
     /// <summary>
     /// Height in meters the character can jump
@@ -997,6 +1011,19 @@ public class CharacterControllerFP : MonoBehaviour
     /// Current camera pitch angle in degrees
     /// </summary>
     public float CameraPitch => cameraPitch;
+
+    #endregion
+
+    #region Reticle
+
+    private void OnGUI()
+    {
+        if (reticleTexture == null || !isCursorLocked) return;
+
+        float x = (Screen.width - reticleSize) * 0.5f;
+        float y = (Screen.height - reticleSize) * 0.5f;
+        GUI.DrawTexture(new Rect(x, y, reticleSize, reticleSize), reticleTexture);
+    }
 
     #endregion
 

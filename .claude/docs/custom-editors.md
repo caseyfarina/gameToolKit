@@ -23,9 +23,10 @@ When adding new `[SerializeField]` properties to scripts with custom editors, yo
 | **PhysicsPlatformAnimator.cs** | `PhysicsEditors/PhysicsPlatformAnimatorEditor.cs` | Physics-based animation controls |
 | **PuzzleSwitch.cs** | `PuzzleEditors/PuzzleSwitchEditor.cs` | Puzzle-specific UI layout |
 | **PuzzleSwitchChecker.cs** | `PuzzleEditors/PuzzleSwitchCheckerEditor.cs` | Checker-specific UI layout |
-| **InputMouseInteraction.cs** | `InputEditors/InputMouseInteractionEditor.cs` | Conditional fields for DetectionMode and CursorAppearance |
+| **InputMouseInteraction.cs** | `InputEditors/InputMouseInteractionEditor.cs` | Conditional scale/hover fields |
+| **InputFPMouseInteraction.cs** | `InputEditors/InputFPMouseInteractionEditor.cs` | Conditional scale/hover fields, raycast settings |
 
-**Total**: 10 scripts with custom editors
+**Total**: 11 scripts with custom editors
 
 ---
 

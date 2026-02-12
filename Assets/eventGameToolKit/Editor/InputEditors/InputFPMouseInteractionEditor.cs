@@ -2,14 +2,18 @@ using UnityEngine;
 using UnityEditor;
 
 /// <summary>
-/// Custom editor for InputMouseInteraction with conditional field visibility.
+/// Custom editor for InputFPMouseInteraction with conditional field visibility.
 /// </summary>
-[CustomEditor(typeof(InputMouseInteraction))]
-public class InputMouseInteractionEditor : Editor
+[CustomEditor(typeof(InputFPMouseInteraction))]
+public class InputFPMouseInteractionEditor : Editor
 {
     private SerializedProperty mouseButtonProp;
     private SerializedProperty enableHoverProp;
     private SerializedProperty enableClickProp;
+
+    private SerializedProperty targetCameraProp;
+    private SerializedProperty maxRaycastDistanceProp;
+    private SerializedProperty interactionLayerProp;
 
     private SerializedProperty hoverMaterialProp;
     private SerializedProperty scaleOnHoverProp;
@@ -34,6 +38,10 @@ public class InputMouseInteractionEditor : Editor
         enableHoverProp = serializedObject.FindProperty("enableHover");
         enableClickProp = serializedObject.FindProperty("enableClick");
 
+        targetCameraProp = serializedObject.FindProperty("targetCamera");
+        maxRaycastDistanceProp = serializedObject.FindProperty("maxRaycastDistance");
+        interactionLayerProp = serializedObject.FindProperty("interactionLayer");
+
         hoverMaterialProp = serializedObject.FindProperty("hoverMaterial");
         scaleOnHoverProp = serializedObject.FindProperty("scaleOnHover");
         hoverScaleProp = serializedObject.FindProperty("hoverScale");
@@ -57,7 +65,7 @@ public class InputMouseInteractionEditor : Editor
         serializedObject.Update();
 
         GUI.enabled = false;
-        EditorGUILayout.ObjectField("Script", MonoScript.FromMonoBehaviour((InputMouseInteraction)target), typeof(InputMouseInteraction), false);
+        EditorGUILayout.ObjectField("Script", MonoScript.FromMonoBehaviour((InputFPMouseInteraction)target), typeof(InputFPMouseInteraction), false);
         GUI.enabled = true;
 
         EditorGUILayout.Space();
@@ -67,6 +75,14 @@ public class InputMouseInteractionEditor : Editor
         EditorGUILayout.PropertyField(mouseButtonProp);
         EditorGUILayout.PropertyField(enableHoverProp);
         EditorGUILayout.PropertyField(enableClickProp);
+
+        EditorGUILayout.Space();
+
+        // --- Raycast Settings ---
+        EditorGUILayout.LabelField("Raycast Settings", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(targetCameraProp);
+        EditorGUILayout.PropertyField(maxRaycastDistanceProp);
+        EditorGUILayout.PropertyField(interactionLayerProp);
 
         EditorGUILayout.Space();
 

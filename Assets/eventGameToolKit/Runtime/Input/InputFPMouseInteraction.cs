@@ -5,18 +5,27 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
 /// <summary>
-/// Detects mouse clicks and hover events on 3D objects with optional visual feedback.
-/// Raycasts from the mouse cursor position each frame (requires a free/visible cursor).
-/// For first-person games with a locked cursor, use InputFPMouseInteraction instead.
-/// Common use: Clickable buttons, interactive objects, hover tooltips, or selection systems.
+/// Detects click and hover events on 3D objects by raycasting from the center of the screen.
+/// Designed for first-person games where the cursor is locked (works with CharacterControllerFP).
+/// The player looks at an object using the reticle and clicks to interact.
+/// For free-cursor games, use InputMouseInteraction instead.
+/// Common use: FPS interaction, picking up items, pressing buttons, opening doors.
 /// </summary>
-public class InputMouseInteraction : MonoBehaviour
+public class InputFPMouseInteraction : MonoBehaviour
 {
     [Header("Interaction Settings")]
     [Tooltip("Which mouse button to detect (0=Left, 1=Right, 2=Middle)")]
     [SerializeField] private int mouseButton = 0;
     [SerializeField] private bool enableHover = true;
     [SerializeField] private bool enableClick = true;
+
+    [Header("Raycast Settings")]
+    [Tooltip("Camera to use for raycasting. Falls back to Camera.main if not set.")]
+    [SerializeField] private Camera targetCamera;
+    [Tooltip("Maximum distance for the interaction raycast")]
+    [SerializeField] private float maxRaycastDistance = 100f;
+    [Tooltip("Which layers can be interacted with")]
+    [SerializeField] private LayerMask interactionLayer = ~0;
 
     [Header("Visual Feedback")]
     [Tooltip("Material to use when hovering (optional)")]
@@ -46,15 +55,15 @@ public class InputMouseInteraction : MonoBehaviour
 
     [Header("Hover Events")]
     /// <summary>
-    /// Fires when the mouse cursor first enters this object's collider
+    /// Fires when the reticle first enters this object's collider
     /// </summary>
     public UnityEvent onMouseEnter;
     /// <summary>
-    /// Fires when the mouse cursor leaves this object's collider
+    /// Fires when the reticle leaves this object's collider
     /// </summary>
     public UnityEvent onMouseExit;
     /// <summary>
-    /// Fires continuously each frame while the mouse cursor is over this object
+    /// Fires continuously each frame while the reticle is over this object
     /// </summary>
     public UnityEvent onMouseHover;
 
@@ -84,7 +93,7 @@ public class InputMouseInteraction : MonoBehaviour
 
         if (GetComponent<Collider>() == null)
         {
-            Debug.LogWarning($"InputMouseInteraction on {gameObject.name} requires a Collider component!");
+            Debug.LogWarning($"InputFPMouseInteraction on {gameObject.name} requires a Collider component!");
         }
     }
 
@@ -92,12 +101,13 @@ public class InputMouseInteraction : MonoBehaviour
     {
         if (Mouse.current == null) return;
 
-        Camera cam = Camera.main;
+        Camera cam = GetCamera();
         if (cam == null) return;
 
-        Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
+        // Raycast from center of screen (where the reticle is)
+        Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
 
-        bool isHit = Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ~0, QueryTriggerInteraction.Collide)
+        bool isHit = Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactionLayer, QueryTriggerInteraction.Collide)
                      && hit.collider.gameObject == gameObject;
 
         // Hover state
@@ -108,14 +118,14 @@ public class InputMouseInteraction : MonoBehaviour
                 isHovering = true;
                 ApplyHoverEffects();
                 onMouseEnter.Invoke();
-                if (showDebugInfo) Debug.Log($"Mouse entered: {gameObject.name}");
+                if (showDebugInfo) Debug.Log($"Reticle entered: {gameObject.name}");
             }
             else if (!isHit && wasHitLastFrame)
             {
                 isHovering = false;
                 RemoveHoverEffects();
                 onMouseExit.Invoke();
-                if (showDebugInfo) Debug.Log($"Mouse exited: {gameObject.name}");
+                if (showDebugInfo) Debug.Log($"Reticle exited: {gameObject.name}");
             }
 
             if (isHit)
@@ -134,7 +144,7 @@ public class InputMouseInteraction : MonoBehaviour
                 isMouseDown = true;
                 wasClicked = true;
                 onMouseDown.Invoke();
-                if (showDebugInfo) Debug.Log($"Mouse down on: {gameObject.name}");
+                if (showDebugInfo) Debug.Log($"Click down on: {gameObject.name}");
             }
 
             if (button.wasReleasedThisFrame)
@@ -142,12 +152,12 @@ public class InputMouseInteraction : MonoBehaviour
                 if (isHit)
                 {
                     onMouseUp.Invoke();
-                    if (showDebugInfo) Debug.Log($"Mouse up on: {gameObject.name}");
+                    if (showDebugInfo) Debug.Log($"Click up on: {gameObject.name}");
 
                     if (isMouseDown)
                     {
                         onMouseClick.Invoke();
-                        if (showDebugInfo) Debug.Log($"Mouse clicked: {gameObject.name}");
+                        if (showDebugInfo) Debug.Log($"Clicked: {gameObject.name}");
                     }
                 }
                 isMouseDown = false;
@@ -166,6 +176,13 @@ public class InputMouseInteraction : MonoBehaviour
             2 => Mouse.current.middleButton,
             _ => Mouse.current.leftButton
         };
+    }
+
+    private Camera GetCamera()
+    {
+        if (targetCamera != null) return targetCamera;
+        if (Camera.main != null) return Camera.main;
+        return null;
     }
 
     #region Visual Effects
@@ -221,7 +238,7 @@ public class InputMouseInteraction : MonoBehaviour
     #region Public Methods
 
     /// <summary>
-    /// Enable mouse interaction
+    /// Enable interaction
     /// </summary>
     public void EnableInteraction()
     {
@@ -230,7 +247,7 @@ public class InputMouseInteraction : MonoBehaviour
     }
 
     /// <summary>
-    /// Disable mouse interaction
+    /// Disable interaction
     /// </summary>
     public void DisableInteraction()
     {
@@ -341,7 +358,7 @@ public class InputMouseInteraction : MonoBehaviour
     {
         if (showDebugInfo)
         {
-            Camera cam = Camera.main;
+            Camera cam = GetCamera();
             if (cam == null) return;
 
             Vector3 screenPos = cam.WorldToScreenPoint(transform.position);
