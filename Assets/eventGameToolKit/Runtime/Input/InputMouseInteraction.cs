@@ -1,17 +1,57 @@
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Detects mouse clicks and hover events on 3D objects with optional visual feedback.
+/// Supports two detection modes: ScreenMouse (free cursor) and CenterScreen (locked cursor / FPS).
 /// Common use: Clickable buttons, interactive objects, hover tooltips, or selection systems.
 /// </summary>
 public class InputMouseInteraction : MonoBehaviour
 {
-    [Header("Interaction Settings")]
+    /// <summary>
+    /// How mouse interaction is detected.
+    /// ScreenMouse raycasts from the mouse position. CenterScreen raycasts from the camera center (for FPS / locked cursor).
+    /// </summary>
+    public enum DetectionMode
+    {
+        ScreenMouse,
+        CenterScreen
+    }
+
+    /// <summary>
+    /// Controls cursor visibility. Does NOT affect CursorLockMode.
+    /// </summary>
+    public enum CursorAppearance
+    {
+        Invisible,
+        Visible
+    }
+
+    [Header("Detection Settings")]
+    [Tooltip("ScreenMouse: raycasts from mouse position. CenterScreen: raycasts from camera center (for FPS).")]
+    [SerializeField] private DetectionMode detectionMode = DetectionMode.ScreenMouse;
     [Tooltip("Which mouse button to detect (0=Left, 1=Right, 2=Middle)")]
     [SerializeField] private int mouseButton = 0;
     [SerializeField] private bool enableHover = true;
     [SerializeField] private bool enableClick = true;
+
+    [Header("CenterScreen Settings")]
+    [Tooltip("Camera to use for raycasting. Falls back to Camera.main if not set.")]
+    [SerializeField] private Camera targetCamera;
+    [Tooltip("Maximum distance for the interaction raycast")]
+    [SerializeField] private float maxRaycastDistance = 100f;
+    [Tooltip("Which layers can be interacted with")]
+    [SerializeField] private LayerMask interactionLayer = ~0;
+
+    [Header("Cursor Appearance")]
+    [Tooltip("Controls cursor visibility. Does not affect CursorLockMode.")]
+    [SerializeField] private CursorAppearance cursorAppearance = CursorAppearance.Visible;
+    [Tooltip("Optional custom cursor texture (only when Visible)")]
+    [SerializeField] private Texture2D customCursorTexture;
+    [Tooltip("Hotspot offset for custom cursor texture")]
+    [SerializeField] private Vector2 cursorHotspot = Vector2.zero;
 
     [Header("Visual Feedback")]
     [Tooltip("Material to use when hovering (optional)")]
@@ -58,89 +98,178 @@ public class InputMouseInteraction : MonoBehaviour
     private Material originalMaterial;
     private Vector3 originalScale;
     private Renderer objectRenderer;
-    private Coroutine scaleCoroutine;
+    private Tween scaleTween;
+
+    // Raycast-based state
+    private bool wasHitLastFrame = false;
+    private bool isMouseDown = false;
 
     public bool IsHovering => isHovering;
     public bool WasClicked => wasClicked;
 
     private void Start()
     {
-        // Get renderer for visual feedback
         objectRenderer = GetComponent<Renderer>();
         if (objectRenderer != null)
         {
             originalMaterial = objectRenderer.material;
         }
 
-        // Store original scale
         originalScale = transform.localScale;
 
-        // Ensure we have a collider
         if (GetComponent<Collider>() == null)
         {
             Debug.LogWarning($"InputMouseInteraction on {gameObject.name} requires a Collider component!");
         }
+
+        ApplyCursorSettings();
     }
 
-    #region Mouse Event Handlers
-
-    private void OnMouseEnter()
+    private void OnEnable()
     {
-        if (!enableHover) return;
-
-        isHovering = true;
-        ApplyHoverEffects();
-        onMouseEnter.Invoke();
-        Debug.Log($"Mouse entered: {gameObject.name}");
+        ApplyCursorSettings();
     }
 
-    private void OnMouseExit()
+    private void Update()
     {
-        if (!enableHover) return;
+        if (Mouse.current == null) return;
 
-        isHovering = false;
-        RemoveHoverEffects();
-        onMouseExit.Invoke();
-        Debug.Log($"Mouse exited: {gameObject.name}");
-    }
+        Camera cam = GetCamera();
+        if (cam == null) return;
 
-    private void OnMouseOver()
-    {
-        if (!enableHover) return;
-
-        onMouseHover.Invoke();
-    }
-
-    private void OnMouseDown()
-    {
-        if (!enableClick) return;
-
-        if (Input.GetMouseButtonDown(mouseButton))
+        // Build ray based on detection mode
+        Ray ray;
+        if (detectionMode == DetectionMode.CenterScreen)
         {
-            wasClicked = true;
-            onMouseDown.Invoke();
-            Debug.Log($"Mouse down on: {gameObject.name}");
+            ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        }
+        else
+        {
+            ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
+        }
+
+        // Raycast
+        bool isHit = Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactionLayer, QueryTriggerInteraction.Collide)
+                     && hit.collider.gameObject == gameObject;
+
+        // Hover state
+        if (enableHover)
+        {
+            if (isHit && !wasHitLastFrame)
+            {
+                // Enter
+                isHovering = true;
+                ApplyHoverEffects();
+                onMouseEnter.Invoke();
+                if (showDebugInfo) Debug.Log($"Mouse entered: {gameObject.name}");
+            }
+            else if (!isHit && wasHitLastFrame)
+            {
+                // Exit
+                isHovering = false;
+                RemoveHoverEffects();
+                onMouseExit.Invoke();
+                if (showDebugInfo) Debug.Log($"Mouse exited: {gameObject.name}");
+            }
+
+            if (isHit)
+            {
+                onMouseHover.Invoke();
+            }
+        }
+
+        // Click state
+        if (enableClick)
+        {
+            ButtonControl button = GetMouseButton();
+
+            if (isHit && button.wasPressedThisFrame)
+            {
+                isMouseDown = true;
+                wasClicked = true;
+                onMouseDown.Invoke();
+                if (showDebugInfo) Debug.Log($"Mouse down on: {gameObject.name}");
+            }
+
+            if (button.wasReleasedThisFrame)
+            {
+                if (isHit)
+                {
+                    onMouseUp.Invoke();
+                    if (showDebugInfo) Debug.Log($"Mouse up on: {gameObject.name}");
+
+                    if (isMouseDown)
+                    {
+                        onMouseClick.Invoke();
+                        if (showDebugInfo) Debug.Log($"Mouse clicked: {gameObject.name}");
+                    }
+                }
+                isMouseDown = false;
+            }
+        }
+
+        wasHitLastFrame = isHit;
+    }
+
+    private ButtonControl GetMouseButton()
+    {
+        return mouseButton switch
+        {
+            0 => Mouse.current.leftButton,
+            1 => Mouse.current.rightButton,
+            2 => Mouse.current.middleButton,
+            _ => Mouse.current.leftButton
+        };
+    }
+
+    private Camera GetCamera()
+    {
+        if (targetCamera != null) return targetCamera;
+        if (Camera.main != null) return Camera.main;
+        return null;
+    }
+
+    #region Cursor Management
+
+    private void ApplyCursorSettings()
+    {
+        // In CenterScreen mode, another system (e.g. CharacterControllerFP) owns
+        // Cursor.visible and CursorLockMode. Only apply custom cursor texture.
+        if (detectionMode == DetectionMode.CenterScreen)
+        {
+            if (cursorAppearance == CursorAppearance.Visible && customCursorTexture != null)
+            {
+                Cursor.SetCursor(customCursorTexture, cursorHotspot, CursorMode.Auto);
+            }
+            return;
+        }
+
+        // ScreenMouse mode: this script owns cursor visibility
+        if (cursorAppearance == CursorAppearance.Invisible)
+        {
+            Cursor.visible = false;
+        }
+        else
+        {
+            Cursor.visible = true;
+            if (customCursorTexture != null)
+            {
+                Cursor.SetCursor(customCursorTexture, cursorHotspot, CursorMode.Auto);
+            }
         }
     }
 
-    private void OnMouseUp()
+    private void RestoreCursorSettings()
     {
-        if (!enableClick) return;
+        // Always clear custom cursor texture
+        Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
 
-        if (Input.GetMouseButtonUp(mouseButton))
+        // Only restore visibility in ScreenMouse mode — in CenterScreen mode
+        // another system (e.g. CharacterControllerFP) owns Cursor.visible
+        if (detectionMode == DetectionMode.ScreenMouse)
         {
-            onMouseUp.Invoke();
-            Debug.Log($"Mouse up on: {gameObject.name}");
+            Cursor.visible = true;
         }
-    }
-
-    private void OnMouseUpAsButton()
-    {
-        if (!enableClick) return;
-
-        // This fires only if mouse was pressed AND released on the same object
-        onMouseClick.Invoke();
-        Debug.Log($"Mouse clicked: {gameObject.name}");
     }
 
     #endregion
@@ -149,13 +278,11 @@ public class InputMouseInteraction : MonoBehaviour
 
     private void ApplyHoverEffects()
     {
-        // Change material if specified
         if (hoverMaterial != null && objectRenderer != null)
         {
             objectRenderer.material = hoverMaterial;
         }
 
-        // Scale effect if enabled
         if (scaleOnHover)
         {
             Vector3 targetScale = Vector3.Scale(originalScale, hoverScale);
@@ -165,13 +292,11 @@ public class InputMouseInteraction : MonoBehaviour
 
     private void RemoveHoverEffects()
     {
-        // Restore original material
         if (originalMaterial != null && objectRenderer != null)
         {
             objectRenderer.material = originalMaterial;
         }
 
-        // Restore original scale
         if (scaleOnHover)
         {
             AnimateScale(originalScale);
@@ -180,41 +305,21 @@ public class InputMouseInteraction : MonoBehaviour
 
     private void AnimateScale(Vector3 targetScale)
     {
-        // Stop any existing scale animation
-        if (scaleCoroutine != null)
+        if (scaleTween != null && scaleTween.IsActive())
         {
-            StopCoroutine(scaleCoroutine);
+            scaleTween.Kill();
         }
 
-        if (useScaleEasing && Application.isPlaying && gameObject.activeInHierarchy)
+        if (useScaleEasing)
         {
-            scaleCoroutine = StartCoroutine(ScaleCoroutine(targetScale));
+            scaleTween = transform.DOScale(targetScale, scaleAnimationDuration)
+                .SetEase(scaleEasingCurve)
+                .SetUpdate(true); // Unscaled time for UI responsiveness
         }
         else
         {
-            // Instant scale change (or can't start coroutine)
             transform.localScale = targetScale;
         }
-    }
-
-    private System.Collections.IEnumerator ScaleCoroutine(Vector3 targetScale)
-    {
-        Vector3 startScale = transform.localScale;
-        float elapsed = 0f;
-
-        while (elapsed < scaleAnimationDuration)
-        {
-            elapsed += Time.unscaledDeltaTime; // Use unscaled time for UI responsiveness
-            float progress = elapsed / scaleAnimationDuration;
-            float easedProgress = scaleEasingCurve.Evaluate(progress);
-
-            transform.localScale = Vector3.Lerp(startScale, targetScale, easedProgress);
-            yield return null;
-        }
-
-        // Ensure we end at exactly the target scale
-        transform.localScale = targetScale;
-        scaleCoroutine = null;
     }
 
     #endregion
@@ -296,7 +401,7 @@ public class InputMouseInteraction : MonoBehaviour
     /// </summary>
     public void SetScaleAnimationDuration(float duration)
     {
-        scaleAnimationDuration = Mathf.Max(0.01f, duration); // Minimum duration to prevent issues
+        scaleAnimationDuration = Mathf.Max(0.01f, duration);
     }
 
     /// <summary>
@@ -320,7 +425,7 @@ public class InputMouseInteraction : MonoBehaviour
     public void SimulateClick()
     {
         onMouseClick.Invoke();
-        Debug.Log($"Simulated click on: {gameObject.name}");
+        if (showDebugInfo) Debug.Log($"Simulated click on: {gameObject.name}");
     }
 
     /// <summary>
@@ -342,8 +447,11 @@ public class InputMouseInteraction : MonoBehaviour
     {
         if (showDebugInfo)
         {
-            Vector3 screenPos = Camera.main.WorldToScreenPoint(transform.position);
-            if (screenPos.z > 0) // Only show if in front of camera
+            Camera cam = GetCamera();
+            if (cam == null) return;
+
+            Vector3 screenPos = cam.WorldToScreenPoint(transform.position);
+            if (screenPos.z > 0)
             {
                 Vector2 guiPos = new Vector2(screenPos.x, Screen.height - screenPos.y);
 
@@ -352,6 +460,7 @@ public class InputMouseInteraction : MonoBehaviour
                 GUILayout.Label($"Hovering: {isHovering}");
                 GUILayout.Label($"Clicked: {wasClicked}");
                 GUILayout.Label($"Button: {mouseButton}");
+                GUILayout.Label($"Mode: {detectionMode}");
 
                 if (GUILayout.Button("Test Click"))
                 {
@@ -367,27 +476,32 @@ public class InputMouseInteraction : MonoBehaviour
 
     private void OnDisable()
     {
-        // Clean up effects when disabled
-        RemoveHoverEffects();
-
-        // Stop any running scale animation
-        if (scaleCoroutine != null)
+        // Clean up hover effects
+        if (isHovering)
         {
-            StopCoroutine(scaleCoroutine);
-            scaleCoroutine = null;
+            isHovering = false;
+            RemoveHoverEffects();
         }
+        wasHitLastFrame = false;
+        isMouseDown = false;
+
+        // Kill any running scale tween
+        if (scaleTween != null && scaleTween.IsActive())
+        {
+            scaleTween.Kill();
+        }
+
+        // Restore cursor
+        RestoreCursorSettings();
     }
 
     private void OnDestroy()
     {
-        // Stop any running scale animation
-        if (scaleCoroutine != null)
+        if (scaleTween != null && scaleTween.IsActive())
         {
-            StopCoroutine(scaleCoroutine);
-            scaleCoroutine = null;
+            scaleTween.Kill();
         }
 
-        // Clean up material instance if created
         if (objectRenderer != null && objectRenderer.material != originalMaterial)
         {
             if (Application.isPlaying)

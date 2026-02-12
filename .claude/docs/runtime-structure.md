@@ -71,9 +71,13 @@ Event sources triggered by player input or game state.
 - Supports button, axis, and vector inputs
 
 ### InputMouseInteraction.cs
-- Mouse-based interaction system
-- Click, hover, and drag detection
-- Raycast-based object selection
+- Mouse-based interaction system using New Input System
+- Two detection modes: ScreenMouse (free cursor) and CenterScreen (locked cursor / FPS)
+- Click, hover, enter/exit detection via Physics.Raycast
+- Independent cursor appearance control (Visible/Invisible, custom cursor texture)
+- Works with CharacterControllerFP (CenterScreen mode bypasses CursorLockMode.Locked)
+- Visual feedback: material swap, scale animation with easing
+- 6 UnityEvents: onMouseClick, onMouseDown, onMouseUp, onMouseEnter, onMouseExit, onMouseHover
 
 ### InputCollisionEnter.cs
 **Location**: `Runtime/Utilities/`
@@ -553,7 +557,7 @@ Core interfaces for extensible systems.
 
 ## Custom Editor Scripts
 
-9 scripts have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)):
+10 scripts have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)):
 
 - ActionDialogueSequence
 - ActionDecalSequence
@@ -561,6 +565,7 @@ Core interfaces for extensible systems.
 - ActionDisplayImage
 - ActionDisplayText
 - ActionPlatformAnimator
+- InputMouseInteraction
 - PhysicsPlatformAnimator
 - PuzzleSwitch
 - PuzzleSwitchChecker
