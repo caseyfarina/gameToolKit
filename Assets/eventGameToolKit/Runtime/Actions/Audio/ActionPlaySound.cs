@@ -1,88 +1,105 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
+using UnityEngine.Events;
 
 /// <summary>
-/// Plays a random audio clip from a list when triggered via events.
-/// Common use: Impact sounds, button click feedback, random footstep variations, or collectible pickup effects.
+/// Plays a randomly selected audio clip from a list using PlayOneShot.
+/// Supports randomized pitch and volume ranges for natural variation.
+/// Common use: impact sounds, footstep variation, collectible pickups, button feedback.
 /// </summary>
 public class ActionPlaySound : MonoBehaviour
 {
-    [Header("Audio Settings")]
-    [Tooltip("Array of audio clips to randomly choose from")]
+    [Header("Audio Clips")]
+    [Tooltip("Array of audio clips to randomly choose from. One clip is picked at random each time Play() is called.")]
     [SerializeField] private AudioClip[] audioClips;
-    
-    [Tooltip("Volume level for played sounds")]
+
+    [Header("Volume")]
+    [Tooltip("Minimum volume for each play (0 = silent, 1 = full). A random value between Min and Max is chosen each time.")]
     [Range(0f, 1f)]
-    [SerializeField] private float volume = 0.5f;
-    
+    [SerializeField] private float volumeMin = 0.8f;
+
+    [Tooltip("Maximum volume for each play (0 = silent, 1 = full). Set Min and Max to the same value for a fixed volume.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float volumeMax = 1f;
+
+    [Header("Mixer")]
+    [Tooltip("Optional Audio Mixer Group to route this sound through (e.g. SFX, Music, Ambience). Leave empty to use the default output.")]
+    [SerializeField] private AudioMixerGroup outputMixerGroup;
+
+    [Header("Pitch")]
+    [Tooltip("Minimum pitch multiplier (1 = normal, < 1 = lower, > 1 = higher). A random value between Min and Max is chosen each time.")]
+    [Range(0.1f, 3f)]
+    [SerializeField] private float pitchMin = 1f;
+
+    [Tooltip("Maximum pitch multiplier. Set Min and Max to 1 for no pitch variation. Try 0.9–1.1 for subtle variation.")]
+    [Range(0.1f, 3f)]
+    [SerializeField] private float pitchMax = 1f;
+
+    [Header("Events")]
+    /// <summary>
+    /// Fires each time a clip is successfully played.
+    /// </summary>
+    public UnityEvent onPlay;
+
     private AudioSource audioSource;
-    
-    private void Start()
+
+    private void Awake()
     {
-        // Create AudioSource component if it doesn't exist
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
-        {
             audioSource = gameObject.AddComponent<AudioSource>();
-        }
-        
-        // Configure the AudioSource for one-shot playback
+
         audioSource.playOnAwake = false;
-        audioSource.volume = volume;
+        // Volume is passed directly to PlayOneShot — keep source at 1
+        // so the PlayOneShot volume parameter represents the true 0–1 range.
+        audioSource.volume = 1f;
+        audioSource.outputAudioMixerGroup = outputMixerGroup;
     }
-    
-    /// <summary>
-    /// Public function to play a random sound from the audio clips array
-    /// Designed to be called from UnityEvents
-    /// </summary>
-    public void PlaySound()
+
+    private void OnValidate()
     {
-        // Check if we have clips and an audio source
+        volumeMin = Mathf.Min(volumeMin, volumeMax);
+        pitchMin  = Mathf.Min(pitchMin,  pitchMax);
+    }
+
+    /// <summary>
+    /// Plays a randomly selected clip from the array with randomized pitch and volume.
+    /// Wire this to any UnityEvent source such as InputKeyPress or InputTriggerZone.
+    /// </summary>
+    public void Play()
+    {
         if (audioClips == null || audioClips.Length == 0)
         {
-            Debug.LogWarning("No audio clips assigned to ActionPlaySound script!");
+            Debug.LogWarning($"[ActionPlaySound] '{name}': No audio clips assigned.", this);
             return;
         }
-        
-        if (audioSource == null)
+
+        AudioClip clip = audioClips[Random.Range(0, audioClips.Length)];
+
+        if (clip == null)
         {
-            Debug.LogWarning("No AudioSource available on ActionPlaySound script!");
+            Debug.LogWarning($"[ActionPlaySound] '{name}': Selected clip is null — check for empty slots in the array.", this);
             return;
         }
-        
-        // Choose a random clip from the array
-        int randomIndex = Random.Range(0, audioClips.Length);
-        AudioClip clipToPlay = audioClips[randomIndex];
-        
-        // Play the clip if it's valid
-        if (clipToPlay != null)
-        {
-            audioSource.PlayOneShot(clipToPlay, volume);
-        }
-        else
-        {
-            Debug.LogWarning($"Audio clip at index {randomIndex} is null!");
-        }
+
+        audioSource.pitch = Random.Range(pitchMin, pitchMax);
+        audioSource.PlayOneShot(clip, Random.Range(volumeMin, volumeMax));
+        onPlay?.Invoke();
     }
-    
+
     /// <summary>
-    /// Update the volume and apply it to the AudioSource
+    /// Sets a fixed volume with no variation (both min and max are assigned the same value).
     /// </summary>
-    public void SetVolume(float newVolume)
+    public void SetVolume(float value)
     {
-        volume = Mathf.Clamp01(newVolume);
-        if (audioSource != null)
-        {
-            audioSource.volume = volume;
-        }
+        volumeMin = volumeMax = Mathf.Clamp01(value);
     }
-    
+
     /// <summary>
-    /// Get the number of audio clips currently loaded
+    /// Sets a fixed pitch with no variation (both min and max are assigned the same value).
     /// </summary>
-    public int GetClipCount()
+    public void SetPitch(float value)
     {
-        return audioClips != null ? audioClips.Length : 0;
+        pitchMin = pitchMax = Mathf.Clamp(value, 0.1f, 3f);
     }
 }

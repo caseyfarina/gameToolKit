@@ -6,7 +6,7 @@ Complete inventory of all educational scripts in the eventGameToolKit.
 
 ```
 Runtime/
-├── Actions/              # Event target components (16 scripts)
+├── Actions/              # Event target components (18 scripts)
 │   ├── Audio/           # Sound playback
 │   ├── DecalAnimation/  # URP decal material animations
 │   ├── Display/         # UI text and images
@@ -18,7 +18,7 @@ Runtime/
 │   ├── Enemy/           # AI enemy controllers
 │   └── Player/          # Player controllers
 ├── Game/                # Game managers (9 scripts)
-├── Input/               # Event source components (8 scripts)
+├── Input/               # Event source components (9 scripts)
 ├── Interfaces/          # Core interfaces (1 interface)
 ├── Physics/             # Physics systems (5 scripts)
 │   ├── Bumpers/         # Repulsion forces
@@ -30,7 +30,7 @@ Runtime/
 
 ---
 
-## Input Components (9 scripts)
+## Input Components (10 scripts)
 
 **Location**: `Runtime/Input/`
 
@@ -86,6 +86,13 @@ Event sources triggered by player input or game state.
 - Visual feedback: material swap, scale animation with DOTween
 - 6 UnityEvents: onMouseClick, onMouseDown, onMouseUp, onMouseEnter, onMouseExit, onMouseHover
 
+### InputOnStart.cs
+- Fires UnityEvents at scene initialization — no code required
+- `onAwake` event fires in Awake(), before any Start() in the scene
+- `onStart` event fires in Start(), after all Awake() calls have completed
+- Optional `startDelay` float delays the Start event by N seconds (coroutine-based)
+- Custom Inspector includes help boxes explaining Awake vs Start with an execution order summary
+
 ### InputCollisionEnter.cs
 **Location**: `Runtime/Utilities/`
 - Collision event system (OnCollisionEnter)
@@ -94,7 +101,7 @@ Event sources triggered by player input or game state.
 
 ---
 
-## Action Components (16 scripts)
+## Action Components (18 scripts)
 
 **Location**: `Runtime/Actions/`
 
@@ -104,9 +111,12 @@ Event targets that perform actions when triggered.
 
 #### ActionPlaySound.cs
 **Location**: `Actions/Audio/`
-- Simple audio playback
-- One-shot sound effects
-- Volume and pitch control
+- Plays a randomly selected clip from an array using `PlayOneShot`
+- Randomized volume range (`volumeMin` / `volumeMax`)
+- Randomized pitch range (`pitchMin` / `pitchMax`) — set both to 1 for no variation
+- `onPlay` UnityEvent fires on each successful playback
+- `SetVolume()` and `SetPitch()` for runtime control via UnityEvents
+- Custom Inspector shows friendly range summaries and a Play-mode test button
 
 ### DecalAnimation (4 scripts)
 
@@ -195,6 +205,27 @@ Event targets that perform actions when triggered.
 - Set Animator parameters via events
 - Supports bool, int, float, and trigger parameters
 - No-code animation control
+
+### Random (2 scripts)
+
+**Location**: `Actions/`
+
+#### ActionRandomEvent.cs
+- Randomly fires one UnityEvent from a weighted list on Trigger()
+- `WeightedEvent` entries with label, probability weight, and onSelected event
+- Weights are normalized at runtime — any positive values work (e.g., 1/1/2 = 25%/25%/50%)
+- `Reset()` provides two 50/50 defaults when added in Inspector
+- Logs warning if no events defined or all weights are zero
+- Custom Inspector shows live normalized percentages per entry and a Play-mode "▶ Trigger" button
+
+#### ActionShuffleEvent.cs
+- Cycles through all entries in a random (shuffled) order — each fires exactly once per cycle before reshuffling (urn model / sampling without replacement)
+- `ShuffleEntry` entries with label and onSelected event (no weights — all equal)
+- `preventLastRepeat` option ensures the first entry of a new cycle differs from the last of the previous
+- `onCycleComplete` UnityEvent fires when every entry has been used once
+- `Reshuffle()` and `ResetFull()` public methods for manual control
+- `Reset()` provides three default entries (A, B, C)
+- Custom Inspector shows per-entry queue status (fired / next / queued), cycle progress bar, and Play-mode "▶ Trigger Next" and "↺ Reshuffle" buttons
 
 ### Scene (2 scripts)
 
@@ -544,10 +575,10 @@ Core interfaces for extensible systems.
 
 ## Script Count Summary
 
-**Total: 54 Scripts + 1 Interface**
+**Total: 57 Scripts + 1 Interface**
 
-- **Input Components**: 9 scripts
-- **Action Components**: 16 scripts (+ 1 helper)
+- **Input Components**: 10 scripts
+- **Action Components**: 18 scripts (+ 1 helper)
 - **Animation Components**: 1 script
 - **Character Controllers**: 7 scripts
 - **Game Managers**: 9 scripts
@@ -557,14 +588,14 @@ Core interfaces for extensible systems.
 - **Utilities**: 3 scripts
 - **Interfaces**: 1 interface (ISpawnPointProvider)
 
-**XML Documentation Compliance**: 47/47 educational scripts (100%)
+**XML Documentation Compliance**: 50/50 educational scripts (100%)
 (Utilities excluded from doc generator)
 
 ---
 
 ## Custom Editor Scripts
 
-11 scripts have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)):
+14 scripts have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)):
 
 - ActionDialogueSequence
 - ActionDecalSequence
@@ -572,7 +603,10 @@ Core interfaces for extensible systems.
 - ActionDisplayImage
 - ActionDisplayText
 - ActionPlatformAnimator
+- ActionRandomEvent
+- ActionShuffleEvent
 - InputFPMouseInteraction
+- InputOnStart
 - InputMouseInteraction
 - PhysicsPlatformAnimator
 - PuzzleSwitch

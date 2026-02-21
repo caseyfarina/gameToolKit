@@ -18,7 +18,15 @@
       "Bash(cmd:*)",
       "Bash(dir \"C:\\Users\\casey\\Documents\\unityProjects\" /AD /B)",
       "Bash(git pull:*)",
-      "Bash(dir \"C:\\Users\\casey\\Documents\\unityProjects\" //AD //B)"
+      "Bash(dir \"C:\\Users\\casey\\Documents\\unityProjects\" //AD //B)",
+      "Bash(claude update)",
+      "WebFetch(domain:discussions.unity.com)",
+      "WebFetch(domain:unity.com)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "Bash(where:*)",
+      "Bash(pip install:*)",
+      "Bash(python -m uv:*)"
     ],
     "deny": [],
     "ask": []

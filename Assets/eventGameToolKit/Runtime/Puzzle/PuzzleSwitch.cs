@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.Events;
 using DG.Tweening;
 
@@ -66,6 +67,9 @@ public class PuzzleSwitch : MonoBehaviour
 
     [Tooltip("Sounds for each specific state (overrides default if set)")]
     [SerializeField] private StateSoundData[] stateSounds;
+
+    [Tooltip("Optional Audio Mixer Group to route switch sounds through (e.g. SFX). Leave empty to use the default output.")]
+    [SerializeField] private AudioMixerGroup outputMixerGroup;
 
     [Header("Events")]
     [Tooltip("Fires when state changes, passes new state index")]
@@ -136,6 +140,10 @@ public class PuzzleSwitch : MonoBehaviour
         {
             Debug.LogWarning($"PuzzleSwitch '{switchID}': Audio is enabled but no AudioSource is assigned.", this);
         }
+
+        // Apply mixer group routing if assigned
+        if (audioSource != null && outputMixerGroup != null)
+            audioSource.outputAudioMixerGroup = outputMixerGroup;
 
         // Apply initial visual state
         UpdateVisuals();

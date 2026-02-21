@@ -108,14 +108,20 @@ public class GameAudioManager : MonoBehaviour
             AudioMixerGroup[] groups = audioMixer.FindMatchingGroups("Music");
             if (groups.Length > 0)
                 musicSource.outputAudioMixerGroup = groups[0];
+            else
+                Debug.LogWarning($"[GameAudioManager] No mixer group named 'Music' found in '{audioMixer.name}'. Group names are case-sensitive — check spelling matches exactly.", this);
 
             groups = audioMixer.FindMatchingGroups("SFX");
             if (groups.Length > 0)
                 sfxSource.outputAudioMixerGroup = groups[0];
+            else
+                Debug.LogWarning($"[GameAudioManager] No mixer group named 'SFX' found in '{audioMixer.name}'. Group names are case-sensitive — check spelling matches exactly.", this);
 
             groups = audioMixer.FindMatchingGroups("Ambient");
             if (groups.Length > 0)
                 ambientSource.outputAudioMixerGroup = groups[0];
+            else
+                Debug.LogWarning($"[GameAudioManager] No mixer group named 'Ambient' found in '{audioMixer.name}'. Group names are case-sensitive — check spelling matches exactly.", this);
         }
     }
 
@@ -371,8 +377,6 @@ public class GameAudioManager : MonoBehaviour
         tempSource.pitch = ambientSource.pitch;
 
         return tempSource;
-
-        
     }
 
     #endregion

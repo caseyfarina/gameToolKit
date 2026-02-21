@@ -273,6 +273,21 @@ public class ActionDialogueSequenceEditor : Editor
             EditorGUILayout.HelpBox("Preview is visible in the Scene view. Adjust Visual Settings to see changes in real-time.", MessageType.Info);
         }
 
+        // Character Controller Integration
+        EditorGUILayout.Space(6);
+        EditorGUILayout.LabelField("Character Controller Integration", EditorStyles.boldLabel);
+        SerializedProperty fpProp = serializedObject.FindProperty("fpController");
+        EditorGUILayout.PropertyField(fpProp, new GUIContent("FP Controller (optional)"));
+        if (fpProp.objectReferenceValue == null)
+            EditorGUILayout.HelpBox(
+                "For first-person games: assign CharacterControllerFP here to automatically " +
+                "unlock the cursor and pause movement during decision panels.",
+                MessageType.None);
+        else
+            EditorGUILayout.HelpBox(
+                "Cursor will unlock and movement will pause automatically when decisions appear.",
+                MessageType.Info);
+
         // Dialogue Events header
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Dialogue Events", EditorStyles.boldLabel);

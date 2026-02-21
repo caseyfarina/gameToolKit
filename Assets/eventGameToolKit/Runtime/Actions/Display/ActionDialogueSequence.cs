@@ -149,6 +149,11 @@ public class ActionDialogueSequence : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float decisionButtonOpacity = 0.9f;
 
+    [Header("Character Controller Integration")]
+    [Tooltip("Optional: Assign a CharacterControllerFP to automatically unlock the cursor " +
+             "and pause movement during decision panels. Leave empty for non-FP scenes.")]
+    [SerializeField] private CharacterControllerFP fpController;
+
     [Header("Dialogue Events")]
     public UnityEvent onDialogueStart;
     public UnityEvent onDialogueComplete;
@@ -188,6 +193,19 @@ public class ActionDialogueSequence : MonoBehaviour
     public Ease ImageSlideEasing => imageSlideEasing;
     public Ease TextSlideEasing => textSlideEasing;
 
+
+    private void Reset()
+    {
+        dialogueLines = new DialogueLine[]
+        {
+            new DialogueLine
+            {
+                orientation  = DialogueLine.Orientation.Left,
+                dialogueText = "Hello player!",
+                displayTime  = 3f,
+            }
+        };
+    }
 
     private void Awake()
     {
@@ -806,6 +824,8 @@ public class ActionDialogueSequence : MonoBehaviour
     private List<GameObject> decisionButtons = new List<GameObject>();
     private bool decisionMade = false;
     private int selectedDecisionIndex = 0;
+    private CursorLockMode _savedCursorLockMode;
+    private bool _savedCursorVisible;
 
     /// <summary>
     /// Shows the decision panel with all choices and waits for player selection
@@ -815,6 +835,20 @@ public class ActionDialogueSequence : MonoBehaviour
         onDecisionStart?.Invoke();
         decisionMade = false;
         selectedDecisionIndex = 0;
+
+        // Save and release cursor so mouse clicks reach the decision buttons
+        _savedCursorLockMode = Cursor.lockState;
+        _savedCursorVisible  = Cursor.visible;
+        if (fpController != null)
+        {
+            fpController.UnlockCursor();
+            fpController.SetInputEnabled(false);
+        }
+        else if (Cursor.lockState != CursorLockMode.None)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible   = true;
+        }
 
         // Create decision panel
         CreateDecisionPanel();
@@ -997,6 +1031,19 @@ public class ActionDialogueSequence : MonoBehaviour
         }
 
         decisionButtons.Clear();
+
+        // Restore cursor and input state
+        if (fpController != null)
+        {
+            if (_savedCursorLockMode != CursorLockMode.None)
+                fpController.LockCursor();
+            fpController.SetInputEnabled(true);
+        }
+        else
+        {
+            Cursor.lockState = _savedCursorLockMode;
+            Cursor.visible   = _savedCursorVisible;
+        }
     }
 
     /// <summary>

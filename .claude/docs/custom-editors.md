@@ -15,18 +15,22 @@ When adding new `[SerializeField]` properties to scripts with custom editors, yo
 | MonoBehaviour Script | Custom Editor Script | Purpose |
 |---------------------|---------------------|---------|
 | **ActionDialogueSequence.cs** | `ActionEditors/ActionDialogueSequenceEditor.cs` | Context-aware animation settings, preview system with line slider |
+| **ActionPlaySound.cs** | `ActionEditors/ActionPlaySoundEditor.cs` | Min/max range fields for volume and pitch, contextual hints, Play-mode test button |
 | **ActionDecalSequence.cs** | `ActionEditors/ActionDecalSequenceEditor.cs` | Live playback controls in play mode, duration calculator |
 | **ActionDecalSequenceLibrary.cs** | `ActionEditors/ActionDecalSequenceLibraryEditor.cs` | Sequence switcher buttons, live status display |
 | **ActionDisplayImage.cs** | `ActionEditors/ActionDisplayImageEditor.cs` | Custom layout and organization |
 | **ActionDisplayText.cs** | `ActionEditors/ActionDisplayTextEditor.cs` | Custom layout and organization |
 | **ActionPlatformAnimator.cs** | `ActionEditors/ActionPlatformAnimatorEditor.cs` | Animation controls and settings |
+| **ActionRandomEvent.cs** | `ActionEditors/ActionRandomEventEditor.cs` | Normalized probability percentages per entry, Play-mode Trigger button |
+| **ActionShuffleEvent.cs** | `ActionEditors/ActionShuffleEventEditor.cs` | Per-entry queue status (fired/next/queued), cycle progress bar, Trigger/Reshuffle buttons |
 | **PhysicsPlatformAnimator.cs** | `PhysicsEditors/PhysicsPlatformAnimatorEditor.cs` | Physics-based animation controls |
 | **PuzzleSwitch.cs** | `PuzzleEditors/PuzzleSwitchEditor.cs` | Puzzle-specific UI layout |
 | **PuzzleSwitchChecker.cs** | `PuzzleEditors/PuzzleSwitchCheckerEditor.cs` | Checker-specific UI layout |
 | **InputMouseInteraction.cs** | `InputEditors/InputMouseInteractionEditor.cs` | Conditional scale/hover fields |
+| **InputOnStart.cs** | `InputEditors/InputOnStartEditor.cs` | Awake vs Start explanatory help boxes, conditional delay note |
 | **InputFPMouseInteraction.cs** | `InputEditors/InputFPMouseInteractionEditor.cs` | Conditional scale/hover fields, raycast settings |
 
-**Total**: 11 scripts with custom editors
+**Total**: 15 scripts with custom editors
 
 ---
 

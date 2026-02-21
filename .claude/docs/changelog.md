@@ -4,6 +4,137 @@ Recent updates, refactorings, and improvements to the eventGameToolKit.
 
 ---
 
+## February 2026 - ActionDialogueSequence FP Controller Fix
+
+### Fixed: Decision panels unclickable with CharacterControllerFP
+
+Students using `CharacterControllerFP` reported that clicking decision buttons during dialogue did not work. Two root causes were identified and fixed.
+
+#### Root Causes
+
+- **Cursor locked** — `CharacterControllerFP` locks the cursor, blocking Unity's EventSystem from delivering `PointerEventData` to decision buttons
+- **WASD conflict** — `HandleDecisionInput()` and `HandleMovement()` both polled the same keys, moving the player while navigating choices
+
+#### Changes
+
+- **`CharacterControllerFP`** — added `private bool _inputEnabled = true` flag and `SetInputEnabled(bool)` public method; added `if (!_inputEnabled) return` guard to `HandleLook()`, `HandleMovement()`, `HandleJump()`, and `HandleCursorToggle()`. Gravity, platform attachment, and slope sliding intentionally remain active.
+- **`ActionDialogueSequence`** — added optional `fpController` field (`[Header("Character Controller Integration")]`); `ShowDecisionPanel()` now saves cursor state, calls `fpController.UnlockCursor()` and `fpController.SetInputEnabled(false)` before showing choices; `CleanupDecisionPanel()` restores cursor and re-enables input after a decision. Falls back to raw `Cursor.lockState` manipulation when no FP controller is assigned, so non-FP scenes are unaffected.
+- **`ActionDialogueSequenceEditor`** — new "Character Controller Integration" section surfaces the `fpController` field with contextual help text.
+
+---
+
+## February 2026 - ActionPlaySound Update
+
+### Updated: ActionPlaySound
+
+Upgraded with randomized pitch and volume variation, a bug fix, and a custom Inspector.
+
+#### Changes
+
+- **Volume** — fixed `volume` float replaced with `volumeMin` / `volumeMax` range (default 0.8–1.0)
+- **Pitch** — added `pitchMin` / `pitchMax` range (default 1/1 = no variation); set per-play via `audioSource.pitch` before `PlayOneShot`
+- **Bug fix** — previous code passed `volume` to both `audioSource.volume` and `PlayOneShot`, effectively squaring the volume. Fixed by keeping `audioSource.volume = 1f` and passing the randomized value only to `PlayOneShot`
+- **`onPlay` UnityEvent** — fires on each successful playback
+- **`SetVolume()` / `SetPitch()`** — runtime control via UnityEvents (sets both min and max to a fixed value)
+- **`OnValidate()`** — enforces min ≤ max for both ranges in Editor
+- **`ActionPlaySoundEditor.cs`** — new custom Inspector with side-by-side Min/Max fields, contextual hint text (e.g. "Tip: 0.9–1.1 for subtle variation"), and a Play-mode "▶ Play Sound" test button
+- **Renamed** `PlaySound()` → `Play()` for consistency with EGTK naming conventions
+
+---
+
+## February 2026 - InputOnStart
+
+### New: InputOnStart
+
+Added a general-purpose scene-initialization event source so students can trigger any UnityEvent at scene start without writing code. Fills the gap left by `playOnStart` booleans on individual components, which only auto-trigger their own behavior.
+
+#### Files Added
+
+1. **InputOnStart.cs** (`Runtime/Input/`)
+   - `onAwake` — fires in `Awake()`, before any `Start()` in the scene
+   - `onStart` — fires in `Start()`, after all `Awake()` calls complete
+   - `startDelay` — optional float delays the Start event via coroutine
+   - Full XML documentation
+
+2. **InputOnStartEditor.cs** (`Editor/InputEditors/`)
+   - Help box before `onAwake` explaining when Awake fires and why to use it
+   - Help box before `onStart` explaining when Start fires and why it's the safer default
+   - Conditional note when `startDelay > 0` showing the exact delay value
+   - Bottom summary: execution order reminder and "when in doubt, use On Start" guidance
+
+#### Typical Uses
+
+- Trigger `ActionShuffleEvent.Trigger()` or `ActionRandomEvent.Trigger()` at scene open
+- Fire `ActionDialogueSequence.StartDialogue()` for opening cutscenes (use delay for fade-in)
+- Play an intro sound effect on scene load
+- Show tutorial UI after a brief pause (`startDelay = 1.5`)
+
+---
+
+## February 2026 - ActionShuffleEvent
+
+### New: ActionShuffleEvent
+
+Added an urn-model event dispatcher (sampling without replacement) as a complement to ActionRandomEvent. Every entry fires exactly once per cycle before the sequence reshuffles — equivalent to the `urn` object in MaxMSP.
+
+#### Files Added
+
+1. **ActionShuffleEvent.cs** (`Runtime/Actions/`)
+   - `ShuffleEntry` serializable class with label and `onSelected` UnityEvent (no weights — all equal)
+   - Fisher-Yates shuffle for cycle randomization
+   - `preventLastRepeat` option avoids the same entry bridging two consecutive cycles
+   - `onCycleComplete` UnityEvent fires when every entry has been used once
+   - `Trigger()` advances to the next shuffled entry, reshuffling automatically at cycle end
+   - `Reshuffle()` and `ResetFull()` public methods for manual control
+   - `Reset()` provides three defaults (Entry A, B, C)
+
+2. **ActionShuffleEventEditor.cs** (`Editor/ActionEditors/`)
+   - Per-entry queue status: ✓ fired (grey), ← next (green), #N queued (normal)
+   - Cycle progress bar showing step / total
+   - "▶ Trigger Next" and "↺ Reshuffle" Play-mode buttons
+   - Continuous repaint in Play mode so status updates in real time
+
+#### Key Distinction from ActionRandomEvent
+
+| | ActionRandomEvent | ActionShuffleEvent |
+|---|---|---|
+| Model | Weighted probability | Urn / sampling without replacement |
+| Repeats | Can repeat immediately | Never repeats within a cycle |
+| Weights | Yes (per entry) | No (all equal) |
+| Guarantee | Statistical distribution | Exhaustive coverage per cycle |
+
+---
+
+## February 2026 - ActionRandomEvent
+
+### New: ActionRandomEvent
+
+Added a weighted-random event dispatcher so students can introduce indeterminacy into their no-code projects without writing any code.
+
+#### Files Added
+
+1. **ActionRandomEvent.cs** (`Runtime/Actions/`)
+   - `WeightedEvent` serializable class with label, probability weight, and `onSelected` UnityEvent
+   - Weights are normalized at runtime — any positive values work (1/1/2 = 25%/25%/50%)
+   - `Reset()` provides two 50/50 defaults when the component is first added
+   - `Trigger()` performs weighted random selection and fires the chosen event
+   - `OnValidate()` clamps all weights to ≥ 0 in Editor
+   - Logs warnings for empty array or all-zero weights
+
+2. **ActionRandomEventEditor.cs** (`Editor/ActionEditors/`)
+   - Shows live normalized percentages (e.g., "→ 33.3%") in each foldout header
+   - Manual +/− buttons for adding and removing entries
+   - Play-mode "▶ Trigger" button for quick distribution testing
+
+#### Typical Uses
+
+- Random rewards on collection (common/uncommon/rare loot)
+- Branching dialogue (NPC says different things each visit)
+- Unpredictable hazards (enemy spawns vary each run)
+- Procedural variety (different sound/animation each trigger)
+
+---
+
 ## February 2026 - First-Person Character Controller
 
 ### New: CharacterControllerFP

@@ -265,6 +265,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1766536374}
+        m_TargetAssemblyTypeName: ActionEmissionAnimation, EventGameToolkit.Runtime
+        m_MethodName: Play
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onTeleportFailed:
     m_PersistentCalls:
       m_Calls: []
@@ -1409,7 +1421,7 @@ MonoBehaviour:
   targetRenderer: {fileID: 0}
   materialIndex: 0
   emissionColor: {r: 1, g: 1, b: 1, a: 1}
-  maxIntensity: 2
+  maxIntensity: 8.09
   duration: 1
   intensityCurve:
     serializedVersion: 2
@@ -2119,6 +2131,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1066120454}
+        m_TargetAssemblyTypeName: ActionEmissionAnimation, EventGameToolkit.Runtime
+        m_MethodName: Play
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onTeleportFailed:
     m_PersistentCalls:
       m_Calls: []
@@ -2474,7 +2498,7 @@ MonoBehaviour:
   targetRenderer: {fileID: 0}
   materialIndex: 0
   emissionColor: {r: 1, g: 1, b: 1, a: 1}
-  maxIntensity: 6.92
+  maxIntensity: 11.5
   duration: 1
   intensityCurve:
     serializedVersion: 2

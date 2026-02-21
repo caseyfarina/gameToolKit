@@ -268,6 +268,7 @@ public class CharacterControllerFP : MonoBehaviour
     private Vector3 slopeNormal = Vector3.up;
     private bool isSprinting;
     private bool isCursorLocked;
+    private bool _inputEnabled = true;
 
     // Camera state
     private float cameraPitch;
@@ -429,8 +430,19 @@ public class CharacterControllerFP : MonoBehaviour
             LockCursor();
     }
 
+    /// <summary>
+    /// Enables or disables all player input (look, move, jump, cursor toggle).
+    /// Use this during cutscenes, dialogue decisions, or UI interactions to freeze the controller.
+    /// Gravity and platform attachment continue to apply so the player does not float.
+    /// </summary>
+    public void SetInputEnabled(bool enabled)
+    {
+        _inputEnabled = enabled;
+    }
+
     private void HandleCursorToggle()
     {
+        if (!_inputEnabled) return;
         if (Input.GetKeyDown(cursorToggleKey))
         {
             ToggleCursor();
@@ -543,6 +555,7 @@ public class CharacterControllerFP : MonoBehaviour
 
     private void HandleLook()
     {
+        if (!_inputEnabled) return;
         if (playerCamera == null) return;
         if (lookInput == Vector2.zero) return;
 
@@ -711,6 +724,7 @@ public class CharacterControllerFP : MonoBehaviour
 
     private void HandleMovement()
     {
+        if (!_inputEnabled) return;
         // Movement is always character-relative (forward/strafe)
         Vector3 forward = transform.forward;
         Vector3 right = transform.right;
@@ -769,6 +783,7 @@ public class CharacterControllerFP : MonoBehaviour
 
     private void HandleJump()
     {
+        if (!_inputEnabled) return;
         if (isGrounded)
         {
             jumpTimeoutDelta = jumpTimeout;

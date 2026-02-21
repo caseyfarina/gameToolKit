@@ -39,16 +39,24 @@ This project provides a modular, no-code toolkit for students to create interact
 
 **⚠️ IMPORTANT: This project has TWO git repositories that must stay synchronized!**
 
+### Machines
+- **Laptop** (hostname: `electricEye`): `C:\Users\casey\Documents\unityProjects\egtkWorkingProject\`
+- **Desktop** (hostname: `BLD`): `F:\Unity Projects 2025\gameToolKitFarina\`
+
+Run `hostname` to determine the current machine, then use the matching paths and sync command below.
+
 ### 1. Development/Testing Environment (This Repository)
-- **Location**: `F:\Unity Projects 2025\gameToolKitFarina\gameToolKit\`
 - **Purpose**: Main Unity project where all development and testing happens
 - **Contains**: Full Unity project with scenes, testing assets, and eventGameToolKit package at `Assets/eventGameToolKit/`
+- **Laptop path**: `C:\Users\casey\Documents\unityProjects\egtkWorkingProject\gameToolKit\`
+- **Desktop path**: `F:\Unity Projects 2025\gameToolKitFarina\gameToolKit\`
 
 ### 2. Unity Package Repository (Separate Git Repo)
-- **Location**: `F:\Unity Projects 2025\eventGameToolKit\`
 - **Purpose**: Standalone Unity package with its own git repository
 - **Contains**: Only package contents (no test scenes or development assets)
 - **Used By**: Students via Unity Package Manager
+- **Laptop path**: `C:\Users\casey\Documents\unityProjects\egtkWorkingProject\eventGameToolKit-Package\`
+- **Desktop path**: `F:\Unity Projects 2025\eventGameToolKit-Package\`
 
 ### **CRITICAL SYNC RULE**
 
@@ -59,7 +67,12 @@ Before pushing to git, ALWAYS sync both repositories:
 3. ✅ **Sync to package**: Use robocopy command (see below)
 4. ✅ **Push together**: ALWAYS push both repos at the same time (never just one!)
 
-**Sync Command**:
+**Sync Command (Laptop)**:
+```bash
+cmd //c robocopy "C:\Users\casey\Documents\unityProjects\egtkWorkingProject\gameToolKit\Assets\eventGameToolKit" "C:\Users\casey\Documents\unityProjects\egtkWorkingProject\eventGameToolKit-Package" //MIR //XD .git
+```
+
+**Sync Command (Desktop)**:
 ```bash
 cmd //c robocopy "F:\Unity Projects 2025\gameToolKitFarina\gameToolKit\Assets\eventGameToolKit" "F:\Unity Projects 2025\eventGameToolKit-Package" //MIR //XD .git
 ```
@@ -231,9 +244,9 @@ Example generators are available in **Tools > Examples** menu. They follow consi
 
 ## Quick Reference
 
-**47 Educational Scripts (100% XML Documented)**
-- 8 Input components
-- 16 Action components
+**50 Educational Scripts (100% XML Documented)**
+- 9 Input components
+- 18 Action components
 - 7 Physics components
 - 9 Game managers
 - 2 Puzzle components

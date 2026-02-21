@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.Events;
-using System.Collections;
 using DG.Tweening;
 
 /// <summary>
@@ -84,18 +83,12 @@ public class ActionAnimateTransform : MonoBehaviour
     [Tooltip("Reverse direction on each loop (ping-pong)")]
     [SerializeField] private bool pingPong = false;
 
-    [Tooltip("Use physics timing (FixedUpdate) - REQUIRED for moving platforms with physics characters")]
-    [SerializeField] private bool usePhysicsUpdate = false;
-
     [Tooltip("Delay before animation starts (seconds)")]
     [SerializeField] private float startDelay = 0f;
 
     [Tooltip("Randomize start delay by this percentage (0 = no randomization, 1 = +/- 100%)")]
     [Range(0f, 1f)]
     [SerializeField] private float startDelayRandomness = 0f;
-
-    [Tooltip("Delay between loop iterations (seconds)")]
-    [SerializeField] private float loopDelay = 0f;
 
     [Tooltip("Use unscaled time (ignores Time.timeScale)")]
     [SerializeField] private bool useUnscaledTime = false;
@@ -141,6 +134,7 @@ public class ActionAnimateTransform : MonoBehaviour
     private Vector3 initialRotation;
     private Vector3 initialScale;
     private float actualDuration; // Randomized duration
+    private float actualStartDelay; // Stored for normalized time offset
 
     // Track if Start() has been called to avoid double-playing
     private bool hasStarted = false;
@@ -174,6 +168,21 @@ public class ActionAnimateTransform : MonoBehaviour
         {
             Debug.LogWarning($"[{gameObject.name}] ActionAnimateTransform: All curve mappings are disabled. No animation will play.", this);
         }
+
+        // Check for duplicate property mappings
+        for (int i = 0; i < curveMappings.Length; i++)
+        {
+            if (!curveMappings[i].enabled) continue;
+            for (int j = i + 1; j < curveMappings.Length; j++)
+            {
+                if (!curveMappings[j].enabled) continue;
+                if (curveMappings[i].property == curveMappings[j].property)
+                {
+                    Debug.LogWarning($"[{gameObject.name}] ActionAnimateTransform: Multiple enabled curve mappings target {curveMappings[i].property}. Only one mapping per property is supported.", this);
+                    break;
+                }
+            }
+        }
     }
 
     void OnEnable()
@@ -186,24 +195,19 @@ public class ActionAnimateTransform : MonoBehaviour
         }
     }
 
+    void OnDisable()
+    {
+        // Stop the sequence so it doesn't keep running in the background
+        // (DOTween sequences are independent of the GameObject lifecycle)
+        Stop();
+    }
+
     void Start()
     {
         // Default to this transform if none specified
         if (targetTransform == null)
         {
             targetTransform = transform;
-        }
-
-        // Calculate randomized duration
-        if (durationRandomness > 0f)
-        {
-            float randomRange = duration * durationRandomness;
-            actualDuration = duration + Random.Range(-randomRange, randomRange);
-            actualDuration = Mathf.Max(0.01f, actualDuration); // Ensure positive duration
-        }
-        else
-        {
-            actualDuration = duration;
         }
 
         // Store initial transform values
@@ -242,6 +246,19 @@ public class ActionAnimateTransform : MonoBehaviour
     }
 
     /// <summary>
+    /// Restores transform to the values captured at Start
+    /// </summary>
+    private void RestoreInitialTransform()
+    {
+        if (targetTransform == null)
+            return;
+
+        targetTransform.localPosition = initialPosition;
+        targetTransform.localEulerAngles = initialRotation;
+        targetTransform.localScale = initialScale;
+    }
+
+    /// <summary>
     /// Starts or restarts the animation
     /// </summary>
     public void Play()
@@ -249,8 +266,8 @@ public class ActionAnimateTransform : MonoBehaviour
         // Stop any existing animation
         Stop();
 
-        // Capture current values as new initial state
-        CaptureInitialValues();
+        // Restore to original start position (captured in Start)
+        RestoreInitialTransform();
 
         // Create DOTween animation sequence
         CreateAnimationSequence();
@@ -300,14 +317,8 @@ public class ActionAnimateTransform : MonoBehaviour
     /// </summary>
     public void ResetToInitial()
     {
-        if (targetTransform == null)
-            return;
-
-        targetTransform.localPosition = initialPosition;
-        targetTransform.localEulerAngles = initialRotation;
-        targetTransform.localScale = initialScale;
-
-        currentTime = 0f;
+        Stop();
+        RestoreInitialTransform();
     }
 
     /// <summary>
@@ -318,7 +329,7 @@ public class ActionAnimateTransform : MonoBehaviour
         currentTime = Mathf.Clamp01(normalizedTime);
         if (animationSequence != null && animationSequence.IsActive())
         {
-            animationSequence.Goto(normalizedTime * actualDuration, true);
+            animationSequence.Goto(actualStartDelay + normalizedTime * actualDuration, true);
         }
     }
 
@@ -329,8 +340,20 @@ public class ActionAnimateTransform : MonoBehaviour
     {
         if (targetTransform == null) return;
 
+        // Calculate randomized duration
+        if (durationRandomness > 0f)
+        {
+            float randomRange = duration * durationRandomness;
+            actualDuration = duration + Random.Range(-randomRange, randomRange);
+            actualDuration = Mathf.Max(0.01f, actualDuration);
+        }
+        else
+        {
+            actualDuration = duration;
+        }
+
         // Calculate randomized start delay
-        float actualStartDelay = startDelay;
+        actualStartDelay = startDelay;
         if (startDelayRandomness > 0f && startDelay > 0f)
         {
             float randomRange = startDelay * startDelayRandomness;
@@ -348,6 +371,7 @@ public class ActionAnimateTransform : MonoBehaviour
         }
 
         // Create tweens for each enabled curve mapping
+        bool isFirstTween = true;
         foreach (var mapping in curveMappings)
         {
             if (!mapping.enabled) continue;
@@ -377,10 +401,11 @@ public class ActionAnimateTransform : MonoBehaviour
                 // Apply the animation curve
                 propertyTween.SetEase(mapping.curve);
 
-                // Join all property tweens so they run simultaneously
-                if (animationSequence.Duration() == 0 || (actualStartDelay > 0 && animationSequence.Duration() == actualStartDelay))
+                // First tween is Appended (after any delay), rest are Joined to run simultaneously
+                if (isFirstTween)
                 {
                     animationSequence.Append(propertyTween);
+                    isFirstTween = false;
                 }
                 else
                 {
@@ -403,19 +428,6 @@ public class ActionAnimateTransform : MonoBehaviour
             animationSequence.SetUpdate(true);
         }
 
-        // Note: usePhysicsUpdate is not directly supported by DOTween
-        // Students using moving platforms should use PhysicsPlatformAnimator instead
-        if (usePhysicsUpdate)
-        {
-            Debug.LogWarning($"[{gameObject.name}] ActionAnimateTransform: usePhysicsUpdate is not supported with DOTween. For physics-based platform movement, use PhysicsPlatformAnimator instead.", this);
-        }
-
-        // Note: loopDelay is not currently supported with DOTween-based animations
-        if (loop && loopDelay > 0f)
-        {
-            Debug.LogWarning($"[{gameObject.name}] ActionAnimateTransform: loopDelay is not currently supported with DOTween. The delay will be ignored.", this);
-        }
-
         // Setup callbacks
         animationSequence.OnStart(() =>
         {
@@ -432,7 +444,7 @@ public class ActionAnimateTransform : MonoBehaviour
             if (animationSequence != null)
             {
                 float elapsed = animationSequence.Elapsed();
-                currentTime = Mathf.Clamp01(elapsed / actualDuration);
+                currentTime = Mathf.Clamp01((elapsed - actualStartDelay) / actualDuration);
                 onAnimationUpdate.Invoke(currentTime);
             }
         });
@@ -490,19 +502,30 @@ public class ActionAnimateTransform : MonoBehaviour
                     endValue, duration);
 
             case TransformProperty.RotationX:
-                return DOTween.To(() => targetTransform.localEulerAngles.x,
-                    x => { var rot = targetTransform.localEulerAngles; rot.x = x; targetTransform.localEulerAngles = rot; },
+            {
+                // Track rotation in a local variable to avoid Unity's localEulerAngles
+                // normalization (wrapping to [0,360)) which causes DOTween jitter
+                float rotX = startValue;
+                return DOTween.To(() => rotX,
+                    x => { rotX = x; var rot = targetTransform.localEulerAngles; rot.x = x; targetTransform.localEulerAngles = rot; },
                     endValue, duration);
+            }
 
             case TransformProperty.RotationY:
-                return DOTween.To(() => targetTransform.localEulerAngles.y,
-                    y => { var rot = targetTransform.localEulerAngles; rot.y = y; targetTransform.localEulerAngles = rot; },
+            {
+                float rotY = startValue;
+                return DOTween.To(() => rotY,
+                    y => { rotY = y; var rot = targetTransform.localEulerAngles; rot.y = y; targetTransform.localEulerAngles = rot; },
                     endValue, duration);
+            }
 
             case TransformProperty.RotationZ:
-                return DOTween.To(() => targetTransform.localEulerAngles.z,
-                    z => { var rot = targetTransform.localEulerAngles; rot.z = z; targetTransform.localEulerAngles = rot; },
+            {
+                float rotZ = startValue;
+                return DOTween.To(() => rotZ,
+                    z => { rotZ = z; var rot = targetTransform.localEulerAngles; rot.z = z; targetTransform.localEulerAngles = rot; },
                     endValue, duration);
+            }
 
             case TransformProperty.ScaleX:
                 return DOTween.To(() => targetTransform.localScale.x,
@@ -642,19 +665,16 @@ public class ActionAnimateTransform : MonoBehaviour
     /// </summary>
     public void PlayReverse()
     {
-        // For DOTween, we can achieve reverse by playing backwards
+        // Stop any existing animation and recreate with current settings
+        Stop();
+        RestoreInitialTransform();
+        CreateAnimationSequence();
+
         if (animationSequence != null && animationSequence.IsActive())
         {
+            // Jump to the end, then play backwards from there
+            animationSequence.Goto(animationSequence.Duration());
             animationSequence.PlayBackwards();
-        }
-        else
-        {
-            // Create sequence and immediately play backwards
-            CreateAnimationSequence();
-            if (animationSequence != null)
-            {
-                animationSequence.PlayBackwards();
-            }
         }
     }
 
