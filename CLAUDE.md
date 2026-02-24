@@ -244,9 +244,9 @@ Example generators are available in **Tools > Examples** menu. They follow consi
 
 ## Quick Reference
 
-**50 Educational Scripts (100% XML Documented)**
-- 9 Input components
-- 18 Action components
+**52 Educational Scripts (100% XML Documented)**
+- 10 Input components
+- 20 Action components
 - 7 Physics components
 - 9 Game managers
 - 2 Puzzle components

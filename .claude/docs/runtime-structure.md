@@ -6,7 +6,7 @@ Complete inventory of all educational scripts in the eventGameToolKit.
 
 ```
 Runtime/
-├── Actions/              # Event target components (18 scripts)
+├── Actions/              # Event target components (20 scripts)
 │   ├── Audio/           # Sound playback
 │   ├── DecalAnimation/  # URP decal material animations
 │   ├── Display/         # UI text and images
@@ -101,7 +101,7 @@ Event sources triggered by player input or game state.
 
 ---
 
-## Action Components (18 scripts)
+## Action Components (20 scripts)
 
 **Location**: `Runtime/Actions/`
 
@@ -179,6 +179,8 @@ Event targets that perform actions when triggered.
 - Loop mode for repeating dialogues
 - Preview system in Editor with custom inspector
 - Decision system with player choices
+- Optional `fpController` field — assign a `CharacterControllerFP` to automatically unlock the cursor and pause movement during decision panels; restores both on completion
+- `Reset()` seeds a default "Hello player!" line when the component is first added
 - 4 TMP formatting controls: fontSize, textAlignment, textColor, font
 - 4 UnityEvents: onDialogueStart, onDialogueComplete, onLineChanged, onDecisionStart
 
@@ -304,6 +306,7 @@ Controllers for player and enemy characters.
 - Robust slope detection with automatic sliding on steep surfaces
 - Moving platform support (Tag/Layer/Both detection modes)
 - Cursor lock/unlock management with toggle key and events
+- `SetInputEnabled(bool)` — freezes look/move/jump/cursor-toggle without disabling gravity; used by ActionDialogueSequence during decision panels
 - Animator integration with 5 parameters (Speed, Grounded, VerticalVelocity, IsWalking, IsSprinting)
 - TeleportTo() method for portals, cutscenes, respawns
 - 9 UnityEvents for no-code interaction (includes onCursorLockChanged)
@@ -575,10 +578,10 @@ Core interfaces for extensible systems.
 
 ## Script Count Summary
 
-**Total: 57 Scripts + 1 Interface**
+**Total: 59 Scripts + 1 Interface**
 
 - **Input Components**: 10 scripts
-- **Action Components**: 18 scripts (+ 1 helper)
+- **Action Components**: 20 scripts (+ 1 helper)
 - **Animation Components**: 1 script
 - **Character Controllers**: 7 scripts
 - **Game Managers**: 9 scripts
