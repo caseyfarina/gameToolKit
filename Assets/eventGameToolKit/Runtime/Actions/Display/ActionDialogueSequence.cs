@@ -344,17 +344,11 @@ public class ActionDialogueSequence : MonoBehaviour
     {
         if (!isPlaying) return;
 
-        // If currently typing, skip the type-on effect immediately
-        if (isTyping)
-        {
-            uiController.DialogueTextComponent.maxVisibleCharacters = MAX_VISIBLE_CHARACTERS;
-            isTyping = false;
-            // The main Coroutine loop will pick up 'skipRequested' in the next iteration.
-        }
-        else
-        {
-            skipRequested = true;
-        }
+        // Setting skipRequested handles both cases:
+        // - If typing: the TypewriterEffect OnUpdate callback sees it and calls typeTween.Complete(),
+        //   which correctly drives maxVisibleCharacters to its end value without a display glitch.
+        // - If waiting between lines: the wait loop breaks immediately.
+        skipRequested = true;
     }
 
     private IEnumerator PlayDialogueSequence()

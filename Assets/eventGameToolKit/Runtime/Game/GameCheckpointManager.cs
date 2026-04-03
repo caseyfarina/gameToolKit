@@ -315,9 +315,6 @@ public class GameCheckpointManager : MonoBehaviour, ISpawnPointProvider
         
         Debug.Log($"GameCheckpointManager: Player teleported to checkpoint {savedPosition}");
         onCheckpointRestored.Invoke();
-        
-        RestoreScore();
-        RestoreHealth();
     }
 
     /// <summary>

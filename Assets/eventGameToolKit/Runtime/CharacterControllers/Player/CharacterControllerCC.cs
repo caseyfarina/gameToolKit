@@ -187,12 +187,7 @@ public class CharacterControllerCC : MonoBehaviour
     /// </summary>
     private void CheckForSpawnPoint()
     {
-        // Find all spawn point providers in the scene
-        // This includes checkpoint managers, spawn point selectors, etc.
-        ISpawnPointProvider[] providers = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None) 
-            as ISpawnPointProvider[];
-        
-        // More reliable approach: search through all MonoBehaviours
+        // Search all MonoBehaviours for any that implement ISpawnPointProvider
         MonoBehaviour[] allBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
         
         foreach (MonoBehaviour behaviour in allBehaviours)

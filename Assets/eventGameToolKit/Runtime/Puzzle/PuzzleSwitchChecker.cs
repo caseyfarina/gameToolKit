@@ -115,8 +115,7 @@ public class PuzzleSwitchChecker : MonoBehaviour
             {
                 if (target.targetSwitch != null)
                 {
-                    // Subscribe to state changes
-                    target.targetSwitch.onStateChanged.AddListener((newState) => OnSwitchChanged(target.targetSwitch));
+                    target.targetSwitch.onStateChanged.AddListener(OnAnySwitchChanged);
                 }
                 else
                 {
@@ -132,22 +131,23 @@ public class PuzzleSwitchChecker : MonoBehaviour
     void OnDestroy()
     {
         // Unsubscribe from events
-        if (automaticChecking)
+        if (automaticChecking && switchTargets != null)
         {
             foreach (var target in switchTargets)
             {
                 if (target.targetSwitch != null)
                 {
-                    target.targetSwitch.onStateChanged.RemoveListener((newState) => OnSwitchChanged(target.targetSwitch));
+                    target.targetSwitch.onStateChanged.RemoveListener(OnAnySwitchChanged);
                 }
             }
         }
     }
 
     /// <summary>
-    /// Called when any switch changes state (automatic mode only)
+    /// Called when any switch changes state (automatic mode only).
+    /// Named method (not lambda) so RemoveListener can match it by reference.
     /// </summary>
-    private void OnSwitchChanged(PuzzleSwitch changedSwitch)
+    private void OnAnySwitchChanged(int newState)
     {
         CheckConfiguration(true);
     }
@@ -355,7 +355,7 @@ public class PuzzleSwitchChecker : MonoBehaviour
             {
                 if (target.targetSwitch != null)
                 {
-                    target.targetSwitch.onStateChanged.AddListener((newState) => OnSwitchChanged(target.targetSwitch));
+                    target.targetSwitch.onStateChanged.AddListener(OnAnySwitchChanged);
                 }
             }
             CheckConfiguration(true);
@@ -367,7 +367,7 @@ public class PuzzleSwitchChecker : MonoBehaviour
             {
                 if (target.targetSwitch != null)
                 {
-                    target.targetSwitch.onStateChanged.RemoveListener((newState) => OnSwitchChanged(target.targetSwitch));
+                    target.targetSwitch.onStateChanged.RemoveListener(OnAnySwitchChanged);
                 }
             }
         }

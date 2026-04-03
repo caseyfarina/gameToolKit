@@ -74,7 +74,7 @@ public class PhysicsPlatformAnimator : MonoBehaviour
 
     private void Update()
     {
-        if (!isPlaying || waypoints.Count < 2) return;
+        if (!isPlaying || waypoints.Count < 2 || totalAnimationTime <= 0f) return;
 
         // Handle pause at waypoint
         if (isPaused)
