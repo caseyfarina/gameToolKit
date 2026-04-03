@@ -158,9 +158,11 @@ public class ActionRandomMotion : MonoBehaviour
     {
         currentTween?.Kill();
         float dur = Mathf.Max(0.01f, returnDuration);
-        currentTween = motionSpace == MotionSpace.Local
-            ? transform.DOLocalMove(restPosition, dur).SetEase(easeType)
-            : transform.DOMove(restPosition, dur).SetEase(easeType);
+        currentTween = (motionSpace == MotionSpace.Local
+            ? transform.DOLocalMove(restPosition, dur)
+            : transform.DOMove(restPosition, dur))
+            .SetEase(easeType)
+            .OnComplete(() => { if (isPlaying) StartNextMove(); });
     }
 
     /// <summary>
@@ -175,6 +177,7 @@ public class ActionRandomMotion : MonoBehaviour
     private void StartNextMove()
     {
         if (!isPlaying) return;
+        currentTween?.Kill();
 
         Vector3 offset = new Vector3(
             moveX ? Random.Range(-rangeX, rangeX) : 0f,
