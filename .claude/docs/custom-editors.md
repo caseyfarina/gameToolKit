@@ -29,8 +29,14 @@ When adding new `[SerializeField]` properties to scripts with custom editors, yo
 | **InputMouseInteraction.cs** | `InputEditors/InputMouseInteractionEditor.cs` | Conditional scale/hover fields |
 | **InputOnStart.cs** | `InputEditors/InputOnStartEditor.cs` | Awake vs Start explanatory help boxes, conditional delay note |
 | **InputFPMouseInteraction.cs** | `InputEditors/InputFPMouseInteractionEditor.cs` | Conditional scale/hover fields, raycast settings |
+| **GameCollectionManager.cs** | `GameEditors/GameCollectionManagerEditor.cs` | Conditional UI text/bar fields, canvas preview system |
+| **GameHealthManager.cs** | `GameEditors/GameHealthManagerEditor.cs` | Conditional UI text/bar fields, canvas preview system |
+| **GameTimerManager.cs** | `GameEditors/GameTimerManagerEditor.cs` | Conditional clock/bar fields, totalTime shown only for count-up, canvas preview |
+| **GameInventoryManager.cs** | `GameEditors/GameInventoryManagerEditor.cs` | Conditional card UI fields (layout, count text), canvas preview system |
+| **InputClickDrag.cs** | `InputEditors/InputClickDragEditor.cs` | Hides snapSize when snapping off, hides limit vectors when limits off |
+| **InputClickRotate.cs** | `InputEditors/InputClickRotateEditor.cs` | Hides snapAngle when snapping off, hides limit fields when limits off, play-mode angle readout |
 
-**Total**: 15 scripts with custom editors
+**Total**: 21 scripts with custom editors
 
 ---
 
@@ -134,6 +140,7 @@ Editor scripts are organized by category:
 ```
 Editor/
 ├── ActionEditors/           # Action component editors
+├── GameEditors/             # Game manager editors
 ├── InputEditors/            # Input component editors
 ├── PhysicsEditors/          # Physics component editors
 └── PuzzleEditors/           # Puzzle component editors

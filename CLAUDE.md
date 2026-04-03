@@ -100,6 +100,8 @@ Assets/
 │   │   └── Variables/     # ⚠️ FEATURE BRANCH: ScriptableObject variables
 │   └── Editor/            # Custom Inspector scripts
 │       ├── ActionEditors/
+│       ├── GameEditors/
+│       ├── InputEditors/
 │       ├── PhysicsEditors/
 │       └── PuzzleEditors/
 ├── Scenes/                # Test scenes
@@ -235,6 +237,53 @@ See **[Documentation Generator Guide](.claude/docs/documentation-generator.md)**
 ### Creating Example Scenes
 Example generators are available in **Tools > Examples** menu. They follow consistent patterns documented in **[Development Patterns](.claude/docs/development-patterns.md)**.
 
+## Custom Slash Commands
+
+### `/desk-check <ScriptName>`
+
+Performs a manual trace review (desk check) of a script. Traces every public method with forecasted inputs to verify logic without executing it. Produces per-method trace tables with BUG / EDGE CASE / OK verdicts, checks editor property name matches, and validates flag ordering and event timing. Asks before applying fixes.
+
+**Usage**: `/desk-check GameHealthManager`, `/desk-check ActionDialogueSequence`
+
+## Self-Contained UI Pattern
+
+**GameHealthManager**, **GameCollectionManager**, and **GameInventoryManager** all support optional self-contained UI toggled via `showUI`. When enabled, the manager creates its own Canvas at runtime — no GameUIManager wiring needed.
+
+**Important**: Students should use EITHER the individual controls (Option A) OR GameUIManager (Option B), never both on the same manager. Mixing them creates duplicate overlapping displays. See [GameUI_QuickStart.md](Assets/eventGameToolKit/Documentation/GameUI_QuickStart.md) for student guidance.
+
+**GameTimerManager** also supports self-contained UI: a clock text display (with optional gradient color) and a fill bar (with gradient), both with independent positioning controls. Count-down timers automatically use `startTime` as 100%; count-up timers require `totalTime` to be set for bar/gradient to work.
+
+## GameInventoryManager
+
+`GameInventoryManager` (`Runtime/Game/GameInventoryManager.cs`) replaces the single-slot `GameInventorySlot` with a configurable list of inventory slots in a single component.
+
+`GameInventorySlot` has been removed — it's in git history if needed.
+
+### Architecture
+
+```
+GameInventoryManager
+├── List<InventorySlot> slots    // configurable in Inspector
+├── showUI toggle                // self-contained UI (row of icon+count cards)
+└── showCount toggle             // optional count number in each card
+
+[Serializable] InventorySlot
+├── string itemName
+├── Sprite icon (optional)       // shown in UI card
+├── int maxCapacity
+├── int currentCount
+├── UnityEvent onFull            // fires when count reaches maxCapacity
+├── UnityEvent onEmpty           // fires when count reaches 0
+└── UnityEvent<int> onChanged    // fires on any count change, passes new count
+```
+
+### Migration from GameInventorySlot
+
+Students using `GameInventorySlot` will need to:
+1. Remove `GameInventorySlot` components
+2. Add `GameInventoryManager`
+3. Re-configure slots and re-wire events
+
 ## Getting Help
 
 - **Script Reference**: See [Runtime Structure](.claude/docs/runtime-structure.md)
@@ -244,11 +293,11 @@ Example generators are available in **Tools > Examples** menu. They follow consi
 
 ## Quick Reference
 
-**52 Educational Scripts (100% XML Documented)**
-- 10 Input components
+**54 Educational Scripts (100% XML Documented) | 21 Custom Editors**
+- 12 Input components
 - 20 Action components
 - 7 Physics components
-- 9 Game managers
+- 10 Game managers
 - 2 Puzzle components
 - 1 UI component
 - 1 Animation component

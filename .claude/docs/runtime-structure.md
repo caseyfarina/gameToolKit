@@ -93,6 +93,27 @@ Event sources triggered by player input or game state.
 - Optional `startDelay` float delays the Start event by N seconds (coroutine-based)
 - Custom Inspector includes help boxes explaining Awake vs Start with an execution order summary
 
+### InputClickDrag.cs
+- Allows a GameObject to be clicked and dragged; requires a Collider on the same object
+- `DragPlane` enum: `CameraFacing` (depth-locked screen plane), `WorldXZ`, `WorldXY`, `WorldYZ`
+- `GrabMode` enum: `MaintainOffset` (default) or `SnapToCenter`
+- Optional grid snapping: `snapToGrid` + `snapSize`
+- Optional world-space positional limits: `useLimits` + `minLimit`/`maxLimit` (Vector3)
+- Events: `onDragStart`, `onDragEnd`, `onDragged` (Vector3 world position)
+- Public: `CancelDrag()`, `IsDragging`
+- Custom Inspector: hides snap/limit sub-fields when toggles are off
+
+### InputClickRotate.cs
+- Allows a GameObject to be rotated by clicking and dragging; requires a Collider on the same object
+- `RotationAxis` enum: `WorldX/Y/Z`, `LocalX/Y/Z` — axis captured in world space at drag start
+- `MouseDragAxis` enum: `Horizontal` (default) or `Vertical`
+- `sensitivity`: degrees per pixel of mouse movement (default 0.5)
+- Optional angle snapping: `snapToAngle` + `snapAngle` (degrees)
+- Optional rotation limits: `useLimits` + `LimitSpace` enum (`RelativeToStart` / `WorldAbsolute`) + `minAngle`/`maxAngle`
+- Events: `onRotateStart`, `onRotateEnd`, `onRotated` (float cumulative angle)
+- Public: `CancelRotation()`, `IsRotating`, `GetCurrentAngle()`
+- Custom Inspector: hides snap/limit sub-fields when toggles are off; shows live angle readout in play mode
+
 ### InputCollisionEnter.cs
 **Location**: `Runtime/Utilities/`
 - Collision event system (OnCollisionEnter)
@@ -377,23 +398,47 @@ Controllers for player and enemy characters.
 Manager systems for health, score, audio, state, etc.
 
 ### GameCollectionManager.cs
-- Score/collection system
-- TextMeshPro display integration
-- Threshold events (e.g., "score reaches 10")
-- Add/subtract/set score methods
+- Score/collection value tracking with threshold-based events
+- Optional self-contained UI text display (enable Show UI)
+  - Label prefix, font size, alignment, color, custom font
+  - PunchScale or FadeFlash animation on value change
+- Optional self-contained bar display (enable Show Bar)
+  - Configurable position, size, background color, gradient fill
+  - Smooth animated fill transitions
+- Editor canvas preview for positioning UI elements
+- Min/max value clamping with limit events
+- Increment/Decrement/SetValue methods
 
-### GameInventorySlot.cs
-- Inventory management
-- Capacity limits and overflow detection
-- Item add/remove with quantity tracking
-- Full/empty state events
+### GameInventoryManager.cs
+- Multi-slot inventory system — configure any number of slots in the Inspector
+- Each slot: itemName, optional icon Sprite, maxCapacity, currentCount
+- Per-slot events: onFull, onEmpty, onChanged(int)
+- Methods by index: Increment, Decrement, UseItem, GetCount
+- Methods by name: IncrementByName, DecrementByName, GetCountByName
+- Optional self-contained UI (enable Show UI)
+  - Horizontal row of cards, one per slot
+  - Each card shows the slot's icon (if assigned)
+  - Optional count number in each card (toggle Show Count)
+  - Configurable card size, spacing, background color, font, and position
+  - Editor canvas preview for positioning
+- Custom Inspector editor with conditional UI settings
+
 
 ### GameHealthManager.cs
 - Health system with damage and healing
-- Health threshold detection and events
-- Death state management
-- TextMeshPro display integration
-- Damage immunity cooldown
+- Health threshold detection and events (low health, death, revival)
+- Death state management with revival support via SetHealth/FullHeal
+- Optional self-contained UI text display (enable Show UI)
+  - Label prefix, "current / max" format toggle
+  - Font size, alignment, color, custom font
+  - PunchScale or FadeFlash animation on value change
+- Optional self-contained health bar display (enable Show Bar)
+  - Configurable position, size, background color
+  - Gradient fill color (red → yellow → green by default)
+  - Smooth animated fill transitions
+- Editor canvas preview for positioning UI elements
+- Damage-over-time coroutine for testing
+- One-shot kills skip low health warning (only onDeath fires)
 
 ### GameStateManager.cs
 - Simplified pause and victory state management
@@ -402,12 +447,20 @@ Manager systems for health, score, audio, state, etc.
 - Automatic discovery and control of GameTimerManager
 
 ### GameTimerManager.cs
-- Comprehensive timer system
-- Count-up or countdown modes
-- Multiple configurable thresholds with individual events
+- Count-up or countdown timer with configurable start/total time
+- Optional self-contained UI text display (enable Show UI)
+  - Display formats: MM:SS, Seconds, Seconds with decimal, HH:MM:SS
+  - Label prefix, font size, alignment, custom font
+  - Static color or gradient color mapped across the full timer duration
+- Optional self-contained bar display (enable Show Bar)
+  - Configurable position, size, background color
+  - Gradient fill color mapped across the full timer duration
+  - Smooth animated fill transitions
+- Editor canvas preview shows at 75% time progress
+- Configurable threshold events (fire at specific times)
 - Periodic event system (e.g., every 10 seconds)
-- Three display formats (MM:SS, decimal seconds, HH:MM:SS)
 - Automatic pause/resume with GameStateManager
+- For count-up bar: set Total Time as the 100% reference duration
 
 ### GameUIManager.cs
 - UI data display system with DOTween animations
@@ -598,7 +651,7 @@ Core interfaces for extensible systems.
 
 ## Custom Editor Scripts
 
-14 scripts have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)):
+18 scripts have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)):
 
 - ActionDialogueSequence
 - ActionDecalSequence
@@ -608,6 +661,9 @@ Core interfaces for extensible systems.
 - ActionPlatformAnimator
 - ActionRandomEvent
 - ActionShuffleEvent
+- GameCollectionManager
+- GameHealthManager
+- GameTimerManager
 - InputFPMouseInteraction
 - InputOnStart
 - InputMouseInteraction
