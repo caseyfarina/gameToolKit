@@ -293,14 +293,14 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**54 Educational Scripts (100% XML Documented) | 21 Custom Editors**
+**55 Educational Scripts (100% XML Documented) | 22 Custom Editors**
 - 12 Input components
 - 20 Action components
 - 7 Physics components
 - 10 Game managers
 - 2 Puzzle components
 - 1 UI component
-- 1 Animation component
+- 3 Animation components
 - 3 Root character controllers
 
 For complete script inventory with features, see **[Runtime Structure](.claude/docs/runtime-structure.md)**.

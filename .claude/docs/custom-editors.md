@@ -35,8 +35,9 @@ When adding new `[SerializeField]` properties to scripts with custom editors, yo
 | **GameInventoryManager.cs** | `GameEditors/GameInventoryManagerEditor.cs` | Conditional card UI fields (layout, count text), canvas preview system |
 | **InputClickDrag.cs** | `InputEditors/InputClickDragEditor.cs` | Hides snapSize when snapping off, hides limit vectors when limits off |
 | **InputClickRotate.cs** | `InputEditors/InputClickRotateEditor.cs` | Hides snapAngle when snapping off, hides limit fields when limits off, play-mode angle readout |
+| **ActionRandomMotion.cs** | `AnimationEditors/ActionRandomMotionEditor.cs` | Axis toggle + range inline per row, play-mode Play/Pause/Stop/Return controls |
 
-**Total**: 21 scripts with custom editors
+**Total**: 22 scripts with custom editors
 
 ---
 

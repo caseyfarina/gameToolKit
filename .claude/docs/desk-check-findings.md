@@ -122,6 +122,7 @@ Also breaks `RestoreCheckpoint()` intent: its comment says "leaves score/health 
 - ⬜ InputMouseInteraction / InputFPMouseInteraction
 - ⬜ InputClickDrag (new)
 - ⬜ InputClickRotate (new)
+- ⬜ ActionRandomMotion (new)
 - ⬜ FadeInFromBlackOnRestart
 - ⬜ GameCameraManager
 - ⬜ DialogueUIController
