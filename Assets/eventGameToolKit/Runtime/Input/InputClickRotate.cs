@@ -103,7 +103,7 @@ public class InputClickRotate : MonoBehaviour
     private void TryStartRotate(Vector2 screenPos)
     {
         Ray ray = mainCamera.ScreenPointToRay(screenPos);
-        if (!Physics.Raycast(ray, out RaycastHit hit)) return;
+        if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
         if (hit.collider.gameObject != gameObject) return;
 
         startRotation = transform.rotation;

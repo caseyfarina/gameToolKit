@@ -102,7 +102,7 @@ public class InputClickDrag : MonoBehaviour
     private void TryStartDrag(Vector2 screenPos)
     {
         Ray ray = mainCamera.ScreenPointToRay(screenPos);
-        if (!Physics.Raycast(ray, out RaycastHit hit)) return;
+        if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
         if (hit.collider.gameObject != gameObject) return;
 
         // Record the drag plane at the object's current position
