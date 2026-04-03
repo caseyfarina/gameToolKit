@@ -18,6 +18,9 @@ public class InputClickDragEditor : Editor
     private SerializedProperty minLimitProp;
     private SerializedProperty maxLimitProp;
 
+    private SerializedProperty enableDampingProp;
+    private SerializedProperty dampingTimeProp;
+
     private SerializedProperty onDragStartProp;
     private SerializedProperty onDragEndProp;
     private SerializedProperty onDraggedProp;
@@ -33,6 +36,9 @@ public class InputClickDragEditor : Editor
         useLimitsProp  = serializedObject.FindProperty("useLimits");
         minLimitProp   = serializedObject.FindProperty("minLimit");
         maxLimitProp   = serializedObject.FindProperty("maxLimit");
+
+        enableDampingProp = serializedObject.FindProperty("enableDamping");
+        dampingTimeProp   = serializedObject.FindProperty("dampingTime");
 
         onDragStartProp = serializedObject.FindProperty("onDragStart");
         onDragEndProp   = serializedObject.FindProperty("onDragEnd");
@@ -65,6 +71,16 @@ public class InputClickDragEditor : Editor
             EditorGUI.indentLevel++;
             EditorGUILayout.PropertyField(minLimitProp);
             EditorGUILayout.PropertyField(maxLimitProp);
+            EditorGUI.indentLevel--;
+        }
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Damping", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(enableDampingProp);
+        if (enableDampingProp.boolValue)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(dampingTimeProp);
             EditorGUI.indentLevel--;
         }
 

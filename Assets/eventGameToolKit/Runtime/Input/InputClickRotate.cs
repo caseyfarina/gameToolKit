@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Allows a GameObject to be rotated by clicking and dragging the mouse.
-/// Supports world or local axis constraints, mouse sensitivity, optional angle snapping, and rotation limits.
+/// Supports world or local axis constraints, mouse sensitivity, optional angle snapping, rotation limits, and damping.
 /// Requires a Collider on the same GameObject.
 /// Common use: Dials, levers, spinning puzzles, or orientation controls.
 /// </summary>
@@ -49,6 +49,13 @@ public class InputClickRotate : MonoBehaviour
     [Tooltip("Maximum rotation angle in degrees")]
     [SerializeField] private float maxAngle = 90f;
 
+    [Header("Damping")]
+    [Tooltip("Smooth the rotation so it lags slightly behind the mouse. On release, the object snaps to the final target angle.")]
+    [SerializeField] private bool enableDamping = false;
+
+    [Tooltip("Time in seconds to reach the target rotation (smaller = snappier, larger = more lag)")]
+    [SerializeField] private float dampingTime = 0.1f;
+
     [Header("Events")]
     /// <summary>
     /// Fires when the player starts rotating this object
@@ -61,12 +68,14 @@ public class InputClickRotate : MonoBehaviour
     public UnityEvent onRotateEnd;
 
     /// <summary>
-    /// Fires each frame while rotating, passing the current cumulative angle in degrees from the drag start rotation
+    /// Fires each frame while rotating, passing the object's actual applied angle in degrees (smoothed when damping is enabled)
     /// </summary>
     public UnityEvent<float> onRotated;
 
     private bool isRotating = false;
-    private float cumulativeAngle = 0f;      // angle applied relative to startRotation
+    private float cumulativeAngle = 0f;      // target angle (after limits and snap)
+    private float appliedAngle = 0f;         // angle actually applied to the transform (smoothed when damping is on)
+    private float angularVelocity = 0f;      // SmoothDamp velocity reference
     private Quaternion startRotation;
     private Vector3 rotationAxisInWorld;     // captured in world space at drag start
     private Camera mainCamera;
@@ -108,6 +117,8 @@ public class InputClickRotate : MonoBehaviour
 
         startRotation = transform.rotation;
         cumulativeAngle = 0f;
+        appliedAngle = 0f;
+        angularVelocity = 0f;
         rotationAxisInWorld = GetWorldAxis();
 
         isRotating = true;
@@ -132,7 +143,13 @@ public class InputClickRotate : MonoBehaviour
                 cumulativeAngle = Mathf.Clamp(cumulativeAngle, minAngle, maxAngle);
         }
 
-        transform.rotation = Quaternion.AngleAxis(cumulativeAngle, rotationAxisInWorld) * startRotation;
+        // Smooth toward target or apply directly
+        if (enableDamping)
+            appliedAngle = Mathf.SmoothDamp(appliedAngle, cumulativeAngle, ref angularVelocity, dampingTime);
+        else
+            appliedAngle = cumulativeAngle;
+
+        transform.rotation = Quaternion.AngleAxis(appliedAngle, rotationAxisInWorld) * startRotation;
 
         // World-absolute limits: clamp the actual world Euler angle post-rotation
         if (useLimits && limitSpace == LimitSpace.WorldAbsolute)
@@ -144,17 +161,23 @@ public class InputClickRotate : MonoBehaviour
                 Vector3 euler = transform.eulerAngles;
                 SetEulerAxis(ref euler, clamped);
                 transform.rotation = Quaternion.Euler(euler);
-                // Pull cumulativeAngle back by the amount clamped so the limit
-                // triggers immediately again if the mouse keeps moving in the same direction
-                cumulativeAngle -= (worldEuler - clamped);
+                float correction = worldEuler - clamped;
+                cumulativeAngle -= correction;
+                appliedAngle -= correction;
             }
         }
 
-        onRotated.Invoke(cumulativeAngle);
+        onRotated.Invoke(appliedAngle);
     }
 
     private void EndRotate()
     {
+        if (enableDamping)
+        {
+            appliedAngle = cumulativeAngle;
+            transform.rotation = Quaternion.AngleAxis(appliedAngle, rotationAxisInWorld) * startRotation;
+            angularVelocity = 0f;
+        }
         isRotating = false;
         onRotateEnd.Invoke();
     }
@@ -199,7 +222,7 @@ public class InputClickRotate : MonoBehaviour
     }
 
     /// <summary>
-    /// Cancels a rotation in progress, firing onRotateEnd
+    /// Cancels a rotation in progress, snapping to the target angle and firing onRotateEnd
     /// </summary>
     public void CancelRotation()
     {
@@ -212,7 +235,7 @@ public class InputClickRotate : MonoBehaviour
     public bool IsRotating => isRotating;
 
     /// <summary>
-    /// Returns the cumulative rotation angle in degrees from the drag start rotation
+    /// Returns the current applied angle in degrees from the drag start rotation (smoothed when damping is enabled)
     /// </summary>
-    public float GetCurrentAngle() => cumulativeAngle;
+    public float GetCurrentAngle() => appliedAngle;
 }

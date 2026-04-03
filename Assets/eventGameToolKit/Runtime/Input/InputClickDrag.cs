@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Allows a GameObject to be clicked and dragged by the player.
-/// Constrains movement to a chosen plane with optional grid snapping and positional limits.
+/// Constrains movement to a chosen plane with optional grid snapping, positional limits, and damping.
 /// Requires a Collider on the same GameObject.
 /// Common use: Puzzle pieces, sliders, object placement, drag-to-sort mechanics.
 /// </summary>
@@ -48,6 +48,13 @@ public class InputClickDrag : MonoBehaviour
     [Tooltip("Maximum world-space position on each axis")]
     [SerializeField] private Vector3 maxLimit = new Vector3(10f, 10f, 10f);
 
+    [Header("Damping")]
+    [Tooltip("Smooth the object's movement so it lags slightly behind the cursor. On release, the object snaps to the final target position.")]
+    [SerializeField] private bool enableDamping = false;
+
+    [Tooltip("Time in seconds to reach the cursor position (smaller = snappier, larger = more lag)")]
+    [SerializeField] private float dampingTime = 0.1f;
+
     [Header("Events")]
     /// <summary>
     /// Fires when the player starts dragging this object
@@ -60,7 +67,7 @@ public class InputClickDrag : MonoBehaviour
     public UnityEvent onDragEnd;
 
     /// <summary>
-    /// Fires each frame while dragging, passing the new world-space position
+    /// Fires each frame while dragging, passing the object's actual world-space position (smoothed when damping is enabled)
     /// </summary>
     public UnityEvent<Vector3> onDragged;
 
@@ -68,6 +75,8 @@ public class InputClickDrag : MonoBehaviour
     private Vector3 grabOffset;       // world-space offset from plane hit point to object center
     private Vector3 dragPlanePoint;   // a point on the drag plane (captured at grab start)
     private Vector3 dragPlaneNormal;  // normal of the drag plane (captured at grab start)
+    private Vector3 targetPosition;   // where the object should end up (before damping)
+    private Vector3 dampingVelocity;  // SmoothDamp velocity reference
     private Camera mainCamera;
 
     private void Start()
@@ -123,6 +132,9 @@ public class InputClickDrag : MonoBehaviour
         Vector3 hitPoint = ray.GetPoint(enter);
         grabOffset = grabMode == GrabMode.MaintainOffset ? (transform.position - hitPoint) : Vector3.zero;
 
+        targetPosition = transform.position;
+        dampingVelocity = Vector3.zero;
+
         isDragging = true;
         onDragStart.Invoke();
     }
@@ -137,13 +149,23 @@ public class InputClickDrag : MonoBehaviour
         Vector3 newPos = ray.GetPoint(enter) + grabOffset;
         newPos = ApplySnap(newPos);
         newPos = ApplyLimits(newPos);
+        targetPosition = newPos;
 
-        transform.position = newPos;
-        onDragged.Invoke(newPos);
+        if (enableDamping)
+            transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref dampingVelocity, dampingTime);
+        else
+            transform.position = targetPosition;
+
+        onDragged.Invoke(transform.position);
     }
 
     private void EndDrag()
     {
+        if (enableDamping)
+        {
+            transform.position = targetPosition;
+            dampingVelocity = Vector3.zero;
+        }
         isDragging = false;
         onDragEnd.Invoke();
     }
@@ -169,7 +191,7 @@ public class InputClickDrag : MonoBehaviour
     }
 
     /// <summary>
-    /// Cancels a drag in progress, firing onDragEnd
+    /// Cancels a drag in progress, snapping to the target position and firing onDragEnd
     /// </summary>
     public void CancelDrag()
     {

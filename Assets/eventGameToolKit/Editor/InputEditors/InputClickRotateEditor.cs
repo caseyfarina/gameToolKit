@@ -20,6 +20,9 @@ public class InputClickRotateEditor : Editor
     private SerializedProperty minAngleProp;
     private SerializedProperty maxAngleProp;
 
+    private SerializedProperty enableDampingProp;
+    private SerializedProperty dampingTimeProp;
+
     private SerializedProperty onRotateStartProp;
     private SerializedProperty onRotateEndProp;
     private SerializedProperty onRotatedProp;
@@ -37,6 +40,9 @@ public class InputClickRotateEditor : Editor
         limitSpaceProp = serializedObject.FindProperty("limitSpace");
         minAngleProp   = serializedObject.FindProperty("minAngle");
         maxAngleProp   = serializedObject.FindProperty("maxAngle");
+
+        enableDampingProp = serializedObject.FindProperty("enableDamping");
+        dampingTimeProp   = serializedObject.FindProperty("dampingTime");
 
         onRotateStartProp = serializedObject.FindProperty("onRotateStart");
         onRotateEndProp   = serializedObject.FindProperty("onRotateEnd");
@@ -71,6 +77,16 @@ public class InputClickRotateEditor : Editor
             EditorGUILayout.PropertyField(limitSpaceProp);
             EditorGUILayout.PropertyField(minAngleProp);
             EditorGUILayout.PropertyField(maxAngleProp);
+            EditorGUI.indentLevel--;
+        }
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Damping", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(enableDampingProp);
+        if (enableDampingProp.boolValue)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(dampingTimeProp);
             EditorGUI.indentLevel--;
         }
 
