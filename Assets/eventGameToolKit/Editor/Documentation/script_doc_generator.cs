@@ -12,7 +12,7 @@ using UnityEngine.UI;
 
 public class ScriptDocumentationGenerator : EditorWindow
 {
-    private string rootFolderPath = "Assets/Scripts";
+    public string rootFolderPath = "Assets/Scripts";
     private GameObject documentationRoot;
     private float columnSpacing = 400f;
     private float minFontSize = 8f;
@@ -67,7 +67,7 @@ public class ScriptDocumentationGenerator : EditorWindow
         }
     }
     
-    private void GenerateDocumentation()
+    public void GenerateDocumentation()
     {
         ClearDocumentation();
         
@@ -670,7 +670,7 @@ public class ScriptDocumentationGenerator : EditorWindow
         return descriptions;
     }
 
-    private void ClearDocumentation()
+    public void ClearDocumentation()
     {
         GameObject existing = GameObject.Find("ScriptDocumentation");
         if (existing != null)

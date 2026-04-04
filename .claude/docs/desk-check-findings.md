@@ -40,7 +40,25 @@ Also breaks `RestoreCheckpoint()` intent: its comment says "leaves score/health 
 
 ---
 
-### 5. `CharacterControllerCC` — Dead failed cast
+### 5. `ActionRandomMotion` — Orphaned tweens when Play called during ReturnToRestPosition
+
+**File**: `Runtime/Animation/ActionRandomMotion.cs`  
+**Method**: `StartNextMove()`  
+**Problem**: `StartNextMove()` assigned `currentTween` without first killing the previous tween. Calling `ReturnToRestPosition()` followed by `Play()` left the return tween alive alongside the new move tween — both wrote to `transform.position` simultaneously, causing jitter.  
+**Fix**: Added `currentTween?.Kill();` at the top of `StartNextMove()`.
+
+---
+
+### 6. `ActionRandomMotion` — ReturnToRestPosition permanently breaks motion loop
+
+**File**: `Runtime/Animation/ActionRandomMotion.cs`  
+**Method**: `ReturnToRestPosition()`  
+**Problem**: `ReturnToRestPosition()` killed the active move tween. DOTween's `Kill()` does NOT call `OnComplete`, so `OnMoveFinished` → `StartNextMove` never ran again. `isPlaying` remained `true` so `Play()` silently no-oped with no recovery path — motion was permanently stuck.  
+**Fix**: Added `.OnComplete(() => { if (isPlaying) StartNextMove(); })` to the return tween so the loop resumes after returning.
+
+---
+
+### 7. `CharacterControllerCC` — Dead failed cast
 **File**: `Runtime/CharacterControllers/Player/CharacterControllerCC.cs`  
 **Method**: `CheckForSpawnPoint()`  
 **Problem**: `ISpawnPointProvider[] providers = FindObjectsByType<MonoBehaviour>(...) as ISpawnPointProvider[];` — this cast always returns `null` (array covariance doesn't work this way in C#). The variable is never used; the immediately following `allBehaviours` loop is the real logic. Dead code that misleads readers.  
@@ -120,9 +138,9 @@ Also breaks `RestoreCheckpoint()` intent: its comment says "leaves score/health 
 - ⬜ ActionEmissionAnimation
 - ⬜ InputKeyPress / InputKeyCountdown / InputQuitGame / InputActionEvent
 - ⬜ InputMouseInteraction / InputFPMouseInteraction
-- ⬜ InputClickDrag (new)
-- ⬜ InputClickRotate (new)
-- ⬜ ActionRandomMotion (new)
+- ✅ InputClickDrag
+- ✅ InputClickRotate
+- ✅ ActionRandomMotion
 - ⬜ FadeInFromBlackOnRestart
 - ⬜ GameCameraManager
 - ⬜ DialogueUIController

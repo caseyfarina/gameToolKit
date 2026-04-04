@@ -4,6 +4,89 @@ Recent updates, refactorings, and improvements to the eventGameToolKit.
 
 ---
 
+## April 2026 - Documentation Scene Bootstrapper
+
+### New: `EGTK_Documentation` Auto-Generate Scene
+
+Students can now view all toolkit documentation by opening a single scene — no Tools menu, no Play button.
+
+#### How It Works
+
+- `DocumentationSceneBootstrapper` (`Editor/Documentation/`) is an `[InitializeOnLoad]` class that hooks `EditorSceneManager.sceneOpened`.
+- When a scene named `EGTK_Documentation` opens, it `CreateInstance`s `ScriptDocumentationGenerator`, sets the path to `Assets/eventGameToolKit/Runtime`, calls `GenerateDocumentation()`, and destroys the instance — the window never appears.
+- `ScriptDocumentationGenerator` had three members promoted from `private` to `public`: `rootFolderPath`, `GenerateDocumentation()`, `ClearDocumentation()`. No behavior changed.
+
+#### One-Time Setup
+
+Run **Tools > Documentation > Create Documentation Scene** once per project. This creates `ExampleScenes/EGTK_Documentation.unity`. After that, just open the scene.
+
+---
+
+## April 2026 - GameHealthManager Self-Contained UI & Bug Fixes
+
+### New: Self-Contained UI for GameHealthManager
+
+GameHealthManager now has the same self-contained UI system as GameCollectionManager — students can enable a text display and/or health bar directly on the component without wiring to GameUIManager.
+
+#### New Features
+
+- **UI Text (Optional)** — toggle `showUI` to create an on-screen text display
+  - Label prefix (default "HP: ")
+  - "Show Max In Text" toggle switches between `HP: 75` and `HP: 75 / 100` format
+  - Font size, alignment, color, custom font
+  - PunchScale or FadeFlash animation on health change
+- **UI Bar (Optional)** — toggle `showBar` to create a health bar
+  - Configurable position, size, background color
+  - Gradient fill (red → yellow → green by default)
+  - Smooth animated fill with configurable duration
+- **Editor Canvas Preview** — position UI elements in the Game view without entering Play mode
+
+#### Files Added
+
+1. **GameHealthManagerEditor.cs** (`Editor/GameEditors/`)
+   - Conditional UI sections: text/bar fields only appear when their toggle is enabled
+   - Context-aware animation fields (PunchScale shows "Punch Duration", FadeFlash shows "Flash Duration")
+   - Canvas preview button with play mode cleanup
+   - All 7 health events grouped at bottom
+
+#### Bug Fixes (Pre-Existing)
+
+1. **SetHealth() events never fired** — `CheckHealthStates()` was called before the event-firing logic, clobbering `isDead` and `isLowHealth` flags. This meant `onDeath`, `onRevived`, and `onLowHealthReached` could never fire from `SetHealth()` or `FullHeal()`. Fixed by saving old flags before updating state.
+
+2. **SetMaxHealth() didn't update bar** — increasing `maxHealth` without clamping `currentHealth` skipped the UI update. The bar would show stale percentage until the next damage/heal. Fixed by always updating UI when max changes.
+
+3. **One-shot kills fired low health warning** — `TakeDamage(100)` from full health would fire both `onLowHealthReached` and `onDeath` on the same frame. Fixed by checking `currentHealth > 0` instead of `!isDead` in the low health threshold, so lethal damage only fires `onDeath`.
+
+#### Backward Compatibility
+
+- All new UI fields default to disabled — existing GameHealthManager components work exactly as before
+- No breaking changes to public API or existing events
+- Bug fixes improve correctness for all users
+
+---
+
+## April 2026 - GameCollectionManager Self-Contained UI
+
+### New: Self-Contained UI for GameCollectionManager
+
+GameCollectionManager now creates its own UI display directly — no need to wire to GameUIManager for basic score/counter display.
+
+#### New Features
+
+- **UI Text (Optional)** — toggle `showUI` for on-screen text with label prefix, font size, alignment, color, custom font, and PunchScale/FadeFlash animation
+- **UI Bar (Optional)** — toggle `showBar` for a fill bar with position, size, background color, gradient fill, and smooth animation
+- **Threshold System** — configurable list of value thresholds with separate up/down crossing events
+- **Editor Canvas Preview** — position UI elements in the Game view without entering Play mode
+
+#### Files Added
+
+1. **GameCollectionManagerEditor.cs** (`Editor/GameEditors/`)
+   - Conditional UI sections for text and bar
+   - Max value warning for bar display
+   - Canvas preview system
+
+---
+
 ## February 2026 - ActionDialogueSequence FP Controller Fix
 
 ### Fixed: Decision panels unclickable with CharacterControllerFP
