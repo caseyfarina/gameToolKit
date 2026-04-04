@@ -24,8 +24,10 @@ When adding new `[SerializeField]` properties to scripts with custom editors, yo
 | **ActionRandomEvent.cs** | `ActionEditors/ActionRandomEventEditor.cs` | Normalized probability percentages per entry, Play-mode Trigger button |
 | **ActionShuffleEvent.cs** | `ActionEditors/ActionShuffleEventEditor.cs` | Per-entry queue status (fired/next/queued), cycle progress bar, Trigger/Reshuffle buttons |
 | **PhysicsPlatformAnimator.cs** | `PhysicsEditors/PhysicsPlatformAnimatorEditor.cs` | Physics-based animation controls |
+| **PhysicsForceZone.cs** | `PhysicsEditors/PhysicsForceZoneEditor.cs` | Force range inline min/max, one-force-per-stay help text, play-mode zone readout with per-object forced status |
 | **PuzzleSwitch.cs** | `PuzzleEditors/PuzzleSwitchEditor.cs` | Puzzle-specific UI layout |
 | **PuzzleSwitchChecker.cs** | `PuzzleEditors/PuzzleSwitchCheckerEditor.cs` | Checker-specific UI layout |
+| **PuzzleSequenceChecker.cs** | `PuzzleEditors/PuzzleSequenceCheckerEditor.cs` | Numbered sequence list, current-step highlight in play mode, progress bar |
 | **InputMouseInteraction.cs** | `InputEditors/InputMouseInteractionEditor.cs` | Conditional scale/hover fields |
 | **InputOnStart.cs** | `InputEditors/InputOnStartEditor.cs` | Awake vs Start explanatory help boxes, conditional delay note |
 | **InputFPMouseInteraction.cs** | `InputEditors/InputFPMouseInteractionEditor.cs` | Conditional scale/hover fields, raycast settings |
@@ -37,7 +39,7 @@ When adding new `[SerializeField]` properties to scripts with custom editors, yo
 | **InputClickRotate.cs** | `InputEditors/InputClickRotateEditor.cs` | Hides snapAngle when snapping off, hides limit fields when limits off, play-mode angle readout |
 | **ActionRandomMotion.cs** | `AnimationEditors/ActionRandomMotionEditor.cs` | Axis toggle + range inline per row, play-mode Play/Pause/Stop/Return controls |
 
-**Total**: 22 scripts with custom editors
+**Total**: 24 scripts with custom editors
 
 ---
 

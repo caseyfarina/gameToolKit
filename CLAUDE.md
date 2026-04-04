@@ -168,7 +168,7 @@ Students create interactions by wiring UnityEvents in the Inspector:
 | **Actions** | Event targets that perform actions | ActionSpawnObject, ActionDisplayText, ActionDialogueSequence |
 | **Physics** | Movement, forces, collisions | PhysicsBumper, CharacterControllerCC, PhysicsPlatformAnimator |
 | **Game** | Managers for health, score, timer, audio, etc. | GameHealthManager, GameStateManager, GameAudioManager |
-| **Puzzle** | Switch and checker mechanics | PuzzleSwitch, PuzzleSwitchChecker |
+| **Puzzle** | Switch and checker mechanics | PuzzleSwitch, PuzzleSwitchChecker, PuzzleSequenceChecker |
 | **UI** | User interface helpers | FadeInFromBlackOnRestart |
 | **Animation** | Transform animations | ActionAnimateTransform |
 
@@ -293,7 +293,7 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**55 Educational Scripts (100% XML Documented) | 22 Custom Editors**
+**57 Educational Scripts (100% XML Documented) | 24 Custom Editors**
 - 12 Input components
 - 20 Action components
 - 7 Physics components
