@@ -36,6 +36,11 @@ public class GameInventoryManagerEditor : Editor
         EditorGUILayout.ObjectField("Script", MonoScript.FromMonoBehaviour((GameInventoryManager)target), typeof(GameInventoryManager), false);
         GUI.enabled = true;
 
+        // Scene Persistence
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Scene Persistence", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("persistAcrossScenes"), new GUIContent("Persist Across Scenes"));
+
         // Inventory Slots
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Inventory Slots", EditorStyles.boldLabel);

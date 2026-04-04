@@ -55,6 +55,10 @@ public class InventorySlot
 /// </summary>
 public class GameInventoryManager : MonoBehaviour
 {
+    [Header("Scene Persistence")]
+    [Tooltip("Keep this manager alive when loading a new scene, preserving all slot counts. Place it in your first scene only — it survives all subsequent loads.")]
+    [SerializeField] private bool persistAcrossScenes = false;
+
     [Header("Inventory Slots")]
     [Tooltip("List of item slots - each tracks a different item type")]
     [SerializeField] private List<InventorySlot> slots = new List<InventorySlot> { new InventorySlot() };
@@ -89,6 +93,25 @@ public class GameInventoryManager : MonoBehaviour
 
     // Runtime UI references
     private Canvas uiCanvas;
+
+    private void Awake()
+    {
+        if (!persistAcrossScenes) return;
+
+        // If a persistent instance with the same name already exists, destroy this duplicate
+        foreach (var other in FindObjectsByType<GameInventoryManager>(FindObjectsSortMode.None))
+        {
+            if (other != this && other.persistAcrossScenes && other.gameObject.name == gameObject.name)
+            {
+                Destroy(gameObject);
+                return;
+            }
+        }
+
+        if (transform.parent != null)
+            transform.SetParent(null);
+        DontDestroyOnLoad(gameObject);
+    }
 
     private void Start()
     {

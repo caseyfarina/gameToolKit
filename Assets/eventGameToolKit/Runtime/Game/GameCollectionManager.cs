@@ -43,6 +43,10 @@ public class GameCollectionManager : MonoBehaviour
     /// </summary>
     public enum ValueAnimation { None, PunchScale, FadeFlash }
 
+    [Header("Scene Persistence")]
+    [Tooltip("Keep this manager alive when loading a new scene, preserving the current value. Place it in your first scene only — it survives all subsequent loads.")]
+    [SerializeField] private bool persistAcrossScenes = false;
+
     [Header("Value Settings")]
     [Tooltip("Current value (score, coins, items, etc.)")]
     [SerializeField] private int currentValue = 0;
@@ -157,6 +161,25 @@ public class GameCollectionManager : MonoBehaviour
             }
         );
         return g;
+    }
+
+    private void Awake()
+    {
+        if (!persistAcrossScenes) return;
+
+        // If a persistent instance with the same name already exists, destroy this duplicate
+        foreach (var other in FindObjectsByType<GameCollectionManager>(FindObjectsSortMode.None))
+        {
+            if (other != this && other.persistAcrossScenes && other.gameObject.name == gameObject.name)
+            {
+                Destroy(gameObject);
+                return;
+            }
+        }
+
+        if (transform.parent != null)
+            transform.SetParent(null);
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Start()
