@@ -60,6 +60,10 @@ public class GameAudioManager : MonoBehaviour
     private Tween ambientFadeTween;
     private Tween ambientVolumeTween;
 
+    // Temp sources created during crossfades — tracked so they can be destroyed if interrupted
+    private AudioSource tempMusicSource;
+    private AudioSource tempAmbientSource;
+
     public bool IsMusicPlaying => musicSource != null && musicSource.isPlaying;
     public bool IsAmbientPlaying => ambientSource != null && ambientSource.isPlaying;
     public bool IsFading => (musicFadeTween != null && musicFadeTween.IsActive() && musicFadeTween.IsPlaying()) ||
@@ -339,17 +343,24 @@ public class GameAudioManager : MonoBehaviour
 
     private void CrossfadeAmbient(AudioClip newClip, float duration)
     {
-        AudioSource tempSource = CreateTemporaryAmbientSource();
-        tempSource.clip = newClip;
-        tempSource.volume = 0f;
-        tempSource.Play();
+        // Destroy any previous temp source that was left over from an interrupted crossfade
+        if (tempAmbientSource != null)
+        {
+            Destroy(tempAmbientSource.gameObject);
+            tempAmbientSource = null;
+        }
+
+        tempAmbientSource = CreateTemporaryAmbientSource();
+        tempAmbientSource.clip = newClip;
+        tempAmbientSource.volume = 0f;
+        tempAmbientSource.Play();
 
         float originalVolume = ambientSource.volume;
 
         // Create a sequence for the crossfade
         ambientFadeTween = DOTween.Sequence()
             .Append(FadeAudioSource(ambientSource, 0f, duration))
-            .Join(FadeAudioSource(tempSource, originalVolume, duration))
+            .Join(FadeAudioSource(tempAmbientSource, originalVolume, duration))
             .SetUpdate(true)
             .OnComplete(() =>
             {
@@ -357,10 +368,11 @@ public class GameAudioManager : MonoBehaviour
                 ambientSource.Stop();
                 ambientSource.clip = newClip;
                 ambientSource.volume = originalVolume;
-                ambientSource.time = tempSource.time;
+                ambientSource.time = tempAmbientSource.time;
                 ambientSource.Play();
 
-                Destroy(tempSource.gameObject);
+                Destroy(tempAmbientSource.gameObject);
+                tempAmbientSource = null;
                 onAmbientStarted?.Invoke();
             });
     }
@@ -532,17 +544,24 @@ public class GameAudioManager : MonoBehaviour
 
     private void CrossfadeMusic(AudioClip newClip, float duration)
     {
-        AudioSource tempSource = CreateTemporaryAudioSource();
-        tempSource.clip = newClip;
-        tempSource.volume = 0f;
-        tempSource.Play();
+        // Destroy any previous temp source that was left over from an interrupted crossfade
+        if (tempMusicSource != null)
+        {
+            Destroy(tempMusicSource.gameObject);
+            tempMusicSource = null;
+        }
+
+        tempMusicSource = CreateTemporaryAudioSource();
+        tempMusicSource.clip = newClip;
+        tempMusicSource.volume = 0f;
+        tempMusicSource.Play();
 
         float originalVolume = musicSource.volume;
 
         // Create a sequence for the crossfade
         musicFadeTween = DOTween.Sequence()
             .Append(FadeAudioSource(musicSource, 0f, duration))
-            .Join(FadeAudioSource(tempSource, originalVolume, duration))
+            .Join(FadeAudioSource(tempMusicSource, originalVolume, duration))
             .SetUpdate(true)
             .OnComplete(() =>
             {
@@ -550,10 +569,11 @@ public class GameAudioManager : MonoBehaviour
                 musicSource.Stop();
                 musicSource.clip = newClip;
                 musicSource.volume = originalVolume;
-                musicSource.time = tempSource.time;
+                musicSource.time = tempMusicSource.time;
                 musicSource.Play();
 
-                Destroy(tempSource.gameObject);
+                Destroy(tempMusicSource.gameObject);
+                tempMusicSource = null;
                 onMusicStarted?.Invoke();
             });
     }
@@ -585,6 +605,12 @@ public class GameAudioManager : MonoBehaviour
         masterVolumeTween?.Kill();
         ambientFadeTween?.Kill();
         ambientVolumeTween?.Kill();
+
+        // Clean up any temp sources left over from interrupted crossfades
+        if (tempMusicSource != null)
+            Destroy(tempMusicSource.gameObject);
+        if (tempAmbientSource != null)
+            Destroy(tempAmbientSource.gameObject);
     }
 
     #endregion
@@ -625,7 +651,14 @@ public class GameAudioManager : MonoBehaviour
     public void PlaySFXByName(string resourcePath)
     {
         AudioClip clip = Resources.Load<AudioClip>(resourcePath);
-        PlaySoundEffect(clip);
+        if (clip != null)
+        {
+            PlaySoundEffect(clip);
+        }
+        else
+        {
+            Debug.LogWarning($"Could not find audio clip at path: {resourcePath}");
+        }
     }
 
     /// <summary>
