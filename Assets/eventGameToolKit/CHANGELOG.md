@@ -72,7 +72,6 @@ Complete educational toolkit with 46 fully-documented components across 8 catego
 
 #### Documentation & Tools
 - Script Documentation Generator - Auto-generates visual documentation
-- 11 Example Scene Generators - One-click example scene creation
 - CharacterControllerCC_Documentation.md (940 lines)
 - DecalAnimationSystem_Documentation.md (830 lines)
 - CLAUDE_STUDENT.md - Comprehensive student reference guide
@@ -99,7 +98,7 @@ Replaced 405+ lines of manual coroutine code with DOTween:
 
 - **No-Code Architecture** - Visual UnityEvent-driven design
 - **Modular Components** - Each script serves a specific purpose
-- **Comprehensive Examples** - 11 example scene generators
+- **Comprehensive Examples** - Example scenes in ExampleScenes/
 - **Auto-Documentation** - Script Documentation Generator tool
 - **Student-Friendly** - Encouraging documentation with Quick Start guides
 

@@ -10,9 +10,8 @@ Critical patterns, conventions, and best practices for developing in the eventGa
 2. [Critical Physics Patterns](#critical-physics-patterns)
 3. [System Integration Patterns](#system-integration-patterns)
 4. [Cross-System Coordination](#cross-system-coordination)
-5. [Editor Scene Generator Patterns](#editor-scene-generator-patterns)
-6. [Code Conventions](#code-conventions)
-7. [Adding New Educational Components](#adding-new-educational-components)
+5. [Code Conventions](#code-conventions)
+6. [Adding New Educational Components](#adding-new-educational-components)
 
 ---
 
@@ -518,127 +517,6 @@ public void SwitchToCamera(string cameraName)
 
 // Can be triggered by ANY event (trigger zone, score threshold, timer, etc.)
 ```
-
----
-
-## Editor Scene Generator Patterns
-
-When creating editor tools to generate example scenes, follow these patterns:
-
-### Programmatic UnityEvent Configuration
-
-**⚠️ CRITICAL: Use SerializedProperty, not UnityEventTools**
-
-```csharp
-// ✅ CORRECT - Persists to scene
-private static void AddPersistentListener(SerializedProperty unityEvent, Object target, string methodName)
-{
-    SerializedProperty calls = unityEvent.FindPropertyRelative("m_PersistentCalls.m_Calls");
-    int index = calls.arraySize;
-    calls.InsertArrayElementAtIndex(index);
-
-    SerializedProperty call = calls.GetArrayElementAtIndex(index);
-    call.FindPropertyRelative("m_Target").objectReferenceValue = target;
-    call.FindPropertyRelative("m_MethodName").stringValue = methodName;
-    call.FindPropertyRelative("m_Mode").enumValueIndex = (int)PersistentListenerMode.EventDefined;
-    call.FindPropertyRelative("m_CallState").enumValueIndex = (int)UnityEventCallState.RuntimeOnly;
-}
-
-// ❌ WRONG - Doesn't persist
-UnityEventTools.AddPersistentListener(myEvent, target.MyMethod);
-```
-
-**For methods with parameters**:
-
-```csharp
-private static void AddPersistentListener(SerializedProperty unityEvent, Object target, string methodName, bool boolValue)
-{
-    // ... same as above, plus:
-    call.FindPropertyRelative("m_Mode").enumValueIndex = (int)PersistentListenerMode.Bool;
-    call.FindPropertyRelative("m_Arguments.m_BoolArgument").boolValue = boolValue;
-}
-```
-
-### UI EventSystem Requirement
-
-**Always create EventSystem for UI buttons**:
-
-```csharp
-// Create EventSystem if it doesn't exist
-if (GameObject.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
-{
-    GameObject eventSystemObj = new GameObject("EventSystem");
-    eventSystemObj.AddComponent<UnityEngine.EventSystems.EventSystem>();
-    eventSystemObj.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
-}
-```
-
-**Note**: Use `FindFirstObjectByType` (Unity 6+), not deprecated `FindObjectOfType`.
-
-### Component Enable/Disable Lifecycle
-
-**Handle playOnStart with OnEnable**:
-
-```csharp
-// ❌ PROBLEM - Only runs once
-void Start()
-{
-    if (playOnStart) Play();
-}
-
-// ✅ SOLUTION - Runs on re-enable
-private bool hasStarted = false;
-
-void OnEnable()
-{
-    // Only play if Start() has run
-    if (hasStarted && playOnStart)
-    {
-        Play();
-    }
-}
-
-void Start()
-{
-    // Initialization
-    hasStarted = true;
-    if (playOnStart) Play();
-}
-```
-
-**Why**: Ensures behaviors restart when GameObjects are re-enabled.
-
-### SerializedObject Best Practices
-
-```csharp
-// Get component and create SerializedObject
-var component = gameObject.AddComponent<MyComponent>();
-SerializedObject so = new SerializedObject(component);
-
-// Modify properties
-SerializedProperty prop = so.FindProperty("myField");
-prop.intValue = 10;
-
-// Apply changes and mark dirty
-so.ApplyModifiedProperties();
-EditorUtility.SetDirty(component);
-
-// Support undo
-Undo.RegisterCreatedObjectUndo(gameObject, "Create Example");
-```
-
-### Example Generator Checklist
-
-All example generators should:
-
-- ✅ Use pink/blue materials from `Assets/Materials/`
-- ✅ Create TMP annotations explaining the example
-- ✅ Wire UnityEvents via SerializedProperty
-- ✅ Create EventSystem if needed for UI
-- ✅ Position camera for optimal viewing
-- ✅ Use consistent naming (e.g., "ExampleName_Player")
-- ✅ Add to Tools > Examples menu
-- ✅ Support undo operations
 
 ---
 

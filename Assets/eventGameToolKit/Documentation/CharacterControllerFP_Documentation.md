@@ -29,17 +29,7 @@ CharacterControllerFP is a kinematic first-person character controller designed 
 
 **Just want a working first-person controller? Here's the fastest way:**
 
-### Option A: Use the Setup Generator (Easiest)
-
-1. Go to **Tools > Setup Patterns > First-Person Controller Pattern**
-2. Click **Create First-Person Pattern**
-3. Select the **Player** in the Hierarchy
-4. On the **PlayerInput** component, set **Actions** to `InputSystem_Actions`
-5. Press Play!
-
-**That's it!** WASD to move, mouse to look, Space to jump, Shift to sprint, Escape to toggle cursor.
-
-### Option B: Manual Setup (3 Steps)
+### Manual Setup (3 Steps)
 
 **Step 1: Create the Player**
 1. Create an empty GameObject, name it "Player", position at (0, 1, 0)

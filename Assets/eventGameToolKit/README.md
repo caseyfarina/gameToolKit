@@ -18,7 +18,6 @@ The Event Game Toolkit is built around an **event-driven architecture** where st
 
 - **69 C# scripts** across 8 categories
 - **46 educational components** (100% XML-documented)
-- **11 example scene generators** (Tools > Examples menu)
 - **Comprehensive documentation** system
 - **DOTween integration** for professional animations
 
@@ -132,21 +131,6 @@ Located in `UI/` folder:
 ### Auto-Generated Documentation
 The package includes a **Script Documentation Generator** accessible via **Tools > Script Documentation Generator**. This creates an interactive Canvas-based UI showing all components organized by category with their functions and events.
 
-### Example Scene Generators
-Generate example scenes demonstrating each system via **Tools > Examples** menu:
-
-- Physics Bumper Example
-- Character Controller Example
-- Enemy Controller Example
-- Collection System Example
-- Health System Example
-- Timer System Example
-- Inventory System Example
-- Checkpoint System Example
-- Trigger Zone Example
-- Auto Spawner Example
-- Puzzle System Example
-
 ### External Documentation
 - **CharacterControllerCC_Documentation.md** - Complete 940-line setup guide with Quick Start
 - **DecalAnimationSystem_Documentation.md** - Complete 830-line URP decal guide
@@ -254,7 +238,6 @@ This is an educational package. For bug reports or feature requests, please cont
 
 - **Documentation Issues:** Check CLAUDE_STUDENT.md for comprehensive guidance
 - **Component Questions:** Use the Script Documentation Generator (Tools menu)
-- **Example Scenes:** Generate examples via Tools > Examples menu
 - **Instructor Help:** Contact Casey Farina
 
 ---

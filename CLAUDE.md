@@ -234,8 +234,8 @@ See **[Documentation Generator Guide](.claude/docs/documentation-generator.md)**
 4. Test package in clean Unity project
 5. Push both repos together
 
-### Creating Example Scenes
-Example generators are available in **Tools > Examples** menu. They follow consistent patterns documented in **[Development Patterns](.claude/docs/development-patterns.md)**.
+### Example Scenes
+Example scenes live in `Assets/eventGameToolKit/ExampleScenes/`. Add new ones directly as Unity scene files — no code-based generators.
 
 ## Custom Slash Commands
 
