@@ -174,6 +174,20 @@ Students create interactions by wiring UnityEvents in the Inspector:
 
 ## Development Workflow
 
+### Before Pushing to Git — Maintenance Checklist
+
+When adding, renaming, or modifying scripts, update these files before committing:
+
+| What changed | Files to update |
+|---|---|
+| New script added | `runtime-structure.md`, `ComponentQuickReference.md`, CLAUDE.md script count |
+| Script renamed or removed | `runtime-structure.md`, `ComponentQuickReference.md`, `custom-editors.md` (if applicable) |
+| New `[SerializeField]` on a script with a custom editor | The editor script (see [Custom Editors Guide](.claude/docs/custom-editors.md)) |
+| New custom editor created | `custom-editors.md` table |
+| Public API changed | XML doc comments in the script |
+
+**`ComponentQuickReference.md`** (`Assets/eventGameToolKit/Documentation/`) is the student-facing one-page guide. It must stay current — students use it to discover what components exist.
+
 ### Adding New Fields to Components
 
 **⚠️ CRITICAL: Check for custom editor scripts before adding fields!**
@@ -244,6 +258,22 @@ Example scenes live in `Assets/eventGameToolKit/ExampleScenes/`. Add new ones di
 Performs a manual trace review (desk check) of a script. Traces every public method with forecasted inputs to verify logic without executing it. Produces per-method trace tables with BUG / EDGE CASE / OK verdicts, checks editor property name matches, and validates flag ordering and event timing. Asks before applying fixes.
 
 **Usage**: `/desk-check GameHealthManager`, `/desk-check ActionDialogueSequence`
+
+## Scene Persistence
+
+Two managers support an optional `persistAcrossScenes` toggle that calls `DontDestroyOnLoad`:
+
+| Manager | Persists | How |
+|---|---|---|
+| `GameCollectionManager` | Optional | `persistAcrossScenes` checkbox |
+| `GameInventoryManager` | Optional | `persistAcrossScenes` checkbox |
+| `GameCheckpointManager` | Always | Built-in singleton, no toggle |
+| All others | Never | No persist support |
+
+**Rules:**
+- The manager must be in the **first scene that loads** (title screen, loading screen, or main menu). `DontDestroyOnLoad` only keeps an object alive once it exists — it cannot retroactively reach back into a prior scene.
+- Duplicate prevention is by `gameObject.name`: if a persistent instance with the same name already exists when a new scene loads, the new one destroys itself. Name managers clearly (e.g., "ScoreManager", "KeyInventory") and don't reuse names across different managers.
+- Students should **not** add the manager to subsequent scenes — it carries over automatically.
 
 ## Self-Contained UI Pattern
 
