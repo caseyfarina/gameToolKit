@@ -1,17 +1,25 @@
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using DG.Tweening;
 
 /// <summary>
-/// Trigger zone that shows an optional visual prompt when a tagged object enters,
-/// then fires an event when the player presses the Interact input action (or fallback key).
-/// Creates a self-contained billboard sprite with optional hover and glow animations.
-/// Common use: Door interactions, NPC conversations, item pickups, puzzle activations.
+/// Interaction zone with two modes: Proximity (player walks into a trigger collider and
+/// presses the Interact action) or Mouse (cursor hovers over this object and clicks).
+/// Both modes show an optional billboard prompt sprite with hover float and glow animations.
+/// Common use: Doors, NPCs, item pickups, puzzle activations, point-and-click interactions.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class InputInteractionZone : MonoBehaviour
 {
+    /// <summary>How interaction is initiated</summary>
+    public enum InteractionMode
+    {
+        Proximity,  // Player walks into a trigger collider, then presses the Interact button
+        Mouse       // Cursor hovers over this object; click to interact
+    }
+
     /// <summary>How the prompt sprite is oriented in world space</summary>
     public enum PromptOrientation
     {
@@ -22,22 +30,40 @@ public class InputInteractionZone : MonoBehaviour
     /// <summary>How the prompt animates when it appears and disappears</summary>
     public enum PromptAnimation { FadeIn, ScaleIn, Both }
 
-    // ── Zone ────────────────────────────────────────────────────────────────
-    [Header("Zone Settings")]
-    [Tooltip("Tag used to identify the player. Only this tag activates the zone.")]
+    // ── Mode ─────────────────────────────────────────────────────────────────
+    [Header("Mode")]
+    [Tooltip("Proximity: player enters trigger collider then presses Interact. Mouse: cursor hovers over this object then clicks.")]
+    [SerializeField] private InteractionMode interactionMode = InteractionMode.Proximity;
+
+    // ── Proximity settings ────────────────────────────────────────────────────
+    [Header("Proximity Settings")]
+    [Tooltip("Tag used to identify the player. Only objects with this tag activate the zone.")]
     [SerializeField] private string playerTag = "Player";
 
-    // ── Input ───────────────────────────────────────────────────────────────
     [Header("Interact Input")]
-    [Tooltip("The Interact action from your Input Action Asset (e.g. the 'Interact' action bound to E and Triangle).")]
+    [Tooltip("The Interact action from your Input Action Asset (e.g. the Interact action bound to E and Triangle).")]
     [SerializeField] private InputActionReference interactAction;
 
-    [Tooltip("Fallback key used if no Input Action is assigned. Useful for quick prototyping.")]
+    [Tooltip("Keyboard fallback used when no Input Action is assigned.")]
     [SerializeField] private KeyCode fallbackKey = KeyCode.E;
 
-    // ── Prompt ──────────────────────────────────────────────────────────────
+    // ── Mouse settings ─────────────────────────────────────────────────────────
+    [Header("Mouse Settings")]
+    [Tooltip("Which mouse button triggers the interaction (0 = Left, 1 = Right, 2 = Middle).")]
+    [SerializeField] private int mouseButton = 0;
+
+    [Tooltip("Camera used for raycasting. Falls back to Camera.main if not assigned.")]
+    [SerializeField] private Camera targetCamera;
+
+    [Tooltip("Maximum distance the raycast reaches.")]
+    [SerializeField] private float maxRaycastDistance = 100f;
+
+    [Tooltip("Which layers the raycast detects.")]
+    [SerializeField] private LayerMask interactionLayer = ~0;
+
+    // ── Prompt ────────────────────────────────────────────────────────────────
     [Header("Prompt (Optional)")]
-    [Tooltip("Enable to show a sprite prompt when the player is inside the zone.")]
+    [Tooltip("Enable to show a sprite prompt when interaction is available.")]
     [SerializeField] private bool showPrompt = true;
 
     [Tooltip("The icon sprite to display (e.g. a button prompt image).")]
@@ -58,7 +84,7 @@ public class InputInteractionZone : MonoBehaviour
     [Tooltip("Duration of the appear/disappear animation in seconds.")]
     [SerializeField] private float animationDuration = 0.2f;
 
-    // ── Hover ───────────────────────────────────────────────────────────────
+    // ── Hover ─────────────────────────────────────────────────────────────────
     [Header("Hover (Optional)")]
     [Tooltip("Slowly float the prompt up and down while it is visible.")]
     [SerializeField] private bool enableHover = true;
@@ -69,7 +95,7 @@ public class InputInteractionZone : MonoBehaviour
     [Tooltip("How many up-and-down cycles per second.")]
     [SerializeField] private float hoverSpeed = 0.8f;
 
-    // ── Glow ────────────────────────────────────────────────────────────────
+    // ── Glow ──────────────────────────────────────────────────────────────────
     [Header("Glow (Optional)")]
     [Tooltip("Add a pulsing Point Light to the prompt for a glow effect.")]
     [SerializeField] private bool enableGlow = false;
@@ -86,25 +112,27 @@ public class InputInteractionZone : MonoBehaviour
     [Tooltip("Time in seconds for one full glow pulse (ramp up + ramp down).")]
     [SerializeField] private float glowPulseDuration = 1f;
 
-    // ── Events ───────────────────────────────────────────────────────────────
+    // ── Events ────────────────────────────────────────────────────────────────
     [Header("Events")]
     /// <summary>
-    /// Fires once when the player presses the Interact input action while inside the zone
+    /// Fires when the player presses Interact (Proximity mode) or clicks (Mouse mode)
     /// </summary>
     public UnityEvent onInteract;
 
     /// <summary>
-    /// Fires when the player (tagged object) enters the zone
+    /// Fires when the player enters the zone (Proximity) or the cursor enters this object (Mouse)
     /// </summary>
-    public UnityEvent onPlayerEnter;
+    public UnityEvent onEnter;
 
     /// <summary>
-    /// Fires when the player (tagged object) exits the zone
+    /// Fires when the player exits the zone (Proximity) or the cursor leaves this object (Mouse)
     /// </summary>
-    public UnityEvent onPlayerExit;
+    public UnityEvent onExit;
 
-    // ── Runtime state ────────────────────────────────────────────────────────
-    private bool playerInZone;
+    // ── Runtime state ─────────────────────────────────────────────────────────
+    private bool isInteractable;        // true when prompt is shown and interaction is available
+    private bool wasHoveredLastFrame;   // mouse mode only
+
     private InputAction _interactInputAction;
 
     private GameObject promptObject;
@@ -116,11 +144,11 @@ public class InputInteractionZone : MonoBehaviour
     private Tween hoverTween;
     private Tween glowTween;
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // ── Lifecycle ──────────────────────────────────────────────────────────────
 
     private void OnEnable()
     {
-        if (interactAction != null)
+        if (interactionMode == InteractionMode.Proximity && interactAction != null)
         {
             _interactInputAction = interactAction.action;
             if (_interactInputAction != null)
@@ -136,13 +164,25 @@ public class InputInteractionZone : MonoBehaviour
     {
         if (_interactInputAction != null)
             _interactInputAction.performed -= OnInteractPerformed;
+
+        // Clean up active prompt if disabled mid-interaction
+        if (isInteractable)
+        {
+            isInteractable = false;
+            HidePrompt();
+        }
+
+        wasHoveredLastFrame = false;
     }
 
     private void Start()
     {
-        Collider col = GetComponent<Collider>();
-        if (!col.isTrigger)
-            Debug.LogWarning($"[InputInteractionZone] '{gameObject.name}': Collider is not set to Is Trigger. Players will not be detected.", this);
+        if (interactionMode == InteractionMode.Proximity)
+        {
+            Collider col = GetComponent<Collider>();
+            if (!col.isTrigger)
+                Debug.LogWarning($"[InputInteractionZone] '{gameObject.name}': Collider is not set to Is Trigger. Players will not be detected in Proximity mode.", this);
+        }
 
         if (showPrompt)
         {
@@ -155,48 +195,101 @@ public class InputInteractionZone : MonoBehaviour
 
     private void Update()
     {
-        // Orientation update
+        // Keep prompt facing camera
         if (promptObject != null && promptOrientation == PromptOrientation.FaceCamera && Camera.main != null)
             promptObject.transform.rotation = Camera.main.transform.rotation;
 
-        // Fallback key input (only when no action is assigned)
-        if (playerInZone && interactAction == null && Input.GetKeyDown(fallbackKey))
+        if (interactionMode == InteractionMode.Mouse)
+            HandleMouseMode();
+        else
+            HandleProximityFallbackKey();
+    }
+
+    // ── Proximity ─────────────────────────────────────────────────────────────
+
+    private void HandleProximityFallbackKey()
+    {
+        if (!isInteractable) return;
+        if (_interactInputAction == null && Input.GetKeyDown(fallbackKey))
             onInteract.Invoke();
+    }
+
+    private void OnInteractPerformed(InputAction.CallbackContext ctx)
+    {
+        if (!isInteractable) return;
+        onInteract.Invoke();
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        if (interactionMode != InteractionMode.Proximity) return;
         if (!other.CompareTag(playerTag)) return;
-        playerInZone = true;
+
+        isInteractable = true;
         ShowPrompt();
-        onPlayerEnter.Invoke();
+        onEnter.Invoke();
     }
 
     private void OnTriggerExit(Collider other)
     {
+        if (interactionMode != InteractionMode.Proximity) return;
         if (!other.CompareTag(playerTag)) return;
-        playerInZone = false;
+
+        isInteractable = false;
         HidePrompt();
-        onPlayerExit.Invoke();
+        onExit.Invoke();
     }
 
-    private void OnDestroy()
+    // ── Mouse mode ─────────────────────────────────────────────────────────────
+
+    private void HandleMouseMode()
     {
-        colorTween?.Kill();
-        scaleTween?.Kill();
-        hoverTween?.Kill();
-        glowTween?.Kill();
+        if (Mouse.current == null) return;
+
+        Camera cam = targetCamera != null ? targetCamera : Camera.main;
+        if (cam == null) return;
+
+        Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
+        bool isHit = Physics.Raycast(ray, out _, maxRaycastDistance, interactionLayer, QueryTriggerInteraction.Collide)
+                     && IsMouseOverThisObject(cam);
+
+        if (isHit && !wasHoveredLastFrame)
+        {
+            isInteractable = true;
+            ShowPrompt();
+            onEnter.Invoke();
+        }
+        else if (!isHit && wasHoveredLastFrame)
+        {
+            isInteractable = false;
+            HidePrompt();
+            onExit.Invoke();
+        }
+
+        if (isHit && GetMouseButton().wasPressedThisFrame)
+            onInteract.Invoke();
+
+        wasHoveredLastFrame = isHit;
     }
 
-    // ── Input callback ────────────────────────────────────────────────────────
-
-    private void OnInteractPerformed(InputAction.CallbackContext ctx)
+    private bool IsMouseOverThisObject(Camera cam)
     {
-        if (!playerInZone) return;
-        onInteract.Invoke();
+        Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
+        return Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactionLayer, QueryTriggerInteraction.Collide)
+               && hit.collider.gameObject == gameObject;
     }
 
-    // ── Prompt creation ───────────────────────────────────────────────────────
+    private ButtonControl GetMouseButton()
+    {
+        return mouseButton switch
+        {
+            1 => Mouse.current.rightButton,
+            2 => Mouse.current.middleButton,
+            _ => Mouse.current.leftButton
+        };
+    }
+
+    // ── Prompt creation ────────────────────────────────────────────────────────
 
     private void CreatePrompt()
     {
@@ -204,15 +297,15 @@ public class InputInteractionZone : MonoBehaviour
         promptObject.transform.SetParent(transform);
         promptObject.transform.localPosition = promptOffset;
 
-        // Apply fixed world orientation at creation; FaceCamera is handled each Update
         if (promptOrientation != PromptOrientation.FaceCamera)
             promptObject.transform.rotation = Quaternion.identity;
 
         promptRenderer = promptObject.AddComponent<SpriteRenderer>();
         promptRenderer.sprite = promptSprite;
 
-        // Start fully hidden
-        promptRenderer.color = new Color(1f, 1f, 1f, 0f);
+        // ScaleIn starts opaque at zero scale; FadeIn/Both start transparent at full scale
+        bool fadeInvolved = promptAnimation == PromptAnimation.FadeIn || promptAnimation == PromptAnimation.Both;
+        promptRenderer.color = fadeInvolved ? new Color(1f, 1f, 1f, 0f) : Color.white;
         promptObject.transform.localScale = promptAnimation == PromptAnimation.FadeIn
             ? Vector3.one * promptSize
             : Vector3.zero;
@@ -228,20 +321,18 @@ public class InputInteractionZone : MonoBehaviour
         }
     }
 
-    // ── Prompt visibility ─────────────────────────────────────────────────────
+    // ── Prompt visibility ──────────────────────────────────────────────────────
 
     private void ShowPrompt()
     {
         if (promptObject == null) return;
 
-        // Kill any active tweens and reset position for clean re-entry
         colorTween?.Kill();
         scaleTween?.Kill();
         hoverTween?.Kill();
         glowTween?.Kill();
         promptObject.transform.localPosition = promptOffset;
 
-        // Appear animation
         if (promptAnimation == PromptAnimation.FadeIn || promptAnimation == PromptAnimation.Both)
         {
             colorTween = DOTween.To(
@@ -260,7 +351,6 @@ public class InputInteractionZone : MonoBehaviour
                 .SetUpdate(true);
         }
 
-        // Hover loop — starts after appear animation finishes
         if (enableHover)
         {
             float halfPeriod = hoverSpeed > 0f ? 0.5f / hoverSpeed : 0.5f;
@@ -272,7 +362,6 @@ public class InputInteractionZone : MonoBehaviour
                 .SetDelay(animationDuration);
         }
 
-        // Glow pulse loop — starts after appear animation finishes
         if (enableGlow && promptLight != null)
         {
             glowTween = DOTween.To(
@@ -317,18 +406,23 @@ public class InputInteractionZone : MonoBehaviour
         }
     }
 
-    // ── Public API ────────────────────────────────────────────────────────────
+    private void OnDestroy()
+    {
+        colorTween?.Kill();
+        scaleTween?.Kill();
+        hoverTween?.Kill();
+        glowTween?.Kill();
+    }
+
+    // ── Public API ─────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Returns true if the player is currently inside the zone
+    /// Returns true when interaction is available — player is in zone (Proximity) or cursor is hovering (Mouse)
     /// </summary>
-    public bool IsPlayerInZone => playerInZone;
+    public bool IsInteractable => isInteractable;
 
     /// <summary>
     /// Manually fire the interact event, as if the player pressed the interact button
     /// </summary>
-    public void TriggerInteract()
-    {
-        onInteract.Invoke();
-    }
+    public void TriggerInteract() => onInteract.Invoke();
 }
