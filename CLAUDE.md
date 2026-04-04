@@ -323,7 +323,7 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**57 Educational Scripts (100% XML Documented) | 24 Custom Editors**
+**58 Educational Scripts (100% XML Documented) | 25 Custom Editors**
 - 12 Input components
 - 20 Action components
 - 7 Physics components

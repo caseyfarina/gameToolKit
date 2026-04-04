@@ -20,6 +20,7 @@ All components work the same way: wire them together using **UnityEvents** in th
 | **InputClickRotate** | Makes this object rotatable by clicking and dragging | Dials, wheels, rotating puzzles |
 | **InputActionEvent** | Fires events from any Unity Input System action | Custom controller/keyboard bindings |
 | **InputKeyCountdown** | Counts down while a key is held, fires event at zero | Hold-to-open doors, charge mechanics |
+| **InputInteractionZone** | Shows a prompt sprite when the player enters; fires an event when they press Interact (E / Triangle) | Any "press to interact" mechanic — doors, NPCs, items, puzzles |
 | **InputCollisionEnter** | Fires an event on physics collision with a tagged object | Bullet hits, physical triggers |
 
 ---
