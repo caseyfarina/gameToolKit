@@ -35,8 +35,8 @@ public class CollectionThreshold
 /// Tracks a numeric value (score, coins, items) with threshold-based event triggers.
 /// Optionally creates its own UI display - enable Show UI for text and/or Show Bar for a fill bar.
 ///
-/// MULTI-SCENE SUPPORT: Optionally assign an IntVariable asset to persist value across scene loads.
-/// If no IntVariable is assigned, value is stored locally (single-scene behavior).
+/// MULTI-SCENE SUPPORT: Enable Persist Across Scenes to save the value when loading a new scene.
+/// The manager is recreated per scene but the value carries over automatically.
 ///
 /// Common use: Score systems, collectible counters, resource tracking, or objective progress meters.
 /// </summary>
@@ -48,12 +48,8 @@ public class GameCollectionManager : MonoBehaviour
     public enum ValueAnimation { None, PunchScale, FadeFlash }
 
     [Header("Scene Persistence")]
-    [Tooltip("Keep this manager alive when loading a new scene, preserving the current value. Place it in your first scene only — it survives all subsequent loads.")]
+    [Tooltip("Save the current value when loading a new scene. Each scene can have its own manager — only the value carries over.")]
     [SerializeField] private bool persistAcrossScenes = false;
-
-    [Header("Multi-Scene Persistence (Optional)")]
-    [Tooltip("Optional: Assign an IntVariable asset to persist value across scene loads. Leave empty for single-scene games.")]
-    [SerializeField] private IntVariable valueVariable;
 
     [Header("Value Settings")]
     [Tooltip("Current value (score, coins, items, etc.)")]
@@ -171,38 +167,17 @@ public class GameCollectionManager : MonoBehaviour
         return g;
     }
 
-    private void Awake()
+    private void SyncToGameData()
     {
-        if (!persistAcrossScenes) return;
-
-        // If a persistent instance with the same name already exists, destroy this duplicate
-        foreach (var other in FindObjectsByType<GameCollectionManager>(FindObjectsSortMode.None))
-        {
-            if (other != this && other.persistAcrossScenes && other.gameObject.name == gameObject.name)
-            {
-                Destroy(gameObject);
-                return;
-            }
-        }
-
-        if (transform.parent != null)
-            transform.SetParent(null);
-        DontDestroyOnLoad(gameObject);
-    }
-
-    // Pushes currentValue to the SO variable (if assigned)
-    private void SyncToVariable()
-    {
-        if (valueVariable != null) valueVariable.Value = currentValue;
+        if (persistAcrossScenes)
+            GameData.Instance.SetInt(GameData.COLLECTION_SLOT, currentValue);
     }
 
     private void Start()
     {
-        // If an IntVariable is assigned, initialize from it (persisted value)
-        if (valueVariable != null)
-        {
-            currentValue = valueVariable.Value;
-        }
+        // If persistence is enabled, read the carried-over value (or use Inspector default on first load)
+        if (persistAcrossScenes)
+            currentValue = GameData.Instance.GetInt(GameData.COLLECTION_SLOT, currentValue);
 
         // Initialize threshold states based on starting value
         foreach (var t in thresholds)
@@ -252,7 +227,7 @@ public class GameCollectionManager : MonoBehaviour
             onMaxReached.Invoke();
         }
 
-        SyncToVariable();
+        SyncToGameData();
         onValueChanged.Invoke(currentValue);
         UpdateUIText();
         PlayTextAnimation();
@@ -280,7 +255,7 @@ public class GameCollectionManager : MonoBehaviour
             onMinReached.Invoke();
         }
 
-        SyncToVariable();
+        SyncToGameData();
         onValueChanged.Invoke(currentValue);
         UpdateUIText();
         PlayTextAnimation();
@@ -302,7 +277,7 @@ public class GameCollectionManager : MonoBehaviour
     public void SetValue(int newValue)
     {
         currentValue = newValue;
-        SyncToVariable();
+        SyncToGameData();
         onValueChanged.Invoke(currentValue);
         UpdateUIText();
         UpdateBar();

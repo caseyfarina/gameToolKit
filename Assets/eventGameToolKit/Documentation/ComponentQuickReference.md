@@ -59,9 +59,9 @@ All components work the same way: wire them together using **UnityEvents** in th
 
 | Component | What it does | Basic use |
 |---|---|---|
-| **GameHealthManager** | Tracks a health value with damage, healing, and a death event | Player or enemy health |
-| **GameCollectionManager** | Tracks a numeric value (score, coins) with threshold events | Score counter, collectible tracker |
-| **GameInventoryManager** | Tracks multiple item slots, each with counts and capacity | Inventory with keys, ammo, resources |
+| **GameHealthManager** | Tracks a health value with damage, healing, and a death event. Enable Persist Across Scenes to carry health between levels. | Player or enemy health |
+| **GameCollectionManager** | Tracks a numeric value (score, coins) with threshold events. Enable Persist Across Scenes to carry the value between levels. | Score counter, collectible tracker |
+| **GameInventoryManager** | Tracks multiple item slots, each with counts and capacity. Enable Persist Across Scenes to carry all counts between levels (first 20 slots). | Inventory with keys, ammo, resources |
 | **GameTimerManager** | Counts up or down, fires events at thresholds | Level timer, countdown clock |
 | **GameCheckpointManager** | Stores the player's last checkpoint position for respawning | Respawn system (pairs with InputCheckpointZone) |
 | **GameStateManager** | Handles pause and victory screens | Pause menu, win condition |
@@ -72,16 +72,6 @@ All components work the same way: wire them together using **UnityEvents** in th
 
 ---
 
-## Multi-Scene Data (Optional)
-*ScriptableObject assets that persist data across scene loads. Create via Assets > Create > eventGameToolKit > Variables.*
-
-| Asset Type | What it does | Basic use |
-|---|---|---|
-| **IntVariable** | Holds an integer value that survives scene loads | Persistent health, score, lives |
-| **FloatVariable** | Holds a float value that survives scene loads | Persistent timer, percentage stats |
-| **SpawnPoint** | Marks where the player should appear when entering a scene | Level entry points, scene transitions |
-
----
 
 ## Character Controllers
 *Add one to your player or enemy GameObject.*

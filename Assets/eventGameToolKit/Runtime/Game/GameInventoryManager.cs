@@ -23,8 +23,6 @@ public class InventorySlot
     [Tooltip("Starting count for this slot")]
     public int currentCount = 0;
 
-    [Tooltip("Optional: Assign an IntVariable asset to persist this slot's count across scene loads. Leave empty for single-scene games.")]
-    public IntVariable countVariable;
 
     [Tooltip("Fires when count reaches maxCapacity")]
     /// <summary>
@@ -55,15 +53,15 @@ public class InventorySlot
 /// Manages multiple inventory slots, each with capacity limits and change events.
 /// Optionally creates a row of UI cards (one per slot) showing icons and counts.
 ///
-/// MULTI-SCENE SUPPORT: Each slot can optionally reference an IntVariable asset to persist
-/// its count across scene loads. If no IntVariable is assigned, the count is stored locally.
+/// MULTI-SCENE SUPPORT: Enable Persist Across Scenes to save all slot counts when loading a
+/// new scene. Persistence is automatic for the first 20 slots — no extra setup required.
 ///
 /// Common use: Key collections, ammunition types, multi-resource systems, or collectible sets.
 /// </summary>
 public class GameInventoryManager : MonoBehaviour
 {
     [Header("Scene Persistence")]
-    [Tooltip("Keep this manager alive when loading a new scene, preserving all slot counts. Place it in your first scene only — it survives all subsequent loads.")]
+    [Tooltip("Save all slot counts when loading a new scene. Each scene can have its own manager — only the counts carry over. Limited to the first 20 slots.")]
     [SerializeField] private bool persistAcrossScenes = false;
 
     [Header("Inventory Slots")]
@@ -101,39 +99,25 @@ public class GameInventoryManager : MonoBehaviour
     // Runtime UI references
     private Canvas uiCanvas;
 
-    private void Awake()
+    private void SyncSlotToGameData(int slotIndex, InventorySlot slot)
     {
         if (!persistAcrossScenes) return;
-
-        // If a persistent instance with the same name already exists, destroy this duplicate
-        foreach (var other in FindObjectsByType<GameInventoryManager>(FindObjectsSortMode.None))
-        {
-            if (other != this && other.persistAcrossScenes && other.gameObject.name == gameObject.name)
-            {
-                Destroy(gameObject);
-                return;
-            }
-        }
-
-        if (transform.parent != null)
-            transform.SetParent(null);
-        DontDestroyOnLoad(gameObject);
-    }
-
-    // Pushes a slot's currentCount to its IntVariable (if assigned)
-    private void SyncSlotToVariable(InventorySlot slot)
-    {
-        if (slot.countVariable != null) slot.countVariable.Value = slot.currentCount;
+        if (slotIndex >= GameData.INVENTORY_SLOT_COUNT) return;
+        GameData.Instance.SetInt(GameData.INVENTORY_SLOT_START + slotIndex, slot.currentCount);
     }
 
     private void Start()
     {
-        // If slots have IntVariable assets, initialize from them (persisted values)
-        for (int i = 0; i < slots.Count; i++)
+        // If persistence is enabled, read carried-over counts (or use Inspector defaults on first load)
+        if (persistAcrossScenes)
         {
-            if (slots[i].countVariable != null)
+            if (slots.Count > GameData.INVENTORY_SLOT_COUNT)
+                Debug.LogWarning($"[GameInventoryManager] Persistence is limited to the first {GameData.INVENTORY_SLOT_COUNT} slots.", this);
+
+            for (int i = 0; i < Mathf.Min(slots.Count, GameData.INVENTORY_SLOT_COUNT); i++)
             {
-                slots[i].currentCount = slots[i].countVariable.Value;
+                slots[i].currentCount = GameData.Instance.GetInt(
+                    GameData.INVENTORY_SLOT_START + i, slots[i].currentCount);
             }
         }
 
@@ -166,7 +150,7 @@ public class GameInventoryManager : MonoBehaviour
 
         if (slot.currentCount != previous)
         {
-            SyncSlotToVariable(slot);
+            SyncSlotToGameData(slotIndex, slot);
             slot.onChanged.Invoke(slot.currentCount);
             UpdateCardText(slot);
 
@@ -187,7 +171,7 @@ public class GameInventoryManager : MonoBehaviour
 
         if (slot.currentCount != previous)
         {
-            SyncSlotToVariable(slot);
+            SyncSlotToGameData(slotIndex, slot);
             slot.onChanged.Invoke(slot.currentCount);
             UpdateCardText(slot);
 

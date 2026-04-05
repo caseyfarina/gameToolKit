@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Multi-scene architecture has been ported to main from `feature/multi-scene-support`. The following components are now available:
 
-- **ScriptableObject Variables** (`IntVariable`, `FloatVariable`) for cross-scene data persistence
+- **GameData** ScriptableObject singleton for invisible cross-scene data persistence
 - **SpawnPoint** component for marking player spawn locations
 - **GameSceneManager** for scene loading with transitions
 - Updated **GameHealthManager** and **GameCollectionManager** with optional SO variable support
@@ -260,19 +260,21 @@ Performs a manual trace review (desk check) of a script. Traces every public met
 
 ## Scene Persistence
 
-Two managers support an optional `persistAcrossScenes` toggle that calls `DontDestroyOnLoad`:
+Four managers support a `Persist Across Scenes` checkbox. The underlying mechanism is `GameData` — an auto-created runtime ScriptableObject singleton that is completely invisible to students. They just tick the box.
 
-| Manager | Persists | How |
-|---|---|---|
-| `GameCollectionManager` | Optional | `persistAcrossScenes` checkbox |
-| `GameInventoryManager` | Optional | `persistAcrossScenes` checkbox |
-| `GameCheckpointManager` | Always | Built-in singleton, no toggle |
-| All others | Never | No persist support |
+| Manager | Persists | Mechanism | Internal slot |
+|---|---|---|---|
+| `GameHealthManager` | Optional | `GameData` int slot 0 | Automatic |
+| `GameCollectionManager` | Optional | `GameData` int slot 1 | Automatic |
+| `GameInventoryManager` | Optional | `GameData` int slots 2–21 | Automatic (max 20 slots) |
+| `GameCheckpointManager` | Always | DontDestroyOnLoad singleton | N/A |
+| All others | Never | — | — |
 
 **Rules:**
-- The manager must be in the **first scene that loads** (title screen, loading screen, or main menu). `DontDestroyOnLoad` only keeps an object alive once it exists — it cannot retroactively reach back into a prior scene.
-- Duplicate prevention is by `gameObject.name`: if a persistent instance with the same name already exists when a new scene loads, the new one destroys itself. Name managers clearly (e.g., "ScoreManager", "KeyInventory") and don't reuse names across different managers.
-- Students should **not** add the manager to subsequent scenes — it carries over automatically.
+- Add the manager to **each scene** that needs it — only the *value* carries over, not the manager itself. This means event wiring in each scene is local and works normally.
+- On the first scene load of a new play session, managers use their own Inspector defaults. On subsequent loads, they read the last written value.
+- GameInventoryManager logs a warning if more than 20 slots are configured with persistence enabled.
+- `GameData` resets automatically at the start of each play session — no student action needed for "new game."
 
 ## Self-Contained UI Pattern
 
@@ -322,7 +324,7 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**62 Educational Scripts (100% XML Documented) | 25 Custom Editors**
+**61 Educational Scripts (100% XML Documented) | 25 Custom Editors**
 - 12 Input components
 - 20 Action components
 - 7 Physics components
@@ -331,7 +333,7 @@ Students using `GameInventorySlot` will need to:
 - 1 UI component
 - 3 Animation components
 - 3 Root character controllers
-- 2 ScriptableObject variables (IntVariable, FloatVariable)
+- 1 ScriptableObject variable (GameData — internal, invisible to students)
 
 For complete script inventory with features, see **[Runtime Structure](.claude/docs/runtime-structure.md)**.
 

@@ -8,8 +8,8 @@ using DG.Tweening;
 /// Manages health with damage and healing mechanics, firing events at critical thresholds.
 /// Optionally creates its own UI display - enable Show UI for text and/or Show Bar for a health bar.
 ///
-/// MULTI-SCENE SUPPORT: Optionally assign an IntVariable asset to persist health across scene loads.
-/// If no IntVariable is assigned, health is stored locally (single-scene behavior).
+/// MULTI-SCENE SUPPORT: Enable Persist Across Scenes to save health when loading a new scene.
+/// The manager is recreated per scene but the health value carries over automatically.
 ///
 /// Common use: Player or enemy health systems, destructible objects, shield mechanics, or boss health bars.
 /// </summary>
@@ -25,9 +25,9 @@ public class GameHealthManager : MonoBehaviour
     [SerializeField] private int currentHealth = 100;
     [SerializeField] private int lowHealthThreshold = 25;
 
-    [Header("Multi-Scene Persistence (Optional)")]
-    [Tooltip("Optional: Assign an IntVariable asset to persist health across scene loads. Leave empty for single-scene games.")]
-    [SerializeField] private IntVariable healthVariable;
+    [Header("Scene Persistence")]
+    [Tooltip("Save health when loading a new scene. Each scene can have its own manager — only the value carries over.")]
+    [SerializeField] private bool persistAcrossScenes = false;
 
     [Header("UI Text (Optional)")]
     [Tooltip("Enable to create a self-contained UI text display for health")]
@@ -154,23 +154,21 @@ public class GameHealthManager : MonoBehaviour
         return g;
     }
 
-    // Pushes currentHealth to the SO variable (if assigned)
-    private void SyncToVariable()
+    private void SyncToGameData()
     {
-        if (healthVariable != null) healthVariable.Value = currentHealth;
+        if (persistAcrossScenes)
+            GameData.Instance.SetInt(GameData.HEALTH_SLOT, currentHealth);
     }
 
     private void Start()
     {
-        // If an IntVariable is assigned, initialize from it (persisted value)
-        if (healthVariable != null)
-        {
-            currentHealth = healthVariable.Value;
-        }
+        // If persistence is enabled, read the carried-over value (or use Inspector default on first load)
+        if (persistAcrossScenes)
+            currentHealth = GameData.Instance.GetInt(GameData.HEALTH_SLOT, currentHealth);
 
         // Ensure health starts within valid range
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-        SyncToVariable();
+        SyncToGameData();
         CheckHealthStates();
 
         // Create Canvas if any UI is enabled
@@ -204,7 +202,7 @@ public class GameHealthManager : MonoBehaviour
 
         int previousHealth = currentHealth;
         currentHealth = Mathf.Max(0, currentHealth - damageAmount);
-        SyncToVariable();
+        SyncToGameData();
 
         onDamageReceived.Invoke();
         onHealthChanged.Invoke(currentHealth, maxHealth);
@@ -236,7 +234,7 @@ public class GameHealthManager : MonoBehaviour
 
         int previousHealth = currentHealth;
         currentHealth = Mathf.Min(maxHealth, currentHealth + healAmount);
-        SyncToVariable();
+        SyncToGameData();
 
         onHealthGained.Invoke();
         onHealthChanged.Invoke(currentHealth, maxHealth);
@@ -262,7 +260,7 @@ public class GameHealthManager : MonoBehaviour
         int previousHealth = currentHealth;
         bool wasDead = isDead;
         currentHealth = Mathf.Clamp(newHealth, 0, maxHealth);
-        SyncToVariable();
+        SyncToGameData();
 
         onHealthChanged.Invoke(currentHealth, maxHealth);
         UpdateUIText();
@@ -328,7 +326,7 @@ public class GameHealthManager : MonoBehaviour
         if (currentHealth > maxHealth)
         {
             currentHealth = maxHealth;
-            SyncToVariable();
+            SyncToGameData();
         }
 
         onHealthChanged.Invoke(currentHealth, maxHealth);
