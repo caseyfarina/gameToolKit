@@ -3,554 +3,947 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EGTK — Event Game Toolkit</title>
+<title>EGTK — Introduction & Quick Reference</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:       #0D0F14;
-    --surface:  #171B24;
-    --surface2: #1C2130;
-    --text1:    #F0F2F8;
-    --text2:    #8B8FA8;
-    --text3:    #5E6280;
-    --rule:     #21283C;
-    --blue:     #4F8EF7;
-    --purple:   #9B72F7;
-    --green:    #34D399;
-    --orange:   #FB923C;
-    --red:      #EF4444;
-    --pink:     #F472B6;
-    --teal:     #2DD4BF;
-    --slate:    #94A3C8;
+    --bg:      #0D0F14;
+    --surface: #171B24;
+    --surf2:   #1C2130;
+    --text1:   #F0F2F8;
+    --text2:   #8B8FA8;
+    --text3:   #5E6280;
+    --rule:    #21283C;
+    --blue:    #4F8EF7;
+    --purple:  #9B72F7;
+    --green:   #34D399;
+    --orange:  #FB923C;
+    --red:     #EF4444;
+    --pink:    #F472B6;
+    --teal:    #2DD4BF;
+    --slate:   #94A3C8;
   }
 
   html { scroll-behavior: smooth; }
-
   body {
     font-family: 'Inter', sans-serif;
     background: var(--bg);
     color: var(--text1);
-    line-height: 1.6;
+    min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ── Layout ───────────────────────────────────────── */
-  .container { max-width: 1200px; margin: 0 auto; padding: 0 80px; }
-  section { padding: 80px 0; border-bottom: 1px solid var(--rule); }
-
-  /* ── Pills ────────────────────────────────────────── */
-  .pill {
-    display: inline-flex; align-items: center;
-    padding: 5px 14px; border-radius: 20px;
-    font-size: 11px; font-weight: 600;
-    letter-spacing: .08em; text-transform: uppercase;
+  /* ── Dot grid utility ─────────────────────────────────── */
+  .dot-grid {
+    background-image: radial-gradient(circle, rgba(148,163,200,.065) 1px, transparent 1px);
+    background-size: 28px 28px;
   }
-  .pill-blue   { background: rgba(79,142,247,.12); color: var(--blue); }
-  .pill-purple { background: rgba(155,114,247,.12); color: var(--purple); }
-  .pill-green  { background: rgba(52,211,153,.12);  color: var(--green); }
-  .pill-orange { background: rgba(251,146,60,.12);  color: var(--orange); }
-  .pill-pink   { background: rgba(244,114,182,.12); color: var(--pink); }
-  .pill-teal   { background: rgba(45,212,191,.12);  color: var(--teal); }
-  .pill-slate  { background: rgba(148,163,200,.12); color: var(--slate); }
-  .pill-muted  { background: rgba(148,163,200,.10); color: var(--text3); }
 
-  /* ── Hero ─────────────────────────────────────────── */
-  #hero {
-    padding: 100px 0 80px;
-    text-align: center;
+  /* ── Top nav ──────────────────────────────────────────── */
+  .topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(13,15,20,.88);
+    backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--rule);
+    padding: 0 80px;
+    display: flex; align-items: center; gap: 32px; height: 52px;
+  }
+  .topnav-logo {
+    font-size: 13px; font-weight: 700; color: var(--text1);
+    text-decoration: none; letter-spacing: -.01em;
+  }
+  .topnav-logo span { color: var(--blue); }
+  .topnav-sep { width: 1px; height: 16px; background: var(--rule); }
+  .topnav a {
+    font-size: 12px; font-weight: 500; color: var(--text3);
+    text-decoration: none; transition: color .15s;
+  }
+  .topnav a:hover, .topnav a.active { color: var(--text1); }
+  .topnav-back {
+    margin-left: auto;
+    font-size: 12px; font-weight: 500; color: var(--text3);
+    text-decoration: none; transition: color .15s;
+  }
+  .topnav-back:hover { color: var(--blue); }
+
+  /* ── Hero ─────────────────────────────────────────────── */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 100px 80px 80px;
+    text-align: center;
+  }
+  .hero-glow {
+    position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 400px;
+    background: radial-gradient(ellipse at center, rgba(79,142,247,.12) 0%, transparent 70%);
+    pointer-events: none;
   }
   .hero-bar {
-    width: 120px; height: 4px;
-    background: var(--blue); border-radius: 2px;
-    margin: 0 auto 28px;
+    display: block; width: 120px; height: 4px;
+    background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    margin: 0 auto 40px; border-radius: 2px;
   }
   .hero-title {
-    font-size: 88px; font-weight: 700; letter-spacing: -.03em;
-    line-height: 1; color: var(--text1);
-    margin-bottom: 12px;
+    font-size: 88px; font-weight: 700; letter-spacing: -.04em;
+    line-height: 1;
+    background: linear-gradient(160deg, #F0F2F8 60%, #8B8FA8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
   }
   .hero-sub {
     font-size: 22px; font-weight: 400; color: var(--text2);
-    margin-bottom: 28px;
+    margin-bottom: 24px;
   }
   .hero-rule {
-    width: 48px; height: 2px;
-    background: var(--rule); border-radius: 1px;
-    margin: 0 auto 20px;
+    width: 240px; height: 1px; background: var(--rule);
+    margin: 0 auto 24px;
   }
-  .hero-tag {
+  .hero-principle {
     font-size: 18px; font-weight: 500; color: var(--slate);
+    letter-spacing: .01em;
   }
 
-  /* ── Section headers ──────────────────────────────── */
-  .section-label { margin-bottom: 16px; }
-  .section-title {
-    font-size: 40px; font-weight: 700; letter-spacing: -.02em;
-    color: var(--text1); text-align: center; margin-bottom: 12px;
+  /* ── Section shared ───────────────────────────────────── */
+  .section {
+    max-width: 1200px; margin: 0 auto;
+    padding: 80px 80px;
   }
-  .section-sub {
-    font-size: 18px; color: var(--text2);
-    text-align: center; margin-bottom: 56px;
-  }
-  .section-header-row {
-    display: flex; align-items: baseline; gap: 20px;
-    margin-bottom: 32px;
-  }
-  .section-header-row .section-title {
-    text-align: left; margin-bottom: 0; font-size: 36px;
-  }
-  .section-header-row .section-sub {
-    text-align: left; margin-bottom: 0; font-size: 16px;
-  }
-
-  /* ── Principle diagram ────────────────────────────── */
-  #principle .section-label { text-align: center; }
-  .diagram {
-    display: flex; align-items: center; justify-content: center;
-    gap: 0; margin: 0 0 40px;
-  }
-  .diag-box {
-    flex: 1; background: var(--surface);
-    border: 1px solid var(--rule); border-radius: 12px;
-    overflow: hidden; max-width: 320px;
-  }
-  .diag-box-top { height: 3px; width: 100%; }
-  .diag-box-inner { padding: 20px 24px 24px; }
-  .diag-cat {
+  .section + .section { padding-top: 0; }
+  .sec-pill {
+    display: inline-flex; align-items: center;
     font-size: 10px; font-weight: 600; letter-spacing: .1em;
-    text-transform: uppercase; margin-bottom: 6px;
+    text-transform: uppercase; padding: 5px 12px;
+    border-radius: 20px; margin-bottom: 20px;
   }
-  .diag-title {
-    font-size: 18px; font-weight: 600; color: var(--text1);
-    margin-bottom: 14px; padding-bottom: 14px;
-    border-bottom: 1px solid var(--rule);
+  .sec-title {
+    font-size: 36px; font-weight: 700; letter-spacing: -.02em;
+    color: var(--text1); margin-bottom: 12px;
   }
-  .diag-examples { list-style: none; }
-  .diag-examples li {
-    font-size: 13px; color: var(--text3);
-    padding: 3px 0;
-  }
-  .diag-arrow {
-    font-size: 22px; color: var(--rule);
-    padding: 0 16px; flex-shrink: 0;
-    display: flex; align-items: center;
-    position: relative; top: -10px;
-  }
-  .diagram-caption {
-    text-align: center; font-size: 16px; font-weight: 500;
-    color: var(--text2); letter-spacing: .01em;
+  .sec-desc {
+    font-size: 16px; color: var(--text2); line-height: 1.6;
+    max-width: 640px;
   }
 
-  /* ── Goal cards grid ──────────────────────────────── */
-  #goals .section-label { margin-bottom: 12px; }
-  .cards-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
+  /* ── First Principle ──────────────────────────────────── */
+  .principle-wrap {
+    position: relative;
+    border-radius: 20px; overflow: hidden;
+    border: 1px solid var(--rule);
+    margin-top: 48px;
+    padding: 60px 80px;
+  }
+  .principle-wrap .dot-grid {
+    position: absolute; inset: 0; z-index: 0;
+  }
+  .principle-wrap > *:not(.dot-grid) { position: relative; z-index: 1; }
+
+  .principle-diagram {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0;
+  }
+
+  .pbox {
+    background: rgba(23,27,36,.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 24px 28px;
+    width: 260px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .pbox::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; border-radius: 14px 14px 0 0;
+    background: var(--box-color);
+  }
+  .pbox-label {
+    font-size: 9px; font-weight: 600; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--box-color);
+    margin-bottom: 8px;
+  }
+  .pbox-title {
+    font-size: 17px; font-weight: 600; color: var(--text1);
+    margin-bottom: 12px;
+  }
+  .pbox-rule {
+    height: 1px; background: var(--rule); margin-bottom: 12px;
+  }
+  .pbox-examples {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .pbox-examples li {
+    font-size: 12px; color: var(--text3); font-family: 'SF Mono', 'Fira Mono', monospace;
+  }
+
+  /* Port dot on pbox right edge */
+  .pbox-port-out {
+    position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--box-color);
+    box-shadow: 0 0 10px var(--box-color), 0 0 4px var(--box-color);
+    z-index: 2;
+  }
+  .pbox-port-in {
+    position: absolute; left: -6px; top: 50%; transform: translateY(-50%);
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--port-color, var(--box-color));
+    box-shadow: 0 0 10px var(--port-color, var(--box-color)), 0 0 4px var(--port-color, var(--box-color));
+    z-index: 2;
+  }
+
+  /* Wire connector */
+  .pwire {
+    position: relative;
+    width: 80px; height: 2px;
+    flex-shrink: 0;
+    align-self: center;
+    margin: 0 0;
+  }
+  .pwire-line {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, var(--wire-from), var(--wire-to));
+  }
+  .pwire-bead {
+    position: absolute; top: -4px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--bead-color);
+    box-shadow: 0 0 8px var(--bead-color);
+    animation: wireflow 2.4s linear infinite;
+    animation-delay: var(--bead-delay, 0s);
+  }
+  @keyframes wireflow {
+    0%   { left: 0; opacity: 0; }
+    8%   { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { left: calc(100% - 10px); opacity: 0; }
+  }
+
+  /* Wire label above */
+  .pwire-label {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    font-size: 9px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--text3);
+    white-space: nowrap;
+  }
+
+  /* caption below diagram */
+  .principle-caption {
+    text-align: center; margin-top: 40px;
+    font-size: 15px; color: var(--text3);
+    letter-spacing: .03em;
+  }
+  .principle-caption span { color: var(--slate); }
+
+  /* ── Goal Cards ───────────────────────────────────────── */
+  .goals-header {
+    display: flex; align-items: baseline; gap: 20px;
+    margin-bottom: 32px; flex-wrap: wrap;
+  }
+  .goals-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
   }
+
   .goal-card {
     background: var(--surface);
     border: 1px solid var(--rule);
-    border-radius: 12px;
+    border-radius: 14px;
+    padding: 24px 24px 20px;
+    position: relative;
     overflow: hidden;
-    display: flex;
+  }
+  .goal-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; bottom: 0;
+    width: 3px;
+    background: var(--card-color);
+  }
+  .goal-cat-pill {
+    display: inline-flex; align-items: center;
+    font-size: 9px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; padding: 3px 9px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.05); color: var(--text3);
+    position: absolute; top: 18px; right: 18px;
+  }
+  .goal-title {
+    font-size: 14px; font-weight: 600; color: var(--text1);
+    line-height: 1.4; max-width: 80%;
+    margin-bottom: 16px;
+  }
+  .goal-title em { font-style: normal; color: var(--card-color); }
+
+  /* Wire viz inside card */
+  .goal-wire {
+    display: flex; align-items: center; gap: 0;
+    margin-bottom: 16px;
     position: relative;
   }
-  .goal-card-bar {
-    width: 3px; flex-shrink: 0;
-  }
-  .goal-card-body { padding: 16px 16px 16px 14px; flex: 1; min-width: 0; }
-  .goal-card-top {
-    display: flex; justify-content: space-between;
-    align-items: flex-start; gap: 8px; margin-bottom: 10px;
-  }
-  .goal-text {
-    font-size: 15px; font-weight: 600; color: var(--text1);
-    line-height: 1.4;
-  }
-  .goal-text em { font-style: normal; color: var(--text2); font-weight: 400; }
-  .goal-cat-pill {
-    font-size: 9px; font-weight: 600; letter-spacing: .07em;
-    text-transform: uppercase; padding: 3px 8px;
-    border-radius: 10px; white-space: nowrap; flex-shrink: 0;
-  }
-  .chain {
-    display: flex; align-items: center; flex-wrap: wrap;
-    gap: 4px; margin-bottom: 12px;
-  }
-  .chip {
+  .gwbox {
+    border-radius: 8px; border: 1px solid;
+    padding: 7px 11px;
     font-size: 11px; font-weight: 500;
-    padding: 3px 8px; border-radius: 6px;
     white-space: nowrap;
+    position: relative;
   }
-  .chain-arrow { font-size: 11px; color: var(--text3); }
-  .goal-divider {
-    height: 1px; background: var(--rule); margin-bottom: 10px;
+  .gwbox-src {
+    background: rgba(255,255,255,.04);
+    border-color: var(--src-color);
+    color: var(--src-color);
   }
-  .steps { list-style: none; }
-  .steps li {
-    font-size: 12px; color: var(--text2);
-    padding: 2px 0; display: flex; gap: 6px;
-  }
-  .steps li .num {
-    color: var(--text3); font-size: 11px; flex-shrink: 0; width: 14px;
+  .gwbox-tgt {
+    background: rgba(255,255,255,.04);
+    border-color: var(--tgt-color);
+    color: var(--tgt-color);
   }
 
-  /* ── Reference tables ─────────────────────────────── */
-  #reference .section-label { text-align: left; }
-  #reference .section-title { text-align: left; font-size: 36px; }
-  #reference .section-sub   { text-align: left; margin-bottom: 40px; }
+  /* tiny port dot on gwbox */
+  .gport-out {
+    position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--src-color);
+    box-shadow: 0 0 7px var(--src-color);
+    z-index: 2;
+  }
+  .gport-in {
+    position: absolute; left: -5px; top: 50%; transform: translateY(-50%);
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--tgt-color);
+    box-shadow: 0 0 7px var(--tgt-color);
+    z-index: 2;
+  }
 
-  .ref-table { margin-bottom: 32px; }
-  .ref-cat-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 16px; border-radius: 8px;
-    margin-bottom: 0; font-size: 12px; font-weight: 600;
-    letter-spacing: .04em;
+  .gwire {
+    position: relative; height: 2px; flex: 1; min-width: 20px;
   }
-  .ref-cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .ref-col-header {
-    display: grid; grid-template-columns: 220px 1fr 240px;
-    padding: 7px 16px;
-    background: var(--surface);
-    font-size: 10px; font-weight: 600; letter-spacing: .07em;
-    text-transform: uppercase; color: var(--text3);
+  .gwire-line {
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--src-color), var(--tgt-color));
+    opacity: .5;
   }
-  .ref-row {
-    display: grid; grid-template-columns: 220px 1fr 240px;
-    padding: 0 16px; min-height: 48px; align-items: center;
+  .gwire-bead {
+    position: absolute; top: -4px;
+    width: 8px; height: 8px; border-radius: 50%;
+    animation: cardflow 2s linear infinite;
+    animation-delay: var(--bead-delay, 0s);
+  }
+  @keyframes cardflow {
+    0%   { left: 0; opacity: 0; }
+    10%  { opacity: .9; }
+    85%  { opacity: .9; }
+    100% { left: calc(100% - 8px); opacity: 0; }
+  }
+
+  .goal-rule { height: 1px; background: var(--rule); margin-bottom: 14px; }
+  .goal-steps {
+    list-style: none; display: flex; flex-direction: column; gap: 5px;
+  }
+  .goal-steps li {
+    display: flex; gap: 10px;
+    font-size: 12px; color: var(--text2); line-height: 1.5;
+  }
+  .step-num {
+    flex-shrink: 0; width: 16px; height: 16px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+    color: var(--text3); font-size: 10px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+  }
+
+  /* ── Component Reference Tables ────────────────────────── */
+  .ref-section { margin-top: 64px; }
+  .ref-table-wrap {
+    border: 1px solid var(--rule); border-radius: 12px;
+    overflow: hidden; margin-bottom: 24px;
+  }
+  .ref-cat-row {
+    display: grid;
+    grid-template-columns: 220px 1fr 180px;
+    padding: 10px 20px;
     border-bottom: 1px solid var(--rule);
   }
-  .ref-row:nth-child(even) { background: var(--surface); }
-  .ref-row:nth-child(odd)  { background: var(--surface2); }
-  .ref-name  { font-size: 13px; font-weight: 500; }
-  .ref-desc  { font-size: 13px; color: var(--text2); padding: 8px 16px 8px 0; }
-  .ref-use   { font-size: 13px; color: var(--text3); }
+  .ref-cat-row.header {
+    background: rgba(255,255,255,.03);
+  }
+  .ref-col-label {
+    font-size: 9px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--text3);
+  }
+  .ref-cat-hdr {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .ref-cat-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    box-shadow: 0 0 8px var(--dot-color);
+    background: var(--dot-color);
+    flex-shrink: 0;
+  }
+  .ref-cat-name {
+    font-size: 11px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--dot-color);
+  }
+  .ref-cat-tinted {
+    background: var(--cat-tint);
+  }
+  .ref-row {
+    display: grid;
+    grid-template-columns: 220px 1fr 180px;
+    padding: 10px 20px;
+    border-bottom: 1px solid rgba(33,40,60,.6);
+    align-items: baseline;
+  }
+  .ref-row:last-child { border-bottom: none; }
+  .ref-row:nth-child(even) { background: var(--surf2); }
+  .ref-name {
+    font-size: 13px; font-weight: 500;
+    color: var(--name-color);
+    font-family: 'SF Mono', 'Fira Mono', monospace;
+    letter-spacing: -.01em;
+  }
+  .ref-desc {
+    font-size: 13px; color: var(--text2); padding-right: 16px;
+  }
+  .ref-use {
+    font-size: 12px; color: var(--text3);
+  }
 
-  /* ── Footer ───────────────────────────────────────── */
-  footer {
+  /* ── Footer ───────────────────────────────────────────── */
+  .footer-wrap {
+    margin-top: 80px;
     background: var(--surface);
-    padding: 56px 0;
+    border-top: 1px solid var(--rule);
+    padding: 60px 80px;
     text-align: center;
   }
   .footer-principle {
     font-size: 20px; font-weight: 700; color: var(--text1);
-    margin-bottom: 10px; letter-spacing: -.01em;
+    margin-bottom: 8px; letter-spacing: -.01em;
   }
   .footer-sub {
     font-size: 15px; color: var(--text2); margin-bottom: 32px;
   }
   .footer-tip {
     display: inline-block;
-    background: rgba(79,142,247,.08);
-    border: 1px solid rgba(79,142,247,.18);
+    background: var(--surf2); border: 1px solid var(--rule);
     border-radius: 10px; padding: 16px 24px;
-    font-size: 13px; color: var(--text2);
-    text-align: left; max-width: 520px;
+    text-align: left; font-size: 13px; color: var(--text2);
+    line-height: 1.8;
+    max-width: 520px;
   }
-  .footer-tip strong { color: var(--blue); display: block; margin-bottom: 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
-  .footer-tip ol { padding-left: 16px; }
-  .footer-tip li { padding: 2px 0; }
-
-  /* ── Utility ──────────────────────────────────────── */
-  .text-center { text-align: center; }
+  .footer-tip strong { color: var(--text1); font-weight: 600; }
+  .footer-copy {
+    margin-top: 32px; font-size: 12px; color: var(--text3);
+  }
+  .footer-copy a { color: var(--blue); text-decoration: none; }
+  .footer-copy a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
 
-<!-- ══ HERO ══════════════════════════════════════════════════ -->
-<section id="hero">
-  <div class="hero-bar"></div>
+<!-- Top Nav -->
+<nav class="topnav">
+  <a href="index.html" class="topnav-logo">EGTK<span>.</span></a>
+  <div class="topnav-sep"></div>
+  <a href="#principle" class="topnav active">First Principle</a>
+  <a href="#goals" class="topnav">I Want To...</a>
+  <a href="#reference" class="topnav">Component Reference</a>
+  <a href="index.html" class="topnav-back">← All Docs</a>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-glow"></div>
+  <span class="hero-bar"></span>
   <h1 class="hero-title">EGTK</h1>
   <p class="hero-sub">Event Game Toolkit</p>
   <div class="hero-rule"></div>
-  <p class="hero-tag">One principle. Every interaction.</p>
-</section>
+  <p class="hero-principle">One principle. Every interaction.</p>
+</div>
 
-<!-- ══ FIRST PRINCIPLE ═══════════════════════════════════════ -->
-<section id="principle">
-  <div class="container">
-    <div class="section-label text-center"><span class="pill pill-blue">The First Principle</span></div>
-    <h2 class="section-title">How everything works</h2>
-    <p class="section-sub">You don't write code. You connect components using UnityEvents.</p>
+<!-- First Principle -->
+<div class="section" id="principle">
+  <div>
+    <span class="sec-pill" style="background:rgba(79,142,247,.1);color:var(--blue)">The First Principle</span>
+    <h2 class="sec-title">How everything works</h2>
+    <p class="sec-desc">You don't write code. You connect components using UnityEvents. Every interaction — from opening a door to tracking a score — follows the same structure.</p>
+  </div>
 
-    <div class="diagram">
-      <div class="diag-box">
-        <div class="diag-box-top" style="background:var(--blue)"></div>
-        <div class="diag-box-inner">
-          <div class="diag-cat" style="color:var(--blue)">Input</div>
-          <div class="diag-title">Input Component</div>
-          <ul class="diag-examples">
-            <li>InputKeyPress</li>
-            <li>InputTriggerZone</li>
-            <li>InputInteractionZone</li>
-            <li>InputMouseInteraction</li>
-          </ul>
-        </div>
+  <div class="principle-wrap dot-grid">
+    <div class="dot-grid" style="position:absolute;inset:0;z-index:0;border-radius:20px;"></div>
+
+    <div class="principle-diagram">
+
+      <!-- Box 1: Input -->
+      <div class="pbox" style="--box-color: var(--blue)">
+        <div class="pbox-label">Input</div>
+        <div class="pbox-title">Input Component</div>
+        <div class="pbox-rule"></div>
+        <ul class="pbox-examples">
+          <li>InputKeyPress</li>
+          <li>InputTriggerZone</li>
+          <li>InputInteractionZone</li>
+          <li>InputMouseInteraction</li>
+        </ul>
+        <div class="pbox-port-out"></div>
       </div>
-      <div class="diag-arrow" style="color:var(--blue)">→</div>
-      <div class="diag-box">
-        <div class="diag-box-top" style="background:var(--slate)"></div>
-        <div class="diag-box-inner">
-          <div class="diag-cat" style="color:var(--slate)">The Wire</div>
-          <div class="diag-title">UnityEvent</div>
-          <ul class="diag-examples">
-            <li>On Key Press</li>
-            <li>On Enter / On Exit</li>
-            <li>On Interact</li>
-            <li>On Click</li>
-          </ul>
-        </div>
+
+      <!-- Wire 1: Input → UnityEvent -->
+      <div class="pwire" style="--wire-from:var(--blue);--wire-to:var(--slate);--bead-color:var(--blue);--bead-delay:0s">
+        <div class="pwire-line"></div>
+        <div class="pwire-bead"></div>
+        <div class="pwire-label">fires</div>
       </div>
-      <div class="diag-arrow" style="color:var(--purple)">→</div>
-      <div class="diag-box">
-        <div class="diag-box-top" style="background:var(--purple)"></div>
-        <div class="diag-box-inner">
-          <div class="diag-cat" style="color:var(--purple)">Action</div>
-          <div class="diag-title">Action Component</div>
-          <ul class="diag-examples">
-            <li>ActionPlaySound</li>
-            <li>ActionDisplayText</li>
-            <li>ActionPlatformAnimator</li>
-            <li>ActionSpawnObject</li>
-          </ul>
-        </div>
+
+      <!-- Box 2: UnityEvent -->
+      <div class="pbox" style="--box-color:var(--slate)">
+        <div class="pbox-port-in" style="--port-color:var(--blue)"></div>
+        <div class="pbox-label">The Wire</div>
+        <div class="pbox-title">UnityEvent</div>
+        <div class="pbox-rule"></div>
+        <ul class="pbox-examples">
+          <li>On Key Press</li>
+          <li>On Enter / On Exit</li>
+          <li>On Interact</li>
+          <li>On Click</li>
+        </ul>
+        <div class="pbox-port-out"></div>
       </div>
-    </div>
-    <p class="diagram-caption">Something happens.&nbsp;&nbsp;&nbsp;→&nbsp;&nbsp;&nbsp;Something responds.&nbsp;&nbsp;&nbsp;The pattern never changes.</p>
-  </div>
-</section>
 
-<!-- ══ I WANT TO ═════════════════════════════════════════════ -->
-<section id="goals">
-  <div class="container">
-    <div class="section-label"><span class="pill pill-orange">Student Goals</span></div>
-    <div class="section-header-row">
-      <h2 class="section-title">I want to...</h2>
-      <p class="section-sub">Apply the first principle to your specific goal.</p>
-    </div>
-    <div class="cards-grid" id="cards"></div>
-  </div>
-</section>
+      <!-- Wire 2: UnityEvent → Action -->
+      <div class="pwire" style="--wire-from:var(--slate);--wire-to:var(--purple);--bead-color:var(--purple);--bead-delay:.8s">
+        <div class="pwire-line"></div>
+        <div class="pwire-bead"></div>
+        <div class="pwire-label">calls</div>
+      </div>
 
-<!-- ══ REFERENCE ═════════════════════════════════════════════ -->
-<section id="reference">
-  <div class="container">
-    <div class="section-label"><span class="pill pill-muted">Component Reference</span></div>
-    <h2 class="section-title">Every component, one line</h2>
-    <p class="section-sub">Each one is a trigger (fires an event) or a function target (responds to one).</p>
-    <div id="tables"></div>
-  </div>
-</section>
+      <!-- Box 3: Action -->
+      <div class="pbox" style="--box-color:var(--purple)">
+        <div class="pbox-port-in" style="--port-color:var(--slate)"></div>
+        <div class="pbox-label">Action</div>
+        <div class="pbox-title">Action Component</div>
+        <div class="pbox-rule"></div>
+        <ul class="pbox-examples">
+          <li>ActionPlaySound</li>
+          <li>ActionDisplayText</li>
+          <li>ActionPlatformAnimator</li>
+          <li>ActionSpawnObject</li>
+        </ul>
+      </div>
 
-<!-- ══ FOOTER ════════════════════════════════════════════════ -->
-<footer>
-  <div class="container">
-    <p class="footer-principle">Input fires an event &nbsp;→&nbsp; Event calls a function &nbsp;→&nbsp; Function does something</p>
-    <p class="footer-sub">Every interaction in EGTK follows this structure, no matter how complex the result.</p>
-    <div class="footer-tip">
-      <strong>First Principle Check</strong>
-      <ol>
-        <li>What happens? → Pick an Input component</li>
-        <li>What responds? → Pick a function to call</li>
-        <li>Wire them in the Inspector</li>
-      </ol>
     </div>
+
+    <p class="principle-caption">
+      <span>Something happens.</span> &nbsp;→&nbsp; <span>Something responds.</span>
+      &nbsp;&nbsp;The pattern never changes.
+    </p>
   </div>
-</footer>
+</div>
+
+<!-- I Want To... Goal Cards -->
+<div class="section" id="goals">
+  <div class="goals-header">
+    <span class="sec-pill" style="background:rgba(251,146,60,.1);color:var(--orange)">Student Goals</span>
+    <h2 class="sec-title" style="margin-bottom:0">I want to...</h2>
+  </div>
+  <div class="goals-grid" id="goalsGrid"></div>
+</div>
+
+<!-- Component Reference -->
+<div class="section" id="reference">
+  <span class="sec-pill" style="background:rgba(148,163,200,.08);color:var(--slate)">Component Reference</span>
+  <h2 class="sec-title">Every component, one line</h2>
+  <p class="sec-desc" style="margin-bottom:48px">Each one is a trigger (fires an event) or a function target (responds to one).</p>
+  <div id="refTables"></div>
+</div>
+
+<!-- Footer -->
+<div class="footer-wrap">
+  <p class="footer-principle">Input fires an event → Event calls a function → Function does something</p>
+  <p class="footer-sub">Every interaction in EGTK follows this structure, no matter how complex the result.</p>
+  <div class="footer-tip">
+    <strong>First Principle Check</strong><br>
+    1. What happens? <em style="color:var(--blue)">Pick an Input.</em><br>
+    2. What responds? <em style="color:var(--purple)">Pick a function.</em><br>
+    3. Wire them in the Inspector.
+  </div>
+  <p class="footer-copy">
+    <a href="index.html">← EGTK Docs</a> &nbsp;&middot;&nbsp; Animation &amp; Interactivity
+  </p>
+</div>
 
 <script>
-// ── Goal cards data ────────────────────────────────────────────
-const cards = [
-  { goal: 'play a sound when the player presses a key',
-    color: 'blue', cat: 'INPUT + SOUND',
-    chain: [{t:'InputKeyPress',c:'blue'},{t:'On Press Event',c:'slate'},{t:'ActionPlaySound',c:'purple'}],
-    steps: ['Add InputKeyPress to any GameObject','Add ActionPlaySound (needs AudioSource)','Wire: On Press Event → Play()'] },
-  { goal: 'show a message on screen',
-    color: 'blue', cat: 'INPUT + DISPLAY',
-    chain: [{t:'Any Input',c:'blue'},{t:'Any Event',c:'slate'},{t:'ActionDisplayText',c:'purple'}],
-    steps: ['Add ActionDisplayText to any GameObject (creates its own UI)','Set your message in the inspector','Wire any trigger event → DisplayDefaultText()'] },
-  { goal: 'open a door when the player presses Interact',
-    color: 'teal', cat: 'INTERACTION',
-    chain: [{t:'InputInteractionZone',c:'teal'},{t:'On Interact',c:'slate'},{t:'ActionPlatformAnimator',c:'purple'}],
-    steps: ['Add InputInteractionZone with a Trigger Collider','Add ActionPlatformAnimator to the door','Wire: On Interact → Play()'] },
-  { goal: 'make objects the player can click',
-    color: 'teal', cat: 'MOUSE INPUT',
-    chain: [{t:'InputMouseInteraction',c:'teal'},{t:'On Mouse Click',c:'slate'},{t:'Any Action',c:'purple'}],
-    steps: ['Add InputMouseInteraction to any object','Add a Collider to the object','Wire: On Mouse Click → any Action you want'] },
-  { goal: 'track the player\'s score or collectibles',
-    color: 'green', cat: 'GAME MANAGER',
-    chain: [{t:'Any Input',c:'blue'},{t:'Any Event',c:'slate'},{t:'GameCollectionManager',c:'green'}],
-    steps: ['Add GameCollectionManager to a manager object','Enable Show UI for automatic display','Wire trigger → Increment()'] },
-  { goal: 'give the player health and a death state',
-    color: 'green', cat: 'GAME MANAGER',
-    chain: [{t:'Damage Trigger',c:'blue'},{t:'On Take Damage',c:'slate'},{t:'GameHealthManager',c:'green'}],
-    steps: ['Add GameHealthManager to a manager object','Wire hazards → TakeDamage(10)','On Death → ActionRestartScene.RestartScene()'] },
-  { goal: 'add a countdown timer to my game',
-    color: 'green', cat: 'GAME MANAGER',
-    chain: [{t:'GameTimerManager',c:'green'},{t:'On Timer Stopped',c:'slate'},{t:'ActionRestartScene',c:'purple'}],
-    steps: ['Add GameTimerManager, uncheck Count Up','Set Start Time (e.g. 60 seconds)','Wire: On Timer Stopped → next action'] },
-  { goal: 'spawn enemies or objects automatically',
-    color: 'orange', cat: 'SPAWNING',
-    chain: [{t:'ActionAutoSpawner',c:'orange'},{t:'On Spawn',c:'slate'},{t:'Enemy Prefab',c:'orange'}],
-    steps: ['Add ActionAutoSpawner to a spawn point','Assign your enemy/object Prefab','Set Spawn Time Min/Max — it runs automatically'] },
-  { goal: 'create NPC dialogue with choices',
-    color: 'purple', cat: 'DIALOGUE',
-    chain: [{t:'InputInteractionZone',c:'teal'},{t:'On Interact',c:'slate'},{t:'ActionDialogueSequence',c:'purple'}],
-    steps: ['Add ActionDialogueSequence to the NPC','Fill in lines, portrait, and choices','Wire: On Interact → StartDialogue()'] },
-  { goal: 'respawn the player after they die',
-    color: 'orange', cat: 'RESPAWN',
-    chain: [{t:'GameHealthManager',c:'green'},{t:'On Death',c:'slate'},{t:'ActionRespawnPlayer',c:'orange'}],
-    steps: ['Add InputCheckpointZone along the level','Add ActionRespawnPlayer to the player','Wire: On Death → RespawnToCheckpoint()'] },
-  { goal: 'make a puzzle where all switches must be hit',
-    color: 'pink', cat: 'PUZZLE',
-    chain: [{t:'PuzzleSwitch',c:'pink'},{t:'On Puzzle Solved',c:'slate'},{t:'PuzzleSwitchChecker',c:'pink'}],
-    steps: ['Add PuzzleSwitch to each switch object','Add PuzzleSwitchChecker, assign all switches','Wire: On Puzzle Solved → open the door'] },
-  { goal: 'create random outcomes (loot, varied responses)',
-    color: 'purple', cat: 'RANDOM',
-    chain: [{t:'Any Input',c:'blue'},{t:'On Event',c:'slate'},{t:'ActionRandomEvent',c:'purple'}],
-    steps: ['Add ActionRandomEvent, set weighted entries','Each entry wires to a different outcome','Wire any trigger → Trigger()'] },
+const COLORS = {
+  blue:   '#4F8EF7',
+  purple: '#9B72F7',
+  green:  '#34D399',
+  orange: '#FB923C',
+  red:    '#EF4444',
+  pink:   '#F472B6',
+  teal:   '#2DD4BF',
+  slate:  '#94A3C8',
+};
+
+const GOALS = [
+  {
+    title:    'play a sound when the player presses a key',
+    accent:   COLORS.blue,
+    category: 'Input + Sound',
+    src:      { label: 'InputKeyPress', color: COLORS.blue },
+    tgt:      { label: 'ActionPlaySound', color: COLORS.purple },
+    steps: [
+      'Add InputKeyPress to any GameObject',
+      'Add ActionPlaySound (needs an AudioSource)',
+      'Wire: On Key Press → Play()',
+    ],
+    delay: '0s',
+  },
+  {
+    title:    'show a message on screen',
+    accent:   COLORS.blue,
+    category: 'Input + Display',
+    src:      { label: 'Any Input', color: COLORS.blue },
+    tgt:      { label: 'ActionDisplayText', color: COLORS.purple },
+    steps: [
+      'Add ActionDisplayText to a Canvas object',
+      'Set your message in the Inspector',
+      'Wire any trigger event → DisplayDefaultText()',
+    ],
+    delay: '.2s',
+  },
+  {
+    title:    'open a door when the player presses Interact',
+    accent:   COLORS.teal,
+    category: 'Interaction',
+    src:      { label: 'InputInteractionZone', color: COLORS.teal },
+    tgt:      { label: 'ActionPlatformAnimator', color: COLORS.orange },
+    steps: [
+      'Add InputInteractionZone with a Trigger Collider',
+      'Add ActionPlatformAnimator to the door',
+      'Wire: On Interact → Play()',
+    ],
+    delay: '.4s',
+  },
+  {
+    title:    'make objects the player can click',
+    accent:   COLORS.teal,
+    category: 'Mouse Input',
+    src:      { label: 'InputMouseInteraction', color: COLORS.teal },
+    tgt:      { label: 'Any Action', color: COLORS.purple },
+    steps: [
+      'Add InputMouseInteraction to any object',
+      'Add a Collider to the object',
+      'Wire: On Click → any Action',
+    ],
+    delay: '.6s',
+  },
+  {
+    title:    'track the player\'s score or collectibles',
+    accent:   COLORS.green,
+    category: 'Game Manager',
+    src:      { label: 'InputTriggerZone', color: COLORS.teal },
+    tgt:      { label: 'GameCollectionManager', color: COLORS.green },
+    steps: [
+      'Add GameCollectionManager to a manager object',
+      'Enable Show UI for automatic display',
+      'Wire trigger → Increment()',
+    ],
+    delay: '.3s',
+  },
+  {
+    title:    'give the player health and a death state',
+    accent:   COLORS.green,
+    category: 'Game Manager',
+    src:      { label: 'Hazard Trigger', color: COLORS.red },
+    tgt:      { label: 'GameHealthManager', color: COLORS.green },
+    steps: [
+      'Add GameHealthManager to a manager object',
+      'Wire hazards → TakeDamage(10)',
+      'On Death → ActionRestartScene.RestartScene()',
+    ],
+    delay: '.5s',
+  },
+  {
+    title:    'add a countdown timer to my game',
+    accent:   COLORS.green,
+    category: 'Game Manager',
+    src:      { label: 'GameTimerManager', color: COLORS.green },
+    tgt:      { label: 'ActionRestartScene', color: COLORS.orange },
+    steps: [
+      'Add GameTimerManager, uncheck Count Up',
+      'Set Start Time (e.g. 60 seconds)',
+      'Wire: On Timer Stopped → next action',
+    ],
+    delay: '.7s',
+  },
+  {
+    title:    'spawn enemies or objects automatically',
+    accent:   COLORS.orange,
+    category: 'Spawning',
+    src:      { label: 'ActionAutoSpawner', color: COLORS.orange },
+    tgt:      { label: 'Enemy Prefab', color: COLORS.red },
+    steps: [
+      'Add ActionAutoSpawner to a spawn point',
+      'Assign your enemy / object Prefab',
+      'Set Interval — it runs automatically',
+    ],
+    delay: '.1s',
+  },
+  {
+    title:    'create NPC dialogue with choices',
+    accent:   COLORS.purple,
+    category: 'Dialogue',
+    src:      { label: 'InputInteractionZone', color: COLORS.teal },
+    tgt:      { label: 'ActionDialogueSequence', color: COLORS.purple },
+    steps: [
+      'Add ActionDialogueSequence to the NPC',
+      'Fill in lines, portrait, and choices',
+      'Wire: On Interact → StartDialogue()',
+    ],
+    delay: '.4s',
+  },
+  {
+    title:    'respawn the player after they die',
+    accent:   COLORS.orange,
+    category: 'Respawn',
+    src:      { label: 'GameHealthManager', color: COLORS.green },
+    tgt:      { label: 'ActionRespawnPlayer', color: COLORS.orange },
+    steps: [
+      'Add InputCheckpointZone along the level',
+      'Add ActionRespawnPlayer to the player',
+      'Wire: On Death → RespawnToCheckpoint()',
+    ],
+    delay: '.6s',
+  },
+  {
+    title:    'make a puzzle where all switches must be hit',
+    accent:   COLORS.pink,
+    category: 'Puzzle',
+    src:      { label: 'PuzzleSwitch', color: COLORS.pink },
+    tgt:      { label: 'PuzzleSwitchChecker', color: COLORS.pink },
+    steps: [
+      'Add PuzzleSwitch to each switch object',
+      'Add PuzzleSwitchChecker, assign all switches',
+      'Wire: On Puzzle Solved → open the door',
+    ],
+    delay: '.2s',
+  },
+  {
+    title:    'create random outcomes (loot, varied responses)',
+    accent:   COLORS.purple,
+    category: 'Random',
+    src:      { label: 'Any Input', color: COLORS.blue },
+    tgt:      { label: 'ActionRandomEvent', color: COLORS.purple },
+    steps: [
+      'Add ActionRandomEvent, set weighted entries',
+      'Each entry wires to a different outcome',
+      'Wire any trigger → Trigger()',
+    ],
+    delay: '.8s',
+  },
 ];
 
-const grid = document.getElementById('cards');
-cards.forEach(c => {
-  const chain = c.chain.map((ch,i) =>
-    `<span class="chip" style="background:var(--${ch.c}18,rgba(0,0,0,.2));color:var(--${ch.c})">${ch.t}</span>${i<c.chain.length-1?'<span class="chain-arrow">→</span>':''}`
-  ).join('');
-  const steps = c.steps.map((s,i)=>
-    `<li><span class="num">${i+1}.</span><span>${s}</span></li>`
-  ).join('');
-  grid.innerHTML += `
-    <div class="goal-card">
-      <div class="goal-card-bar" style="background:var(--${c.color})"></div>
-      <div class="goal-card-body">
-        <div class="goal-card-top">
-          <div class="goal-text"><em>I want to</em> ${c.goal}</div>
-          <span class="goal-cat-pill pill-${c.color}" style="background:var(--${c.color}15);color:var(--${c.color})">${c.cat}</span>
-        </div>
-        <div class="chain">${chain}</div>
-        <div class="goal-divider"></div>
-        <ul class="steps">${steps}</ul>
-      </div>
-    </div>`;
-});
-
-// ── Reference tables data ──────────────────────────────────────
-const tables = [
-  { label: 'INPUT — Event Sources', color: 'blue',
+const TABLES = [
+  {
+    name: 'Input', color: COLORS.blue,
+    tint: 'rgba(79,142,247,.04)',
+    cols: ['Component', 'What It Does', 'Good For'],
     rows: [
-      ['InputKeyPress','Fires when a key is pressed','Key pressed → call any function'],
-      ['InputOnStart','Fires when the scene starts','Auto-run something on scene load'],
-      ['InputTriggerZone','Fires when a tagged object enters or exits a collider','Player walks into area → call a function'],
-      ['InputCheckpointZone','A trigger zone that also saves a spawn point','Checkpoints and respawn points'],
-      ['InputInteractionZone','Shows a prompt sprite; fires when the player presses Interact','Player presses E or Triangle → call any function'],
-      ['InputMouseInteraction','Fires when the mouse clicks or hovers over this object','Clickable objects with a free cursor'],
-      ['InputFPMouseInteraction','Same but raycasts from screen center','Clickable objects in a first-person game'],
-      ['InputClickDrag','Makes this object draggable','Drag-and-drop puzzles and sliders'],
-      ['InputClickRotate','Makes this object rotatable by dragging','Dials, wheels, rotating puzzles'],
-      ['InputActionEvent','Fires from any Unity Input System action','Custom controller and keyboard bindings'],
-      ['InputKeyCountdown','Counts down while a key is held','Hold-to-open doors and charge mechanics'],
-      ['InputCollisionEnter','Fires on physics collision with a tagged object','Bullet hits and physical triggers'],
-    ]},
-  { label: 'ACTIONS — Function Targets', color: 'purple',
+      ['InputKeyPress',           'Fires when a key is pressed',                                    'Key pressed → call any function'],
+      ['InputOnStart',            'Fires when the scene starts',                                   'Auto-run something on scene load'],
+      ['InputTriggerZone',        'Fires when a tagged object enters or exits a collider',          'Player walks into area → call a function'],
+      ['InputCheckpointZone',     'A trigger zone that also saves a spawn point',                  'Checkpoints and respawn points'],
+      ['InputInteractionZone',    'Shows a prompt sprite; fires when the player presses Interact', 'Player presses E or Triangle → call any function'],
+      ['InputMouseInteraction',   'Fires when the mouse clicks or hovers over this object',        'Clickable objects with a free cursor'],
+      ['InputFPMouseInteraction', 'Same but raycasts from screen center',                         'Clickable objects in a first-person game'],
+      ['InputClickDrag',          'Makes this object draggable',                                  'Drag-and-drop puzzles and sliders'],
+      ['InputClickRotate',        'Makes this object rotatable by dragging',                      'Dials, wheels, rotating puzzles'],
+      ['InputActionEvent',        'Fires from any Unity Input System action',                     'Custom controller and keyboard bindings'],
+      ['InputKeyCountdown',       'Counts down while a key is held',                              'Hold-to-open doors and charge mechanics'],
+      ['InputCollisionEnter',     'Fires on physics collision with a tagged object',               'Bullet hits and physical triggers'],
+    ],
+  },
+  {
+    name: 'Actions', color: COLORS.purple,
+    tint: 'rgba(155,114,247,.04)',
+    cols: ['Component', 'What It Does', 'Good For'],
     rows: [
-      ['ActionPlaySound','Plays a sound with randomized volume and pitch','Any sound effect'],
-      ['ActionDisplayText','Shows text on screen with optional typewriter','Subtitles, hints, UI messages'],
-      ['ActionDisplayImage','Shows an image with fade or scale animation','Pop-up icons and overlays'],
-      ['ActionDialogueSequence','Multi-line dialogue with portraits and choices','NPC conversations and cutscenes'],
-      ['ActionSpawnObject','Instantiates a prefab at a spawn point','Spawn enemies and pickups'],
-      ['ActionAutoSpawner','Continuously spawns prefabs on a timer','Enemy waves and ambient spawning'],
-      ['ActionSpawnProjectile','Spawns a projectile with direction and force','Shooting and throwing'],
-      ['ActionRestartScene','Reloads the current scene','Restart button and game over'],
-      ['ActionRespawnPlayer','Teleports player to last checkpoint','Death and respawn'],
-      ['ActionTeleportToTransform','Teleports any object to a target','Portals and warps'],
-      ['ActionEventSequencer','Fires events in sequence with delays','Cutscene chains'],
-      ['ActionRandomEvent','Picks one event from a weighted list','Random loot and varied responses'],
-      ['ActionShuffleEvent','Cycles events in random order, each once','Shuffle playlists and non-repeating dialogue'],
-      ['ActionTriggerAnimatorParameter','Sets an Animator parameter','Trigger animations'],
-      ['ActionPlayCharacterEmoteAnimation','Plays a named animation trigger','Character reactions and emotes'],
-      ['ActionAnimateTransform','Moves, rotates, or scales using animation curves','Custom tweened animations'],
-      ['ActionRandomMotion','Continuously applies randomized movement','Floating objects and idle wobble'],
-      ['ActionPlatformAnimator','Moves a platform between waypoints','Doors, elevators, moving platforms'],
-      ['ActionDecalSequence','Frame-by-frame material animation on a URP decal','Animated decals'],
-      ['ActionBlinkDecal','Automatically blinks a character eye decal','Any character that needs blinking'],
-      ['ActionEmissionAnimation','Animates a material\'s emission intensity over time','Glowing, pulsing, or flickering objects'],
-      ['FadeInFromBlackOnRestart','Fades the screen in from black when the scene loads','Scene transitions and restarts'],
-    ]},
-  { label: 'GAME MANAGERS — One per scene', color: 'green',
+      ['ActionPlaySound',                 'Plays a sound with randomized volume and pitch',                   'Any sound effect'],
+      ['ActionDisplayText',               'Shows text on screen with optional typewriter effect',             'Subtitles, hints, UI messages'],
+      ['ActionDisplayImage',              'Shows an image with fade or scale animation',                      'Pop-up icons and overlays'],
+      ['ActionDialogueSequence',          'Multi-line dialogue with portraits and choices',                   'NPC conversations and cutscenes'],
+      ['ActionSpawnObject',               'Instantiates a prefab at a spawn point',                          'Spawn enemies and pickups'],
+      ['ActionAutoSpawner',               'Continuously spawns prefabs on a timer',                          'Enemy waves and ambient spawning'],
+      ['ActionSpawnProjectile',           'Spawns a projectile with direction and force',                    'Shooting and throwing'],
+      ['ActionRestartScene',              'Reloads the current scene',                                       'Restart button and game over'],
+      ['ActionRespawnPlayer',             'Teleports player to last checkpoint',                             'Death and respawn'],
+      ['ActionTeleportToTransform',       'Teleports any object to a target',                               'Portals and warps'],
+      ['ActionEventSequencer',            'Fires events in sequence with delays',                            'Cutscene chains'],
+      ['ActionRandomEvent',               'Picks one event from a weighted list',                            'Random loot and varied responses'],
+      ['ActionShuffleEvent',              'Cycles events in random order, each once',                        'Shuffle playlists and non-repeating dialogue'],
+      ['ActionTriggerAnimatorParameter',  'Sets an Animator parameter',                                     'Trigger animations'],
+      ['ActionPlayCharacterEmoteAnimation','Plays a named animation trigger',                               'Character reactions and emotes'],
+      ['ActionAnimateTransform',          'Moves, rotates, or scales using animation curves',               'Custom tweened animations'],
+      ['ActionRandomMotion',              'Continuously applies randomized movement',                        'Floating objects and idle wobble'],
+      ['ActionPlatformAnimator',          'Moves a platform between waypoints',                             'Doors, elevators, and moving platforms'],
+      ['ActionDecalSequence',             'Frame-by-frame material animation on a URP decal',               'Animated decals'],
+      ['ActionDecalSequenceLibrary',      'Switches between multiple named decal sequences',                'Characters with multiple animation states'],
+      ['ActionBlinkDecal',                'Automatically blinks a character eye decal',                     'Any character that needs blinking'],
+    ],
+  },
+  {
+    name: 'Game Managers', color: COLORS.green,
+    tint: 'rgba(52,211,153,.04)',
+    cols: ['Component', 'What It Does', 'Good For'],
     rows: [
-      ['GameHealthManager','Tracks health with damage, healing, and a death event','Player or enemy health'],
-      ['GameCollectionManager','Tracks a numeric value with threshold events','Score, coins, collectibles'],
-      ['GameInventoryManager','Tracks multiple item slots with counts','Keys, ammo, resources'],
-      ['GameTimerManager','Counts up or down, fires events at thresholds','Level timer, countdown clock'],
-      ['GameCheckpointManager','Stores last checkpoint for respawning','Respawn system'],
-      ['GameStateManager','Handles pause and victory screens','Pause menu, win condition'],
-      ['GameAudioManager','Controls background music and ambient audio','Music system, crossfades'],
-      ['GameCameraManager','Switches between Cinemachine cameras by name','Multiple angles, cutscenes'],
-      ['GameUIManager','Connects managers to existing HUD UI elements','HUD wiring'],
-    ]},
-  { label: 'CHARACTER CONTROLLERS', color: 'red',
+      ['GameHealthManager',     'Tracks health with damage, healing, and death event',       'Player or enemy health'],
+      ['GameCollectionManager', 'Tracks a numeric value with threshold events',              'Score, coins, collectibles'],
+      ['GameInventoryManager',  'Tracks multiple item slots with counts',                   'Keys, ammo, resources'],
+      ['GameTimerManager',      'Counts up or down, fires events at thresholds',            'Level timer, countdown clock'],
+      ['GameCheckpointManager', 'Stores last checkpoint for respawning',                   'Respawn system'],
+      ['GameStateManager',      'Handles pause and victory screens',                        'Pause menu, win condition'],
+      ['GameAudioManager',      'Controls background music and ambient audio',              'Music system, crossfades'],
+      ['GameCameraManager',     'Switches between Cinemachine cameras by name',            'Multiple angles, cutscenes'],
+      ['GameUIManager',         'Connects managers to HUD UI elements',                    'HUD wiring'],
+      ['GameSceneManager',      'Loads scenes additively with spawn point coordination',   'Multi-level games and hub worlds'],
+    ],
+  },
+  {
+    name: 'Multi-Scene Data', color: COLORS.teal,
+    tint: 'rgba(45,212,191,.04)',
+    cols: ['Asset Type', 'What It Does', 'Good For'],
     rows: [
-      ['CharacterControllerFP','First-person controller with mouse look, jump, sprint','First-person games'],
-      ['CharacterControllerCC','Third-person controller with rotation and jump','Third-person and top-down games'],
-      ['PhysicsBallPlayerController','Physics-based ball controller','Rolling ball games'],
-      ['PhysicsCharacterController','Rigidbody-based character controller','Physics-heavy platformers'],
-      ['EnemyControllerCC','AI enemy that chases the player using NavMesh','Basic enemy AI'],
-      ['PhysicsEnemyController','Rigidbody-based enemy that chases','Physics-based enemy AI'],
-    ]},
-  { label: 'PHYSICS', color: 'orange',
+      ['IntVariable',    'ScriptableObject holding an int that persists across scene loads',   'Persistent health, score, lives'],
+      ['FloatVariable',  'ScriptableObject holding a float that persists across scene loads',  'Persistent timer, percentage stats'],
+      ['SpawnPoint',     'Marks where the player spawns; supports checkpoint and ID priority', 'Level entry points, scene transitions'],
+    ],
+  },
+  {
+    name: 'Character Controllers', color: COLORS.red,
+    tint: 'rgba(239,68,68,.04)',
+    cols: ['Component', 'What It Does', 'Good For'],
     rows: [
-      ['PhysicsBumper','Bounces any Rigidbody that touches it','Pinball bumpers, bounce pads'],
-      ['PhysicsBumperTag','Same but only affects tagged objects','Targeted bounce zones'],
-      ['PhysicsForceZone','Applies forces to Rigidbodies inside a trigger','Wind zones, jump pads, explosions'],
-      ['PhysicsPlatformAnimator','Moves platform between waypoints using Rigidbody','Moving platforms the player can stand on'],
-      ['PhysicsPlatformStick','Keeps player attached to a moving platform','Required companion to PhysicsPlatformAnimator'],
-    ]},
-  { label: 'PUZZLES', color: 'pink',
+      ['CharacterControllerFP',     'First-person controller with mouse look, jump, sprint', 'First-person games'],
+      ['CharacterControllerCC',     'Third-person controller with rotation and jump',        'Third-person and top-down games'],
+      ['PhysicsBallPlayerController','Physics-based ball controller',                       'Rolling ball games'],
+      ['PhysicsCharacterController','Rigidbody-based character controller',                 'Physics-heavy platformers'],
+      ['EnemyControllerCC',         'AI enemy that chases the player using NavMesh',        'Basic enemy AI'],
+      ['PhysicsEnemyController',    'Rigidbody-based enemy that chases',                   'Physics-based enemy AI'],
+    ],
+  },
+  {
+    name: 'Physics', color: COLORS.orange,
+    tint: 'rgba(251,146,60,.04)',
+    cols: ['Component', 'What It Does', 'Good For'],
     rows: [
-      ['PuzzleSwitch','A switch that can be activated and deactivated','Any interactive switch or button'],
-      ['PuzzleSwitchChecker','Fires when all assigned switches are activated','Combination puzzles'],
-      ['PuzzleSequenceChecker','Fires when switches activated in correct order','Sequence puzzles'],
-    ]},
+      ['PhysicsBumper',           'Bounces any Rigidbody that touches it',                     'Pinball bumpers, bounce pads'],
+      ['PhysicsBumperTag',        'Same but only affects tagged objects',                      'Targeted bounce zones'],
+      ['PhysicsForceZone',        'Applies forces to Rigidbodies inside a trigger',            'Wind zones, jump pads, explosion areas'],
+      ['PhysicsPlatformAnimator', 'Moves platform between waypoints using Rigidbody',         'Moving platforms the player can stand on'],
+      ['PhysicsPlatformStick',    'Keeps player attached to a moving platform',               'Required companion to PhysicsPlatformAnimator'],
+    ],
+  },
+  {
+    name: 'Puzzles', color: COLORS.pink,
+    tint: 'rgba(244,114,182,.04)',
+    cols: ['Component', 'What It Does', 'Good For'],
+    rows: [
+      ['PuzzleSwitch',          'A switch that can be activated and deactivated',              'Any interactive switch or button'],
+      ['PuzzleSwitchChecker',   'Fires when all assigned switches are activated',              'Combination puzzles'],
+      ['PuzzleSequenceChecker', 'Fires when switches are activated in the correct order',     'Sequence puzzles'],
+    ],
+  },
+  {
+    name: 'UI & Utilities', color: COLORS.slate,
+    tint: 'rgba(148,163,200,.04)',
+    cols: ['Component', 'What It Does', 'Good For'],
+    rows: [
+      ['FadeInFromBlackOnRestart', 'Fades the screen in from black every time the scene loads', 'Scene transitions and respawn fade-in'],
+    ],
+  },
 ];
 
-const tablesEl = document.getElementById('tables');
-tables.forEach(t => {
-  const rows = t.rows.map((r,i) => `
-    <div class="ref-row">
-      <div class="ref-name" style="color:var(--${t.color})">${r[0]}</div>
-      <div class="ref-desc">${r[1]}</div>
-      <div class="ref-use">${r[2]}</div>
-    </div>`).join('');
-  tablesEl.innerHTML += `
-    <div class="ref-table">
-      <div class="ref-cat-header" style="background:color-mix(in srgb,var(--${t.color}) 10%,transparent);color:var(--${t.color})">
-        <div class="ref-cat-dot" style="background:var(--${t.color})"></div>
-        ${t.label}
+// ── Build goal cards ──────────────────────────────────────────────
+const goalsGrid = document.getElementById('goalsGrid');
+GOALS.forEach(g => {
+  const card = document.createElement('div');
+  card.className = 'goal-card';
+  card.style.setProperty('--card-color', g.accent);
+
+  const catColor = g.accent;
+  const srcC = g.src.color;
+  const tgtC = g.tgt.color;
+
+  card.innerHTML = `
+    <div class="goal-cat-pill">${g.category}</div>
+    <div class="goal-title">I want to <em>${g.title}</em></div>
+    <div class="goal-wire" style="--src-color:${srcC};--tgt-color:${tgtC}">
+      <div class="gwbox gwbox-src">
+        ${g.src.label}
+        <div class="gport-out"></div>
       </div>
-      <div class="ref-col-header">
-        <div>COMPONENT / FUNCTION</div><div>WHAT IT DOES</div><div>GOOD FOR</div>
+      <div class="gwire">
+        <div class="gwire-line"></div>
+        <div class="gwire-bead" style="background:${tgtC};box-shadow:0 0 6px ${tgtC};--bead-delay:${g.delay}"></div>
       </div>
-      ${rows}
-    </div>`;
+      <div class="gwbox gwbox-tgt">
+        <div class="gport-in"></div>
+        ${g.tgt.label}
+      </div>
+    </div>
+    <div class="goal-rule"></div>
+    <ol class="goal-steps">
+      ${g.steps.map((s,i) => `<li><span class="step-num">${i+1}</span><span>${s}</span></li>`).join('')}
+    </ol>
+  `;
+  goalsGrid.appendChild(card);
 });
 
-// Fix chip colors (CSS vars in template literals)
-document.querySelectorAll('.chip').forEach(el => {
-  const style = el.getAttribute('style');
-  if (style) {
-    el.setAttribute('style', style
-      .replace(/var\(--(\w+)18[^)]*\)/g, (_, c) => {
-        const map = {blue:'rgba(79,142,247,.1)',purple:'rgba(155,114,247,.1)',green:'rgba(52,211,153,.1)',
-          orange:'rgba(251,146,60,.1)',pink:'rgba(244,114,182,.1)',teal:'rgba(45,212,191,.1)',
-          slate:'rgba(148,163,200,.1)',red:'rgba(239,68,68,.1)'};
-        return map[c] || 'rgba(255,255,255,.07)';
-      })
-    );
-  }
+// ── Build reference tables ─────────────────────────────────────────
+const refEl = document.getElementById('refTables');
+TABLES.forEach(t => {
+  const wrap = document.createElement('div');
+  wrap.className = 'ref-table-wrap ref-section';
+
+  // Category header
+  const hdr = document.createElement('div');
+  hdr.className = 'ref-cat-hdr ref-cat-tinted';
+  hdr.style.setProperty('--cat-tint', t.tint);
+  hdr.innerHTML = `
+    <div class="ref-cat-dot" style="--dot-color:${t.color}"></div>
+    <span class="ref-cat-name" style="--dot-color:${t.color}">${t.name}</span>
+  `;
+  wrap.appendChild(hdr);
+
+  // Column headers
+  const colHdr = document.createElement('div');
+  colHdr.className = 'ref-cat-row header';
+  colHdr.innerHTML = t.cols.map(c => `<span class="ref-col-label">${c}</span>`).join('');
+  wrap.appendChild(colHdr);
+
+  // Rows
+  t.rows.forEach(([name, desc, use]) => {
+    const row = document.createElement('div');
+    row.className = 'ref-row';
+    row.innerHTML = `
+      <span class="ref-name" style="--name-color:${t.color}">${name}</span>
+      <span class="ref-desc">${desc}</span>
+      <span class="ref-use">${use}</span>
+    `;
+    wrap.appendChild(row);
+  });
+
+  refEl.appendChild(wrap);
 });
 </script>
 </body>
