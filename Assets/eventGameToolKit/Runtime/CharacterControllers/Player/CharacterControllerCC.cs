@@ -184,36 +184,55 @@ public class CharacterControllerCC : MonoBehaviour
     /// <summary>
     /// Checks for any ISpawnPointProvider in the scene and spawns at that position.
     /// Called in Awake() to set position before physics runs.
+    ///
+    /// Priority order:
+    /// 1. GameCheckpointManager (if has checkpoint)
+    /// 2. SpawnPoint (handles its own priority via HasSpawnPoint)
+    /// 3. Any other ISpawnPointProvider
     /// </summary>
-    private void CheckForSpawnPoint()
+    public void CheckForSpawnPoint()
     {
-        // Search all MonoBehaviours for any that implement ISpawnPointProvider
-        MonoBehaviour[] allBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
-        
-        foreach (MonoBehaviour behaviour in allBehaviours)
+        ISpawnPointProvider selectedProvider = null;
+
+        // Priority 1: Check GameCheckpointManager first (highest priority)
+        if (GameCheckpointManager.Instance != null && GameCheckpointManager.Instance.HasSpawnPoint)
         {
-            if (behaviour is ISpawnPointProvider provider && provider.HasSpawnPoint)
+            selectedProvider = GameCheckpointManager.Instance;
+        }
+
+        // Priority 2 & 3: Search other providers if no checkpoint
+        if (selectedProvider == null)
+        {
+            MonoBehaviour[] allBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+
+            foreach (MonoBehaviour behaviour in allBehaviours)
             {
-                // Found a valid spawn point - use it
-                Debug.Log($"CharacterControllerCC: Found spawn point at {provider.SpawnPosition}");
-                
-                // Disable CharacterController to set position directly
-                controller.enabled = false;
-                transform.position = provider.SpawnPosition;
-                transform.rotation = provider.SpawnRotation;
-                controller.enabled = true;
-                
-                // Notify the provider that we used the spawn point
-                provider.OnSpawnPointUsed();
-                
-                // Fire event
-                onSpawnPointUsed?.Invoke(provider.SpawnPosition);
-                
-                // Only use first valid provider
-                return;
+                if (behaviour is ISpawnPointProvider provider && provider.HasSpawnPoint)
+                {
+                    selectedProvider = provider;
+                    break;
+                }
             }
         }
-        
+
+        // Use the selected provider
+        if (selectedProvider != null)
+        {
+            Debug.Log($"CharacterControllerCC: Found spawn point at {selectedProvider.SpawnPosition}");
+
+            // Disable CharacterController to set position directly
+            controller.enabled = false;
+            transform.position = selectedProvider.SpawnPosition;
+            transform.rotation = selectedProvider.SpawnRotation;
+            controller.enabled = true;
+
+            // Notify the provider that we used the spawn point
+            selectedProvider.OnSpawnPointUsed();
+
+            // Fire event
+            onSpawnPointUsed?.Invoke(selectedProvider.SpawnPosition);
+        }
+
         // No spawn point found - stay at current position (scene default)
     }
 

@@ -12,18 +12,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **[Documentation Generator Guide](.claude/docs/documentation-generator.md)** - XML documentation requirements
 - **[Changelog](.claude/docs/changelog.md)** - Recent updates and refactorings
 
-## Feature Branch: Multi-Scene Support
+## Multi-Scene Support (Now in Main)
 
-**⚠️ BRANCH: `feature/multi-scene-support` - NOT YET IN MAIN**
-
-A new architecture for multi-scene games exists in a separate branch to keep the student codebase stable during end-of-semester. This branch adds:
+Multi-scene architecture has been ported to main from `feature/multi-scene-support`. The following components are now available:
 
 - **ScriptableObject Variables** (`IntVariable`, `FloatVariable`) for cross-scene data persistence
 - **SpawnPoint** component for marking player spawn locations
 - **GameSceneManager** for scene loading with transitions
 - Updated **GameHealthManager** and **GameCollectionManager** with optional SO variable support
+- Updated **CharacterControllerCC** with spawn point priority logic
 
-See [Multi-Scene Architecture](#multi-scene-architecture-feature-branch) section below for details.
+See [Multi-Scene Architecture](#multi-scene-architecture) section below for details.
 
 ## Project Overview
 
@@ -323,23 +322,22 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**58 Educational Scripts (100% XML Documented) | 25 Custom Editors**
+**62 Educational Scripts (100% XML Documented) | 25 Custom Editors**
 - 12 Input components
 - 20 Action components
 - 7 Physics components
-- 10 Game managers
+- 12 Game managers (includes GameSceneManager + SpawnPoint)
 - 2 Puzzle components
 - 1 UI component
 - 3 Animation components
 - 3 Root character controllers
+- 2 ScriptableObject variables (IntVariable, FloatVariable)
 
 For complete script inventory with features, see **[Runtime Structure](.claude/docs/runtime-structure.md)**.
 
 ---
 
-## Multi-Scene Architecture (Feature Branch)
-
-**⚠️ This section describes code in `feature/multi-scene-support` branch, NOT main.**
+## Multi-Scene Architecture
 
 ### The Problem
 
@@ -443,10 +441,6 @@ This would allow enemies in Level1 to communicate with UI in a persistent scene 
 
 - **[MultiSceneSetup_QuickStart.md](Assets/eventGameToolKit/Documentation/MultiSceneSetup_QuickStart.md)** - Student guide (in feature branch)
 
-### Merging to Main
+### Merge Status
 
-When ready to release:
-1. Merge `feature/multi-scene-support` to `main`
-2. Sync to package repository
-3. Update script count in this file (adds 4 new scripts)
-4. Students will receive SO variable support on next package update
+Multi-scene components were cherry-picked from `feature/multi-scene-support` into main (April 2026). The feature branch can be archived — it contains destructive changes (deleted components) that should NOT be merged directly.

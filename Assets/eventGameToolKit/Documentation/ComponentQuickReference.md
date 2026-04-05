@@ -68,6 +68,18 @@ All components work the same way: wire them together using **UnityEvents** in th
 | **GameAudioManager** | Controls background music, ambient audio, and sound effects with fading | Music system, ambient audio |
 | **GameCameraManager** | Switches between Cinemachine cameras by name | Multiple camera angles, cutscenes |
 | **GameUIManager** | Connects health, score, and timer values to UI display elements | HUD wired to existing UI objects |
+| **GameSceneManager** | Loads scenes with transitions and spawn point selection | Multi-level games, hub worlds |
+
+---
+
+## Multi-Scene Data (Optional)
+*ScriptableObject assets that persist data across scene loads. Create via Assets > Create > eventGameToolKit > Variables.*
+
+| Asset Type | What it does | Basic use |
+|---|---|---|
+| **IntVariable** | Holds an integer value that survives scene loads | Persistent health, score, lives |
+| **FloatVariable** | Holds a float value that survives scene loads | Persistent timer, percentage stats |
+| **SpawnPoint** | Marks where the player should appear when entering a scene | Level entry points, scene transitions |
 
 ---
 

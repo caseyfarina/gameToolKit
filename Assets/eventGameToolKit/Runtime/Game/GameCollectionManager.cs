@@ -34,6 +34,10 @@ public class CollectionThreshold
 /// <summary>
 /// Tracks a numeric value (score, coins, items) with threshold-based event triggers.
 /// Optionally creates its own UI display - enable Show UI for text and/or Show Bar for a fill bar.
+///
+/// MULTI-SCENE SUPPORT: Optionally assign an IntVariable asset to persist value across scene loads.
+/// If no IntVariable is assigned, value is stored locally (single-scene behavior).
+///
 /// Common use: Score systems, collectible counters, resource tracking, or objective progress meters.
 /// </summary>
 public class GameCollectionManager : MonoBehaviour
@@ -46,6 +50,10 @@ public class GameCollectionManager : MonoBehaviour
     [Header("Scene Persistence")]
     [Tooltip("Keep this manager alive when loading a new scene, preserving the current value. Place it in your first scene only — it survives all subsequent loads.")]
     [SerializeField] private bool persistAcrossScenes = false;
+
+    [Header("Multi-Scene Persistence (Optional)")]
+    [Tooltip("Optional: Assign an IntVariable asset to persist value across scene loads. Leave empty for single-scene games.")]
+    [SerializeField] private IntVariable valueVariable;
 
     [Header("Value Settings")]
     [Tooltip("Current value (score, coins, items, etc.)")]
@@ -182,8 +190,20 @@ public class GameCollectionManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    // Pushes currentValue to the SO variable (if assigned)
+    private void SyncToVariable()
+    {
+        if (valueVariable != null) valueVariable.Value = currentValue;
+    }
+
     private void Start()
     {
+        // If an IntVariable is assigned, initialize from it (persisted value)
+        if (valueVariable != null)
+        {
+            currentValue = valueVariable.Value;
+        }
+
         // Initialize threshold states based on starting value
         foreach (var t in thresholds)
         {
@@ -232,6 +252,7 @@ public class GameCollectionManager : MonoBehaviour
             onMaxReached.Invoke();
         }
 
+        SyncToVariable();
         onValueChanged.Invoke(currentValue);
         UpdateUIText();
         PlayTextAnimation();
@@ -259,6 +280,7 @@ public class GameCollectionManager : MonoBehaviour
             onMinReached.Invoke();
         }
 
+        SyncToVariable();
         onValueChanged.Invoke(currentValue);
         UpdateUIText();
         PlayTextAnimation();
@@ -280,6 +302,7 @@ public class GameCollectionManager : MonoBehaviour
     public void SetValue(int newValue)
     {
         currentValue = newValue;
+        SyncToVariable();
         onValueChanged.Invoke(currentValue);
         UpdateUIText();
         UpdateBar();

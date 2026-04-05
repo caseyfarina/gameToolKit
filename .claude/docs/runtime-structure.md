@@ -17,9 +17,10 @@ Runtime/
 ├── CharacterControllers/ # Player and enemy controllers (7 scripts)
 │   ├── Enemy/           # AI enemy controllers
 │   └── Player/          # Player controllers
-├── Game/                # Game managers (9 scripts)
+├── Game/                # Game managers (11 scripts)
 ├── Input/               # Event source components (9 scripts)
 ├── Interfaces/          # Core interfaces (1 interface)
+├── Variables/           # ScriptableObject variables (2 scripts)
 ├── Physics/             # Physics systems (5 scripts)
 │   ├── Bumpers/         # Repulsion forces
 │   └── Platforms/       # Moving platforms
@@ -497,6 +498,50 @@ Manager systems for health, score, audio, state, etc.
 - 3 UnityEvents: onCheckpointSaved, onCheckpointRestored, onPositionSaved
 - Works seamlessly with InputCheckpointZone
 - See [Checkpoint Quick Start Guide](../CheckpointSystem_QuickStart.md)
+
+### GameSceneManager.cs
+- Scene loading for multi-scene games with persistent player and UI
+- Singleton with DontDestroyOnLoad persistence
+- Additive or single scene loading modes
+- Automatic previous scene unloading
+- Pre/post load delays for transition effects (fade out/in)
+- Coordinates with SpawnPoint components for player positioning
+- LoadScene(string) - load by name, spawn at default SpawnPoint
+- LoadSceneAtSpawnPoint(string, string) - load with specific spawn point ID
+- ReloadCurrentScene() - reload current level
+- LoadSceneSingle(string) - non-additive load (for main menu returns)
+- 5 UnityEvents: onSceneLoadStarted, onSceneLoadCompleted, onSceneLoadFailed, onSceneLoading, onLoadProgress
+
+### SpawnPoint.cs
+- Marks spawn locations in scenes, implements ISpawnPointProvider
+- Priority system: GameCheckpointManager > SpawnPoint with matching ID > default SpawnPoint
+- spawnId field for targeting specific entry points per scene
+- isDefaultSpawnPoint toggle for fallback positioning
+- spawnOffset for offsetting from transform position
+- Static RequestSpawnId()/ClearRequestedSpawnId() for GameSceneManager coordination
+- Editor gizmos: player silhouette, direction arrow, offset indicator
+- 1 UnityEvent: onPlayerSpawned
+
+---
+
+## Variables (2 scripts)
+
+**Location**: `Runtime/Variables/`
+
+ScriptableObject assets for cross-scene data persistence.
+
+### IntVariable.cs
+- ScriptableObject holding an integer value that persists across scene loads
+- Resets to defaultValue when entering Play mode
+- Optional min/max constraints
+- Add(), Subtract(), SetValue(), ResetToDefault()
+- 1 UnityEvent: onValueChanged
+
+### FloatVariable.cs
+- ScriptableObject holding a float value that persists across scene loads
+- Same API as IntVariable plus GetNormalized() for 0-1 percentage
+- Optional min/max constraints
+- 1 UnityEvent: onValueChanged
 
 ---
 

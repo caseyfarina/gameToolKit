@@ -38,6 +38,11 @@ public class GameHealthManagerEditor : Editor
         EditorGUILayout.ObjectField("Script", MonoScript.FromMonoBehaviour((GameHealthManager)target), typeof(GameHealthManager), false);
         GUI.enabled = true;
 
+        // Multi-Scene Persistence (Optional)
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Multi-Scene Persistence (Optional)", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("healthVariable"), new GUIContent("Health Variable"));
+
         // Health Settings
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Health Settings", EditorStyles.boldLabel);

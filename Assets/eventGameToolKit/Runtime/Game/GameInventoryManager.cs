@@ -23,6 +23,9 @@ public class InventorySlot
     [Tooltip("Starting count for this slot")]
     public int currentCount = 0;
 
+    [Tooltip("Optional: Assign an IntVariable asset to persist this slot's count across scene loads. Leave empty for single-scene games.")]
+    public IntVariable countVariable;
+
     [Tooltip("Fires when count reaches maxCapacity")]
     /// <summary>
     /// Fires when the slot becomes full (count reaches maxCapacity)
@@ -51,6 +54,10 @@ public class InventorySlot
 /// <summary>
 /// Manages multiple inventory slots, each with capacity limits and change events.
 /// Optionally creates a row of UI cards (one per slot) showing icons and counts.
+///
+/// MULTI-SCENE SUPPORT: Each slot can optionally reference an IntVariable asset to persist
+/// its count across scene loads. If no IntVariable is assigned, the count is stored locally.
+///
 /// Common use: Key collections, ammunition types, multi-resource systems, or collectible sets.
 /// </summary>
 public class GameInventoryManager : MonoBehaviour
@@ -113,8 +120,23 @@ public class GameInventoryManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    // Pushes a slot's currentCount to its IntVariable (if assigned)
+    private void SyncSlotToVariable(InventorySlot slot)
+    {
+        if (slot.countVariable != null) slot.countVariable.Value = slot.currentCount;
+    }
+
     private void Start()
     {
+        // If slots have IntVariable assets, initialize from them (persisted values)
+        for (int i = 0; i < slots.Count; i++)
+        {
+            if (slots[i].countVariable != null)
+            {
+                slots[i].currentCount = slots[i].countVariable.Value;
+            }
+        }
+
         if (showUI)
         {
             CreateCanvas();
@@ -144,6 +166,7 @@ public class GameInventoryManager : MonoBehaviour
 
         if (slot.currentCount != previous)
         {
+            SyncSlotToVariable(slot);
             slot.onChanged.Invoke(slot.currentCount);
             UpdateCardText(slot);
 
@@ -164,6 +187,7 @@ public class GameInventoryManager : MonoBehaviour
 
         if (slot.currentCount != previous)
         {
+            SyncSlotToVariable(slot);
             slot.onChanged.Invoke(slot.currentCount);
             UpdateCardText(slot);
 

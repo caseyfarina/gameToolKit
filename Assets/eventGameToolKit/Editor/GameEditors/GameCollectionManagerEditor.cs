@@ -42,6 +42,7 @@ public class GameCollectionManagerEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Scene Persistence", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("persistAcrossScenes"), new GUIContent("Persist Across Scenes"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("valueVariable"), new GUIContent("Value Variable"));
 
         // Value Settings
         EditorGUILayout.Space();

@@ -7,6 +7,10 @@ using DG.Tweening;
 /// <summary>
 /// Manages health with damage and healing mechanics, firing events at critical thresholds.
 /// Optionally creates its own UI display - enable Show UI for text and/or Show Bar for a health bar.
+///
+/// MULTI-SCENE SUPPORT: Optionally assign an IntVariable asset to persist health across scene loads.
+/// If no IntVariable is assigned, health is stored locally (single-scene behavior).
+///
 /// Common use: Player or enemy health systems, destructible objects, shield mechanics, or boss health bars.
 /// </summary>
 public class GameHealthManager : MonoBehaviour
@@ -20,6 +24,10 @@ public class GameHealthManager : MonoBehaviour
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private int currentHealth = 100;
     [SerializeField] private int lowHealthThreshold = 25;
+
+    [Header("Multi-Scene Persistence (Optional)")]
+    [Tooltip("Optional: Assign an IntVariable asset to persist health across scene loads. Leave empty for single-scene games.")]
+    [SerializeField] private IntVariable healthVariable;
 
     [Header("UI Text (Optional)")]
     [Tooltip("Enable to create a self-contained UI text display for health")]
@@ -146,10 +154,23 @@ public class GameHealthManager : MonoBehaviour
         return g;
     }
 
+    // Pushes currentHealth to the SO variable (if assigned)
+    private void SyncToVariable()
+    {
+        if (healthVariable != null) healthVariable.Value = currentHealth;
+    }
+
     private void Start()
     {
+        // If an IntVariable is assigned, initialize from it (persisted value)
+        if (healthVariable != null)
+        {
+            currentHealth = healthVariable.Value;
+        }
+
         // Ensure health starts within valid range
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        SyncToVariable();
         CheckHealthStates();
 
         // Create Canvas if any UI is enabled
@@ -183,6 +204,7 @@ public class GameHealthManager : MonoBehaviour
 
         int previousHealth = currentHealth;
         currentHealth = Mathf.Max(0, currentHealth - damageAmount);
+        SyncToVariable();
 
         onDamageReceived.Invoke();
         onHealthChanged.Invoke(currentHealth, maxHealth);
@@ -214,6 +236,7 @@ public class GameHealthManager : MonoBehaviour
 
         int previousHealth = currentHealth;
         currentHealth = Mathf.Min(maxHealth, currentHealth + healAmount);
+        SyncToVariable();
 
         onHealthGained.Invoke();
         onHealthChanged.Invoke(currentHealth, maxHealth);
@@ -239,6 +262,7 @@ public class GameHealthManager : MonoBehaviour
         int previousHealth = currentHealth;
         bool wasDead = isDead;
         currentHealth = Mathf.Clamp(newHealth, 0, maxHealth);
+        SyncToVariable();
 
         onHealthChanged.Invoke(currentHealth, maxHealth);
         UpdateUIText();
@@ -304,6 +328,7 @@ public class GameHealthManager : MonoBehaviour
         if (currentHealth > maxHealth)
         {
             currentHealth = maxHealth;
+            SyncToVariable();
         }
 
         onHealthChanged.Invoke(currentHealth, maxHealth);

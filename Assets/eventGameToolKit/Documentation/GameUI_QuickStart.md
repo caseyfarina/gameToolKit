@@ -8,10 +8,10 @@
 
 | | Option A: Individual Controls | Option B: GameUIManager |
 |---|---|---|
-| **Best for** | Simple projects with just health and/or score | Projects that need health, score, timer, AND inventory all in one place |
+| **Best for** | Most projects — full per-element control over position, size, color, and animation | Projects where you want every display to share one consistent font and color scheme |
 | **How it works** | Each manager creates its own UI | One central component displays everything |
 | **Setup** | Toggle a checkbox on the manager | Add a separate component and wire events |
-| **Customization** | Each display styled independently | All displays share one font/color scheme |
+| **Customization** | Each display fully styled independently (position, size, gradient, animation per element) | All displays share one font/color scheme — less per-element control |
 | **Components needed** | Just the managers you already have | GameUIManager + event wiring |
 
 **Important: Pick one option and stick with it.** If you enable Show UI or Show Bar on GameHealthManager or GameCollectionManager, do NOT also wire those managers to a GameUIManager. You'll get duplicate overlapping displays!
@@ -20,7 +20,7 @@
 
 ## Option A: Individual Controls (Recommended for Most Projects)
 
-The simplest approach. Your GameHealthManager and GameCollectionManager can create their own UI displays with no extra wiring.
+The most flexible approach. Every game manager — health, score, timer, and inventory — can create its own UI display with full independent styling and no extra wiring.
 
 ### Health Bar + Text in 1 Minute
 
@@ -76,7 +76,7 @@ That's it. No extra GameObjects, no event wiring, no GameUIManager needed.
 
 ## Option B: GameUIManager (Centralized Display)
 
-Use this when you want ONE component managing ALL your UI: health, score, timer, and inventory with a consistent look.
+Use this when you want a quick, consistent look — one shared font and color scheme across all your UI elements. It's simpler to set up if you don't need per-element styling, but requires manual event wiring and offers less customization than Option A.
 
 ### Setup (3 Minutes)
 
@@ -152,9 +152,9 @@ Scene Hierarchy:
 
 ## Quick Decision Guide
 
-- "I just need a health bar" -> **Option A**: check Show Bar on GameHealthManager
-- "I just need a score counter" -> **Option A**: check Show UI on GameCollectionManager
-- "I need health + score" -> **Option A**: enable both, no extra components
-- "I need health + score + timer + inventory" -> **Option B**: GameUIManager handles all four
-- "I want everything to match one font/color" -> **Option B**: GameUIManager has shared styling
-- "I want health and score to look totally different" -> **Option A**: each has its own style settings
+- "I just need a health bar" → **Option A**: check Show Bar on GameHealthManager
+- "I just need a score counter" → **Option A**: check Show UI on GameCollectionManager
+- "I need health + score + timer + inventory" → **Option A**: every manager has its own Show UI toggle
+- "I want each element positioned and styled separately" → **Option A**: full per-element control
+- "I want everything to match one font/color and don't need per-element styling" → **Option B**: GameUIManager has shared styling
+- "I want the quickest possible setup with a consistent look" → **Option B**: one component, one style
