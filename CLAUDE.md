@@ -324,9 +324,9 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**61 Educational Scripts (100% XML Documented) | 25 Custom Editors**
+**62 Educational Scripts (100% XML Documented) | 25 Custom Editors**
 - 12 Input components
-- 20 Action components
+- 21 Action components
 - 7 Physics components
 - 12 Game managers (includes GameSceneManager + SpawnPoint)
 - 2 Puzzle components

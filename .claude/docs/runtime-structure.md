@@ -6,7 +6,7 @@ Complete inventory of all educational scripts in the eventGameToolKit.
 
 ```
 Runtime/
-├── Actions/              # Event target components (20 scripts)
+├── Actions/              # Event target components (21 scripts)
 │   ├── Audio/           # Sound playback
 │   ├── DecalAnimation/  # URP decal material animations
 │   ├── Display/         # UI text and images
@@ -123,7 +123,7 @@ Event sources triggered by player input or game state.
 
 ---
 
-## Action Components (20 scripts)
+## Action Components (21 scripts)
 
 **Location**: `Runtime/Actions/`
 
@@ -229,6 +229,18 @@ Event targets that perform actions when triggered.
 - Set Animator parameters via events
 - Supports bool, int, float, and trigger parameters
 - No-code animation control
+
+### Toggle (1 script)
+
+**Location**: `Actions/`
+
+#### ActionToggle.cs
+- Toggles the active state of a list of GameObjects independently
+- Each object flips based on its own current `activeSelf` state — no internal state tracked
+- `Toggle()` — flips each GO independently (active→inactive, inactive→active)
+- `AllOn()` — sets all GOs active regardless of current state
+- `AllOff()` — sets all GOs inactive regardless of current state
+- Null-safe: skips missing or destroyed entries silently
 
 ### Random (2 scripts)
 
@@ -676,10 +688,10 @@ Core interfaces for extensible systems.
 
 ## Script Count Summary
 
-**Total: 59 Scripts + 1 Interface**
+**Total: 60 Scripts + 1 Interface**
 
 - **Input Components**: 10 scripts
-- **Action Components**: 20 scripts (+ 1 helper)
+- **Action Components**: 21 scripts (+ 1 helper)
 - **Animation Components**: 1 script
 - **Character Controllers**: 7 scripts
 - **Game Managers**: 9 scripts

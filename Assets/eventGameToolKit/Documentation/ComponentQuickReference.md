@@ -51,6 +51,7 @@ All components work the same way: wire them together using **UnityEvents** in th
 | **ActionDecalSequence** | Plays a frame-by-frame material animation on a URP decal | Animated decals, sprite-sheet effects |
 | **ActionDecalSequenceLibrary** | Switches between multiple decal sequences | Character with multiple animation states |
 | **ActionBlinkDecal** | Automatically blinks a character's eye decal | Any character that needs blinking |
+| **ActionToggle** | Flips the active state of a list of GameObjects; each object flips independently. AllOn() and AllOff() force a known state. | Show/hide groups, toggle hazards, switch between panels |
 
 ---
 

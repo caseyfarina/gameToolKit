@@ -10,6 +10,8 @@ using System.Collections.Generic;
 public class PhysicsForceZoneEditor : Editor
 {
     private SerializedProperty targetTagProp;
+    private SerializedProperty targetModeProp;
+    private SerializedProperty directionTargetProp;
     private SerializedProperty forceDirectionProp;
     private SerializedProperty randomDirectionOffsetProp;
     private SerializedProperty forceSpaceProp;
@@ -26,6 +28,8 @@ public class PhysicsForceZoneEditor : Editor
     private void OnEnable()
     {
         targetTagProp               = serializedObject.FindProperty("targetTag");
+        targetModeProp              = serializedObject.FindProperty("targetMode");
+        directionTargetProp         = serializedObject.FindProperty("directionTarget");
         forceDirectionProp          = serializedObject.FindProperty("forceDirection");
         randomDirectionOffsetProp   = serializedObject.FindProperty("randomDirectionOffset");
         forceSpaceProp              = serializedObject.FindProperty("forceSpace");
@@ -52,11 +56,29 @@ public class PhysicsForceZoneEditor : Editor
 
         EditorGUILayout.Space();
 
+        // ── Target Mode ──────────────────────────
+        EditorGUILayout.LabelField("Target (Optional)", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(targetModeProp, new GUIContent("Target Mode"));
+
+        bool usingTarget = targetModeProp.enumValueIndex != 0; // 0 = None
+
+        if (usingTarget)
+        {
+            EditorGUILayout.PropertyField(directionTargetProp, new GUIContent("Direction Target"));
+
+            if (directionTargetProp.objectReferenceValue == null)
+                EditorGUILayout.HelpBox("No target assigned — will auto-find the Player-tagged object at runtime.", MessageType.None);
+        }
+
+        EditorGUILayout.Space();
+
         // ── Force Direction ──────────────────────
-        EditorGUILayout.LabelField("Force Direction", EditorStyles.boldLabel);
+        EditorGUI.BeginDisabledGroup(usingTarget);
+        EditorGUILayout.LabelField("Force Direction" + (usingTarget ? " (inactive — Target Mode is set)" : ""), EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(forceDirectionProp,        new GUIContent("Direction"));
         EditorGUILayout.PropertyField(randomDirectionOffsetProp, new GUIContent("Random Offset (per axis ±)"));
         EditorGUILayout.PropertyField(forceSpaceProp,            new GUIContent("Space"));
+        EditorGUI.EndDisabledGroup();
 
         EditorGUILayout.Space();
 

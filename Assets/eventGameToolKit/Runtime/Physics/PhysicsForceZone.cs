@@ -6,25 +6,33 @@ using System.Collections.Generic;
 /// Tracks tagged Rigidbodies inside a trigger collider and applies randomized forces to them
 /// on demand or automatically on enter/exit. Each object can be forced only once per stay
 /// (deduplication resets when the object leaves and re-enters).
-/// Common use: Explosion zones, jump pads, wind tunnels, push traps, or physics puzzles.
+/// Common use: Explosion zones, jump pads, wind tunnels, push traps, physics puzzles, gravity wells.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class PhysicsForceZone : MonoBehaviour
 {
     public enum ForceSpace { World, Local }
+    public enum TargetMode { None, TowardTarget, AwayFromTarget }
 
     [Header("Tag Filter")]
     [Tooltip("Only Rigidbody objects with this tag will be affected")]
     [SerializeField] private string targetTag = "Player";
 
+    [Header("Target (Optional)")]
+    [Tooltip("None: use fixed Force Direction below.\nTowardTarget / AwayFromTarget: direction is computed per object relative to the target.\nIf no target is assigned, the Player-tagged object is used automatically.")]
+    [SerializeField] private TargetMode targetMode = TargetMode.None;
+
+    [Tooltip("GameObject to pull toward or push away from. Leave empty to auto-find the Player-tagged object.")]
+    [SerializeField] private GameObject directionTarget;
+
     [Header("Force Direction")]
-    [Tooltip("Base direction of the force (does not need to be normalized)")]
+    [Tooltip("Base direction of the force (does not need to be normalized). Ignored when Target Mode is set.")]
     [SerializeField] private Vector3 forceDirection = Vector3.up;
 
     [Tooltip("Per-axis random spread added to the base direction. X=2 means ±2 on the X axis.")]
     [SerializeField] private Vector3 randomDirectionOffset = Vector3.zero;
 
-    [Tooltip("World: direction is in world space. Local: direction is relative to this transform.")]
+    [Tooltip("World: direction is in world space. Local: direction is relative to this transform. Ignored when Target Mode is set.")]
     [SerializeField] private ForceSpace forceSpace = ForceSpace.World;
 
     [Header("Force Magnitude")]
@@ -124,11 +132,12 @@ public class PhysicsForceZone : MonoBehaviour
 
         foreach (var rb in objectsInZone)
         {
-            if (oneForcePerStay && forcedThisStay.Contains(rb)) continue;
-
-            ApplyForceTo(rb);
-            count++;
-
+            bool deduped = oneForcePerStay && forcedThisStay.Contains(rb);
+            if (!deduped)
+            {
+                ApplyForceTo(rb);
+                count++;
+            }
             if (applyToFirst) break;
         }
 
@@ -172,20 +181,40 @@ public class PhysicsForceZone : MonoBehaviour
     private void ForceRigidbody(Rigidbody rb)
     {
         if (rb == null) return;
-        rb.AddForce(GetForceVector(), forceMode);
+        rb.AddForce(GetForceVector(rb), forceMode);
         onForceAppliedToObject.Invoke(rb.gameObject);
     }
 
-    private Vector3 GetForceVector()
+    private Vector3 GetForceVector(Rigidbody rb)
     {
-        Vector3 dir = forceDirection + new Vector3(
-            Random.Range(-randomDirectionOffset.x, randomDirectionOffset.x),
-            Random.Range(-randomDirectionOffset.y, randomDirectionOffset.y),
-            Random.Range(-randomDirectionOffset.z, randomDirectionOffset.z)
-        );
+        Vector3 dir;
 
-        if (forceSpace == ForceSpace.Local)
-            dir = transform.TransformDirection(dir);
+        if (targetMode != TargetMode.None)
+        {
+            GameObject target = directionTarget;
+            if (target == null) target = GameObject.FindWithTag("Player");
+
+            if (target != null)
+            {
+                dir = (target.transform.position - rb.position).normalized;
+                if (targetMode == TargetMode.AwayFromTarget) dir = -dir;
+            }
+            else
+            {
+                dir = Vector3.up;
+            }
+        }
+        else
+        {
+            dir = forceDirection + new Vector3(
+                Random.Range(-randomDirectionOffset.x, randomDirectionOffset.x),
+                Random.Range(-randomDirectionOffset.y, randomDirectionOffset.y),
+                Random.Range(-randomDirectionOffset.z, randomDirectionOffset.z)
+            );
+
+            if (forceSpace == ForceSpace.Local)
+                dir = transform.TransformDirection(dir);
+        }
 
         if (dir == Vector3.zero) dir = Vector3.up;
 
