@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 /// <summary>
 /// CharacterController-based first-person character controller with mouse look, slope detection,
-/// animation support, and built-in moving platform support.
+/// dodge, animation support, and built-in moving platform support.
 ///
 /// SPAWN SYSTEM: On Awake(), this controller checks for any ISpawnPointProvider in the scene
 /// (such as GameCheckpointManager) and spawns at that position BEFORE physics initializes.
@@ -40,6 +40,32 @@ public class CharacterControllerFP : MonoBehaviour
     /// Multiplier for movement control while airborne (0 = no air control, 1 = full)
     /// </summary>
     [SerializeField] private float airControlFactor = 0.5f;
+
+    [Header("Dodge Settings")]
+    /// <summary>
+    /// Distance covered in a single dodge
+    /// </summary>
+    [SerializeField] private float dodgeDistance = 5f;
+
+    /// <summary>
+    /// Speed of the dodge burst
+    /// </summary>
+    [SerializeField] private float dodgeSpeed = 20f;
+
+    /// <summary>
+    /// Time in seconds before the player can dodge again
+    /// </summary>
+    [SerializeField] private float dodgeCooldown = 1f;
+
+    /// <summary>
+    /// Whether the player can dodge while airborne
+    /// </summary>
+    [SerializeField] private bool allowAirDodge = false;
+
+    /// <summary>
+    /// Forward: dash in the camera-facing direction. Lateral: sidestep in the last moved lateral direction.
+    /// </summary>
+    [SerializeField] private DodgeMode dodgeMode = DodgeMode.Forward;
 
     [Header("Sprint Settings (Optional)")]
     /// <summary>
@@ -253,6 +279,16 @@ public class CharacterControllerFP : MonoBehaviour
     /// </summary>
     public UnityEvent<bool> onCursorLockChanged;
 
+    /// <summary>
+    /// Fires when the character dodges
+    /// </summary>
+    public UnityEvent onDodge;
+
+    /// <summary>
+    /// Fires when the dodge cooldown finishes and the player can dodge again
+    /// </summary>
+    public UnityEvent onDodgeCooldownReady;
+
     // Core state
     private CharacterController controller;
     private PlayerInput playerInput;
@@ -264,11 +300,19 @@ public class CharacterControllerFP : MonoBehaviour
     private bool jumpRequested;
     private bool isMoving;
     private Vector3 lastMoveDirection;
+    private Vector3 lastLateralDirection;
     private bool isOnSteepSlope;
     private Vector3 slopeNormal = Vector3.up;
     private bool isSprinting;
     private bool isCursorLocked;
     private bool _inputEnabled = true;
+
+    // Dodge state
+    private bool dodgeRequested;
+    private bool isDodging;
+    private float dodgeCooldownTimer;
+    private Vector3 dodgeDirection;
+    private Vector3 dodgeStartPosition;
 
     // Camera state
     private float cameraPitch;
@@ -290,6 +334,7 @@ public class CharacterControllerFP : MonoBehaviour
     private int _animIDVerticalVelocity;
     private int _animIDIsWalking;
     private int _animIDIsSprinting;
+    private int _animIDIsDodging;
     private bool _lastAnimatorGroundedState;
 
     #region Initialization
@@ -374,6 +419,7 @@ public class CharacterControllerFP : MonoBehaviour
             _animIDVerticalVelocity = Animator.StringToHash("VerticalVelocity");
             _animIDIsWalking = Animator.StringToHash("IsWalking");
             _animIDIsSprinting = Animator.StringToHash("IsSprinting");
+            _animIDIsDodging = Animator.StringToHash("IsDodging");
         }
 
         jumpTimeoutDelta = jumpTimeout;
@@ -467,6 +513,8 @@ public class CharacterControllerFP : MonoBehaviour
     public void TeleportTo(Vector3 position, Quaternion rotation)
     {
         velocity = Vector3.zero;
+        isDodging = false;
+        dodgeRequested = false;
         currentPlatform = null;
         isOnPlatform = false;
 
@@ -514,6 +562,20 @@ public class CharacterControllerFP : MonoBehaviour
     }
 
     /// <summary>
+    /// Called by PlayerInput when Dodge action fires
+    /// </summary>
+    public void OnDodge(InputValue value)
+    {
+        if (value.isPressed && dodgeCooldownTimer <= 0f && !isDodging)
+        {
+            if (allowAirDodge || isGrounded)
+            {
+                dodgeRequested = true;
+            }
+        }
+    }
+
+    /// <summary>
     /// Called by PlayerInput when Sprint action fires
     /// </summary>
     public void OnSprint(InputValue value)
@@ -532,9 +594,11 @@ public class CharacterControllerFP : MonoBehaviour
     {
         HandleCursorToggle();
         HandleLook();
+        UpdateDodgeCooldown();
         CheckGrounded();
         CheckSlope();
         CheckForPlatform();
+        HandleDodge();
         HandleJump();
         UpdateAnimations();
         CheckMovementEvents();
@@ -722,8 +786,72 @@ public class CharacterControllerFP : MonoBehaviour
 
     #region Movement Handling
 
+    private void UpdateDodgeCooldown()
+    {
+        if (dodgeCooldownTimer > 0f)
+        {
+            float previousTimer = dodgeCooldownTimer;
+            dodgeCooldownTimer -= Time.deltaTime;
+
+            if (dodgeCooldownTimer <= 0f && previousTimer > 0f)
+            {
+                onDodgeCooldownReady.Invoke();
+            }
+        }
+    }
+
+    private void HandleDodge()
+    {
+        if (dodgeRequested)
+        {
+            dodgeRequested = false;
+
+            if (dodgeMode == DodgeMode.Forward)
+            {
+                Vector3 fwd = transform.forward;
+                fwd.y = 0f;
+                dodgeDirection = fwd.normalized;
+            }
+            else // Lateral
+            {
+                if (lastLateralDirection != Vector3.zero)
+                    dodgeDirection = lastLateralDirection;
+                else
+                    dodgeDirection = transform.right;
+            }
+
+            if (isOnSteepSlope) return;
+
+            dodgeStartPosition = transform.position;
+            isDodging = true;
+            dodgeCooldownTimer = dodgeCooldown;
+            onDodge.Invoke();
+        }
+
+        if (isDodging)
+        {
+            if (isOnSteepSlope)
+            {
+                isDodging = false;
+                return;
+            }
+
+            float distanceTraveled = Vector3.Distance(dodgeStartPosition, transform.position);
+            if (distanceTraveled < dodgeDistance)
+            {
+                velocity.x = dodgeDirection.x * dodgeSpeed;
+                velocity.z = dodgeDirection.z * dodgeSpeed;
+            }
+            else
+            {
+                isDodging = false;
+            }
+        }
+    }
+
     private void HandleMovement()
     {
+        if (isDodging) return;
         if (!_inputEnabled) return;
         // Movement is always character-relative (forward/strafe)
         Vector3 forward = transform.forward;
@@ -766,6 +894,9 @@ public class CharacterControllerFP : MonoBehaviour
             velocity.x = newHorizontalVelocity.x;
             velocity.z = newHorizontalVelocity.z;
             lastMoveDirection = targetDirection;
+
+            if (moveInput.x != 0f)
+                lastLateralDirection = transform.right * Mathf.Sign(moveInput.x);
         }
         else
         {
@@ -886,6 +1017,9 @@ public class CharacterControllerFP : MonoBehaviour
 
         if (HasParameter(_animIDIsSprinting))
             characterAnimator.SetBool(_animIDIsSprinting, isSprinting && enableSprint && speed > 0.1f && isGrounded);
+
+        if (HasParameter(_animIDIsDodging))
+            characterAnimator.SetBool(_animIDIsDodging, isDodging);
     }
 
     private bool HasParameter(int paramHash)
@@ -969,6 +1103,21 @@ public class CharacterControllerFP : MonoBehaviour
     public void SetSlopeSlideSpeed(float newSlideSpeed) => slopeSlideSpeed = newSlideSpeed;
 
     /// <summary>
+    /// Sets the dodge distance in units
+    /// </summary>
+    public void SetDodgeDistance(float newDistance) => dodgeDistance = newDistance;
+
+    /// <summary>
+    /// Sets the dodge burst speed
+    /// </summary>
+    public void SetDodgeSpeed(float newSpeed) => dodgeSpeed = newSpeed;
+
+    /// <summary>
+    /// Sets the dodge cooldown duration in seconds
+    /// </summary>
+    public void SetDodgeCooldown(float newCooldown) => dodgeCooldown = newCooldown;
+
+    /// <summary>
     /// Resets all velocity to zero
     /// </summary>
     public void ResetVelocity() => velocity = Vector3.zero;
@@ -1016,6 +1165,16 @@ public class CharacterControllerFP : MonoBehaviour
     /// Current velocity vector of the character
     /// </summary>
     public Vector3 Velocity => velocity;
+
+    /// <summary>
+    /// Whether the character is currently in a dodge
+    /// </summary>
+    public bool IsDodging => isDodging;
+
+    /// <summary>
+    /// Remaining dodge cooldown in seconds (0 = ready)
+    /// </summary>
+    public float DodgeCooldownRemaining => dodgeCooldownTimer;
 
     /// <summary>
     /// Whether the cursor is currently locked
@@ -1079,6 +1238,13 @@ public class CharacterControllerFP : MonoBehaviour
         {
             Gizmos.color = Color.cyan;
             Gizmos.DrawRay(playerCamera.position, playerCamera.forward * 3f);
+        }
+
+        // Dodge direction during active dodge
+        if (Application.isPlaying && isDodging)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawRay(transform.position, dodgeDirection * dodgeDistance);
         }
     }
 

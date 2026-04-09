@@ -107,8 +107,8 @@ public class InputFPMouseInteraction : MonoBehaviour
         // Raycast from center of screen (where the reticle is)
         Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
 
-        bool isHit = Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactionLayer, QueryTriggerInteraction.Collide)
-                     && hit.collider.gameObject == gameObject;
+        bool isHit = Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactionLayer, QueryTriggerInteraction.Ignore)
+                     && (hit.collider.gameObject == gameObject || hit.collider.transform.IsChildOf(transform));
 
         // Hover state
         if (enableHover)

@@ -13,6 +13,17 @@ public enum PlatformDetectionMode
 }
 
 /// <summary>
+/// Dodge direction mode for character controllers
+/// </summary>
+public enum DodgeMode
+{
+    /// <summary>Dodge in the movement/facing direction (default)</summary>
+    Forward,
+    /// <summary>Sidestep in the most recently moved lateral direction (left or right)</summary>
+    Lateral
+}
+
+/// <summary>
 /// Movement space modes for character controller input interpretation
 /// </summary>
 public enum MovementSpace
@@ -70,6 +81,7 @@ public class CharacterControllerCC : MonoBehaviour
     [SerializeField] private float dodgeSpeed = 20f;
     [SerializeField] private float dodgeCooldown = 1f;
     [SerializeField] private bool allowAirDodge = false;
+    [SerializeField] private DodgeMode dodgeMode = DodgeMode.Forward;
 
     [Header("Character Settings")]
     [Tooltip("How fast the character turns to face movement direction")]
@@ -144,6 +156,7 @@ public class CharacterControllerCC : MonoBehaviour
     private float dodgeCooldownTimer;
     private Vector3 dodgeDirection;
     private Vector3 dodgeStartPosition;
+    private Vector3 lastLateralDirection;
 
     // Platform state
     private Transform currentPlatform;
@@ -579,19 +592,24 @@ public class CharacterControllerCC : MonoBehaviour
         if (dodgeRequested)
         {
             dodgeRequested = false;
-            Vector3 targetDirection = GetMovementDirection(moveInput);
 
-            if (targetDirection != Vector3.zero)
+            if (dodgeMode == DodgeMode.Lateral)
             {
-                dodgeDirection = targetDirection;
-            }
-            else if (lastMoveDirection != Vector3.zero)
-            {
-                dodgeDirection = lastMoveDirection.normalized;
+                if (lastLateralDirection != Vector3.zero)
+                    dodgeDirection = lastLateralDirection;
+                else
+                    dodgeDirection = transform.right;
             }
             else
             {
-                dodgeDirection = transform.forward;
+                Vector3 targetDirection = GetMovementDirection(moveInput);
+
+                if (targetDirection != Vector3.zero)
+                    dodgeDirection = targetDirection;
+                else if (lastMoveDirection != Vector3.zero)
+                    dodgeDirection = lastMoveDirection.normalized;
+                else
+                    dodgeDirection = transform.forward;
             }
 
             if (isOnSteepSlope) return;
@@ -659,6 +677,9 @@ public class CharacterControllerCC : MonoBehaviour
             velocity.x = newHorizontalVelocity.x;
             velocity.z = newHorizontalVelocity.z;
             lastMoveDirection = targetDirection;
+
+            if (moveInput.x != 0f)
+                lastLateralDirection = GetMovementDirection(new Vector2(Mathf.Sign(moveInput.x), 0f));
         }
         else
         {
