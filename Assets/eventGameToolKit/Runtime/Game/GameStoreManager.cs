@@ -795,7 +795,7 @@ public class GameStoreManager : MonoBehaviour
         tmp.fontSize               = size;
         tmp.color                  = color;
         tmp.alignment              = align;
-        tmp.enableWordWrapping     = false;
+        tmp.textWrappingMode       = TMPro.TextWrappingModes.NoWrap;
         tmp.overflowMode           = TextOverflowModes.Ellipsis;
         if (customFont != null) tmp.font = customFont;
 
