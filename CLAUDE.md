@@ -12,18 +12,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **[Documentation Generator Guide](.claude/docs/documentation-generator.md)** - XML documentation requirements
 - **[Changelog](.claude/docs/changelog.md)** - Recent updates and refactorings
 
-## Multi-Scene Support (Now in Main)
-
-Multi-scene architecture has been ported to main from `feature/multi-scene-support`. The following components are now available:
-
-- **GameData** ScriptableObject singleton for invisible cross-scene data persistence
-- **SpawnPoint** component for marking player spawn locations
-- **GameSceneManager** for scene loading with transitions
-- Updated **GameHealthManager** and **GameCollectionManager** with optional SO variable support
-- Updated **CharacterControllerCC** with spawn point priority logic
-
-See [Multi-Scene Architecture](#multi-scene-architecture) section below for details.
-
 ## Project Overview
 
 **Educational Unity Toolkit for "Animation and Interactivity" Class**
@@ -78,6 +66,8 @@ cmd //c robocopy "F:\Unity Projects 2025\gameToolKitFarina\gameToolKit\Assets\ev
 
 **IMPORTANT**: Use `cmd //c` and double slashes `//` to avoid Git Bash path conversion errors (Git Bash converts `/MIR` to `C:/Program Files/Git/MIR` without the double slashes).
 
+**IMPORTANT**: The package repo's `README.md` is overwritten on every robocopy sync. Always edit `gameToolKit/Assets/eventGameToolKit/README.md` (the source), never the copy in `eventGameToolKit-Package/`.
+
 ## Project Structure
 
 ### Main Directories
@@ -96,7 +86,7 @@ Assets/
 │   │   ├── Puzzle/        # Puzzle mechanics
 │   │   ├── UI/            # UI helpers and effects
 │   │   ├── Utilities/     # Legacy/helper scripts
-│   │   └── Variables/     # ⚠️ FEATURE BRANCH: ScriptableObject variables
+│   │   └── Variables/     # Internal persistence (GameData singleton — not student-facing)
 │   └── Editor/            # Custom Inspector scripts
 │       ├── ActionEditors/
 │       ├── GameEditors/
@@ -260,21 +250,46 @@ Performs a manual trace review (desk check) of a script. Traces every public met
 
 ## Scene Persistence
 
-Four managers support a `Persist Across Scenes` checkbox. The underlying mechanism is `GameData` — an auto-created runtime ScriptableObject singleton that is completely invisible to students. They just tick the box.
+The underlying mechanism is `GameData` — an auto-created runtime ScriptableObject singleton that is completely invisible to students. `GameData` resets at the start of each play session automatically.
 
-| Manager | Persists | Mechanism | Internal slot |
+### Persist Across Scenes
+
+| Manager | Persists | Mechanism | Default on Restart |
 |---|---|---|---|
-| `GameHealthManager` | Optional | `GameData` int slot 0 | Automatic |
-| `GameCollectionManager` | Optional | `GameData` int slot 1 | Automatic |
-| `GameInventoryManager` | Optional | `GameData` int slots 2–21 | Automatic (max 20 slots) |
+| `GameHealthManager` | Optional checkbox | `GameData` int slot 0 | Reset to default |
+| `GameCollectionManager` | Optional checkbox | `GameData` int slot 1 | Reset to default |
+| `GameInventoryManager` | Optional checkbox | `GameData` int slots 2–21 (max 20) | Reset to default |
+| `GameStoreManager` | Per-item `persistPurchase` bool | `GameData` int slots 22–41 (max 20 items) | Keep value |
+| `GameFlagManager` | Always (no checkbox needed) | `GameData` flag set | Keep value |
 | `GameCheckpointManager` | Always | DontDestroyOnLoad singleton | N/A |
-| All others | Never | — | — |
 
 **Rules:**
-- Add the manager to **each scene** that needs it — only the *value* carries over, not the manager itself. This means event wiring in each scene is local and works normally.
-- On the first scene load of a new play session, managers use their own Inspector defaults. On subsequent loads, they read the last written value.
-- GameInventoryManager logs a warning if more than 20 slots are configured with persistence enabled.
+- Add the manager to **each scene** that needs it — only the *value* carries over, not the manager itself.
+- On the first scene load of a new play session, managers use their own Inspector defaults.
 - `GameData` resets automatically at the start of each play session — no student action needed for "new game."
+
+### Restart vs. Progression
+
+`GameSceneManager` exposes two distinct load methods:
+- `LoadScene(name)` — progression load, persisted values carry over
+- `RestartScene(name)` / `RestartCurrentScene()` — death/failure restart, managers check their **On Restart** setting
+
+Each persistent manager has an `On Restart` dropdown (`Reset To Default` / `Keep Value`) visible in the Inspector when persistence is enabled. Defaults are chosen to match the most common game design expectation (health resets, store upgrades survive).
+
+### GameFlagManager — Arbitrary State Persistence
+
+For objects that need to remember one-time events across scene loads (doors opened, pickups collected, NPCs talked to):
+
+1. Place `GameFlagManager` anywhere in the scene — no configuration needed
+2. Wire `SetFlag("my_flag")` to any UnityEvent on the triggering object
+3. Place `GameFlagListener` on the object to restore, set the same flag name
+4. Wire `onFlagAlreadySet` to the restore action (e.g. `SetActive(false)`)
+
+**Future consideration:** A `GamePersistentPickup` component that wraps steps 2–4 into a single self-contained component for the common pickup case.
+
+### ResetPersistence
+
+`GameCollectionManager` and `GameInventoryManager` expose a public `ResetPersistence()` method callable from UnityEvents. Use it when game design calls for resetting score/inventory on specific events beyond a simple scene restart.
 
 ## Self-Contained UI Pattern
 
@@ -324,11 +339,11 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**62 Educational Scripts (100% XML Documented) | 25 Custom Editors**
+**65 Educational Scripts (100% XML Documented) | 28 Custom Editors**
 - 12 Input components
 - 21 Action components
 - 7 Physics components
-- 12 Game managers (includes GameSceneManager + SpawnPoint)
+- 15 Game managers (includes GameSceneManager, SpawnPoint, GameStoreManager, GameFlagManager, GameFlagListener)
 - 2 Puzzle components
 - 1 UI component
 - 3 Animation components
@@ -341,108 +356,32 @@ For complete script inventory with features, see **[Runtime Structure](.claude/d
 
 ## Multi-Scene Architecture
 
-### The Problem
+The toolkit solves multi-scene persistence through `GameData` — a runtime SO singleton invisible to students — rather than student-configured SO assets. Students add managers per-scene and tick checkboxes; data carries automatically.
 
-The toolkit's no-code design relies on dragging references in the Inspector. This breaks with multi-scene games because:
-- UnityEvents can't reference objects in other scenes
-- Managers in a "Bootstrap" scene can't be wired to enemies/collectibles in level scenes
-- Cross-scene references are blocked in Edit mode
-
-### The Solution: ScriptableObject Variables
-
-Instead of storing data in MonoBehaviours (which are scene-bound), data lives in **ScriptableObject assets** (which are project-level):
-
-```
-Project Assets:
-├── Variables/
-│   ├── PlayerHealth.asset (IntVariable, default: 100)
-│   └── PlayerScore.asset (IntVariable, default: 0)
-
-Level1 Scene:
-├── GameHealthManager → reads/writes PlayerHealth.asset
-├── Enemy → wired to GameHealthManager.TakeDamage()
-└── Coin → wired to GameCollectionManager.Increment()
-
-Level2 Scene:
-├── GameHealthManager → reads/writes PlayerHealth.asset (SAME asset)
-└── ... level content
-```
-
-When scenes change, manager instances are destroyed and recreated, but **the data persists in the assets**.
-
-### New Components (Feature Branch)
+### Key Components
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `IntVariable` | `Runtime/Variables/` | SO that holds an int, resets on Play |
-| `FloatVariable` | `Runtime/Variables/` | SO that holds a float, resets on Play |
+| `GameData` | `Runtime/Variables/` | Internal persistence hub — students never touch this |
 | `SpawnPoint` | `Runtime/Game/` | Marks spawn locations, implements ISpawnPointProvider |
-| `GameSceneManager` | `Runtime/Game/` | Scene loading with spawn point support |
+| `GameSceneManager` | `Runtime/Game/` | Scene loading with restart vs. progression distinction |
+| `GameFlagManager` | `Runtime/Game/` | Named boolean flags that persist across scenes |
+| `GameFlagListener` | `Runtime/Game/` | Reacts to flag state on scene load and at runtime |
 
-### Updated Components (Feature Branch)
+### Scene Loading Pattern
 
-| Component | Change |
-|-----------|--------|
-| `GameHealthManager` | New `healthVariable` field (optional) |
-| `GameCollectionManager` | New `valueVariable` field (optional) |
-| `CharacterControllerCC` | Improved spawn priority logic |
+```
+Bootstrap Scene (optional):
+└── GameSceneManager (DontDestroyOnLoad)
 
-### Backward Compatibility
+Level1 Scene:
+├── GameHealthManager (persistAcrossScenes ✓)
+├── GameCollectionManager (persistAcrossScenes ✓)
+└── Enemy → GameHealthManager.TakeDamage()
 
-The SO variable fields are **optional**. If not assigned:
-- Managers work exactly as before (single-scene behavior)
-- No breaking changes for existing projects
-
-### Value Reset Behavior
-
-```csharp
-// IntVariable uses [System.NonSerialized] for runtime value
-// OnEnable() resets the initialized flag
-// First access initializes from defaultValue
+Level2 Scene:
+├── GameHealthManager (persistAcrossScenes ✓) ← reads carried value
+└── ... level content
 ```
 
-- **Editor**: Values reset to default when entering Play mode
-- **Build**: Values reset when game launches, persist during gameplay
-
-### Future SO Architecture Opportunities
-
-The ScriptableObject pattern could improve other systems:
-
-| System | Current | SO-Based Improvement |
-|--------|---------|---------------------|
-| **GameStateManager** | Local pause state | `BoolVariable` for global pause state |
-| **GameTimerManager** | Local timer value | `FloatVariable` for persistent timer |
-| **GameAudioManager** | Local volume settings | `FloatVariable` for volume levels |
-| **GameCheckpointManager** | Already uses DontDestroyOnLoad | Could use SO for checkpoint data |
-| **PuzzleSwitchChecker** | Checks switches in scene | `BoolVariable` per switch for cross-scene puzzles |
-
-### Event Channels (Future Consideration)
-
-Beyond variables, SO-based **Event Channels** could enable fully decoupled communication:
-
-```csharp
-// Event channel asset
-[CreateAssetMenu]
-public class VoidEventChannel : ScriptableObject
-{
-    public event System.Action OnEventRaised;
-    public void RaiseEvent() => OnEventRaised?.Invoke();
-}
-
-// Any scene can raise/listen
-public class Enemy : MonoBehaviour
-{
-    [SerializeField] VoidEventChannel onPlayerDamaged;
-    void DealDamage() => onPlayerDamaged.RaiseEvent();
-}
-```
-
-This would allow enemies in Level1 to communicate with UI in a persistent scene without direct references.
-
-### Documentation
-
-- **[MultiSceneSetup_QuickStart.md](Assets/eventGameToolKit/Documentation/MultiSceneSetup_QuickStart.md)** - Student guide (in feature branch)
-
-### Merge Status
-
-Multi-scene components were cherry-picked from `feature/multi-scene-support` into main (April 2026). The feature branch can be archived — it contains destructive changes (deleted components) that should NOT be merged directly.
+Wire death/game-over events to `GameSceneManager.RestartScene()` for reset behavior, or `LoadScene()` for progression.
