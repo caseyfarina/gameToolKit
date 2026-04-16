@@ -5,6 +5,17 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
 /// <summary>
+/// Modifier key required to be held when clicking.
+/// </summary>
+public enum ModifierKey
+{
+    None,
+    Shift,
+    Ctrl,
+    Alt
+}
+
+/// <summary>
 /// Detects mouse clicks and hover events on 3D objects with optional visual feedback.
 /// Raycasts from the mouse cursor position each frame (requires a free/visible cursor).
 /// For first-person games with a locked cursor, use InputFPMouseInteraction instead.
@@ -15,6 +26,10 @@ public class InputMouseInteraction : MonoBehaviour
     [Header("Interaction Settings")]
     [Tooltip("Which mouse button to detect (0=Left, 1=Right, 2=Middle)")]
     [SerializeField] private int mouseButton = 0;
+    [Tooltip("Modifier key that must be held for click events to fire (hover is unaffected)")]
+    [SerializeField] private ModifierKey requiredModifier = ModifierKey.None;
+    [Tooltip("When enabled, releasing the mouse button always clears click state even if the modifier was released first. Recommended: on.")]
+    [SerializeField] private bool resetOnModifierRelease = true;
     [SerializeField] private bool enableHover = true;
     [SerializeField] private bool enableClick = true;
 
@@ -129,27 +144,34 @@ public class InputMouseInteraction : MonoBehaviour
         {
             ButtonControl button = GetMouseButton();
 
-            if (isHit && button.wasPressedThisFrame)
+            if (IsModifierHeld())
             {
-                isMouseDown = true;
-                wasClicked = true;
-                onMouseDown.Invoke();
-                if (showDebugInfo) Debug.Log($"Mouse down on: {gameObject.name}");
-            }
-
-            if (button.wasReleasedThisFrame)
-            {
-                if (isHit)
+                if (isHit && button.wasPressedThisFrame)
                 {
-                    onMouseUp.Invoke();
-                    if (showDebugInfo) Debug.Log($"Mouse up on: {gameObject.name}");
-
-                    if (isMouseDown)
-                    {
-                        onMouseClick.Invoke();
-                        if (showDebugInfo) Debug.Log($"Mouse clicked: {gameObject.name}");
-                    }
+                    isMouseDown = true;
+                    wasClicked = true;
+                    onMouseDown.Invoke();
+                    if (showDebugInfo) Debug.Log($"Mouse down on: {gameObject.name}");
                 }
+
+                if (button.wasReleasedThisFrame)
+                {
+                    if (isHit)
+                    {
+                        onMouseUp.Invoke();
+                        if (showDebugInfo) Debug.Log($"Mouse up on: {gameObject.name}");
+
+                        if (isMouseDown)
+                        {
+                            onMouseClick.Invoke();
+                            if (showDebugInfo) Debug.Log($"Mouse clicked: {gameObject.name}");
+                        }
+                    }
+                    isMouseDown = false;
+                }
+            }
+            else if (resetOnModifierRelease && button.wasReleasedThisFrame)
+            {
                 isMouseDown = false;
             }
         }
@@ -165,6 +187,19 @@ public class InputMouseInteraction : MonoBehaviour
             1 => Mouse.current.rightButton,
             2 => Mouse.current.middleButton,
             _ => Mouse.current.leftButton
+        };
+    }
+
+    private bool IsModifierHeld()
+    {
+        if (Keyboard.current == null) return requiredModifier == ModifierKey.None;
+        return requiredModifier switch
+        {
+            ModifierKey.None  => true,
+            ModifierKey.Shift => Keyboard.current.shiftKey.isPressed,
+            ModifierKey.Ctrl  => Keyboard.current.ctrlKey.isPressed,
+            ModifierKey.Alt   => Keyboard.current.altKey.isPressed,
+            _                 => true
         };
     }
 

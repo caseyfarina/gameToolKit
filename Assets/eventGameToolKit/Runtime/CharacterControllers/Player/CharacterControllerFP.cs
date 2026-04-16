@@ -106,6 +106,13 @@ public class CharacterControllerFP : MonoBehaviour
     [Tooltip("Invert the Y axis for look input")]
     [SerializeField] private bool invertY = false;
 
+    /// <summary>
+    /// Time in seconds to smooth mouse look input. 0 = no smoothing (raw), 0.05–0.1 = subtle smoothing
+    /// </summary>
+    [Tooltip("Smoothing applied to mouse look. 0 = raw input, 0.05–0.1 = subtle smoothing")]
+    [Range(0f, 0.2f)]
+    [SerializeField] private float mouseSmoothTime = 0.03f;
+
     [Header("Cursor Settings")]
     /// <summary>
     /// Lock and hide the cursor when the game starts
@@ -302,6 +309,7 @@ public class CharacterControllerFP : MonoBehaviour
     private Vector3 lastMoveDirection;
     private Vector3 lastLateralDirection;
     private bool isOnSteepSlope;
+    private bool wasOnSteepSlope;
     private Vector3 slopeNormal = Vector3.up;
     private bool isSprinting;
     private bool isCursorLocked;
@@ -316,6 +324,8 @@ public class CharacterControllerFP : MonoBehaviour
 
     // Camera state
     private float cameraPitch;
+    private Vector2 smoothedLookInput;
+    private Vector2 lookSmoothVelocity;
 
     // Platform state
     private Transform currentPlatform;
@@ -523,8 +533,10 @@ public class CharacterControllerFP : MonoBehaviour
         transform.rotation = rotation;
         controller.enabled = true;
 
-        // Reset camera pitch to match new rotation
+        // Reset camera pitch and look smoothing state
         cameraPitch = 0f;
+        smoothedLookInput = Vector2.zero;
+        lookSmoothVelocity = Vector2.zero;
 
         Debug.Log($"CharacterControllerFP: Teleported to {position}");
         onTeleport?.Invoke(position);
@@ -593,7 +605,6 @@ public class CharacterControllerFP : MonoBehaviour
     private void Update()
     {
         HandleCursorToggle();
-        HandleLook();
         UpdateDodgeCooldown();
         CheckGrounded();
         CheckSlope();
@@ -602,6 +613,11 @@ public class CharacterControllerFP : MonoBehaviour
         HandleJump();
         UpdateAnimations();
         CheckMovementEvents();
+    }
+
+    private void LateUpdate()
+    {
+        HandleLook();
     }
 
     private void FixedUpdate()
@@ -621,31 +637,31 @@ public class CharacterControllerFP : MonoBehaviour
     {
         if (!_inputEnabled) return;
         if (playerCamera == null) return;
-        if (lookInput == Vector2.zero) return;
 
-        // Determine sensitivity based on active control scheme
-        float sensitivity;
         bool isGamepad = playerInput != null &&
                          playerInput.currentControlScheme != null &&
                          playerInput.currentControlScheme == "Gamepad";
 
-        if (isGamepad)
+        Vector2 rawInput = lookInput;
+
+        // Smooth mouse input only; gamepad input is already continuous and needs no smoothing
+        if (!isGamepad && mouseSmoothTime > 0f)
         {
-            sensitivity = gamepadSensitivity * Time.deltaTime;
+            smoothedLookInput = Vector2.SmoothDamp(smoothedLookInput, rawInput, ref lookSmoothVelocity, mouseSmoothTime);
         }
         else
         {
-            // Mouse input is already frame-rate independent (delta), so no Time.deltaTime
-            sensitivity = mouseSensitivity;
+            smoothedLookInput = rawInput;
         }
 
-        float yawInput = lookInput.x * sensitivity;
-        float pitchInput = lookInput.y * sensitivity;
+        if (smoothedLookInput == Vector2.zero) return;
 
-        if (invertY)
-        {
-            pitchInput = -pitchInput;
-        }
+        float sensitivity = isGamepad ? gamepadSensitivity * Time.deltaTime : mouseSensitivity;
+
+        float yawInput   = smoothedLookInput.x * sensitivity;
+        float pitchInput = smoothedLookInput.y * sensitivity;
+
+        if (invertY) pitchInput = -pitchInput;
 
         // Yaw: rotate the character body left/right
         transform.Rotate(Vector3.up, yawInput);
@@ -664,6 +680,7 @@ public class CharacterControllerFP : MonoBehaviour
     private void CheckGrounded()
     {
         wasGrounded = isGrounded;
+        wasOnSteepSlope = isOnSteepSlope;
 
         if (velocity.y > 0.1f)
         {
@@ -711,7 +728,7 @@ public class CharacterControllerFP : MonoBehaviour
         }
 
         if (isGrounded) onGrounded.Invoke();
-        if (isOnSteepSlope && !wasGrounded) onSteepSlope.Invoke();
+        if (isOnSteepSlope && !wasOnSteepSlope) onSteepSlope.Invoke();
         if (landingStabilizationFrames > 0) landingStabilizationFrames--;
     }
 

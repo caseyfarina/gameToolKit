@@ -8,6 +8,8 @@ using UnityEditor;
 public class InputMouseInteractionEditor : Editor
 {
     private SerializedProperty mouseButtonProp;
+    private SerializedProperty requiredModifierProp;
+    private SerializedProperty resetOnModifierReleaseProp;
     private SerializedProperty enableHoverProp;
     private SerializedProperty enableClickProp;
 
@@ -31,6 +33,8 @@ public class InputMouseInteractionEditor : Editor
     private void OnEnable()
     {
         mouseButtonProp = serializedObject.FindProperty("mouseButton");
+        requiredModifierProp = serializedObject.FindProperty("requiredModifier");
+        resetOnModifierReleaseProp = serializedObject.FindProperty("resetOnModifierRelease");
         enableHoverProp = serializedObject.FindProperty("enableHover");
         enableClickProp = serializedObject.FindProperty("enableClick");
 
@@ -65,6 +69,13 @@ public class InputMouseInteractionEditor : Editor
         // --- Interaction Settings ---
         EditorGUILayout.LabelField("Interaction Settings", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(mouseButtonProp);
+        EditorGUILayout.PropertyField(requiredModifierProp);
+        if (requiredModifierProp.enumValueIndex != 0)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(resetOnModifierReleaseProp);
+            EditorGUI.indentLevel--;
+        }
         EditorGUILayout.PropertyField(enableHoverProp);
         EditorGUILayout.PropertyField(enableClickProp);
 

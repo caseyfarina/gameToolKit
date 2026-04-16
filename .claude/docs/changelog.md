@@ -4,6 +4,42 @@ Recent updates, refactorings, and improvements to the eventGameToolKit.
 
 ---
 
+## April 2026 - Mouse Interaction Modifier Keys & FP Camera Smoothing
+
+### New: Modifier Key Support for Mouse Interaction Components
+
+`InputMouseInteraction` and `InputFPMouseInteraction` now support optional modifier keys (Alt, Ctrl, Shift) so students can wire different actions to alt-click vs plain click on the same object.
+
+#### Changes — InputMouseInteraction + InputFPMouseInteraction
+
+- **`ModifierKey` enum** — `None` / `Shift` / `Ctrl` / `Alt` (defined in `InputMouseInteraction.cs`, shared by both)
+- **`requiredModifier` field** — dropdown in Interaction Settings, defaults to `None` (no behavior change for existing components)
+- **`resetOnModifierRelease` checkbox** — appears in Inspector only when a modifier is selected; on by default. Ensures `isMouseDown` always resets on button release even if the modifier key was released first, preventing spurious click events
+- **`IsModifierHeld()` private helper** — reads `Keyboard.current`; returns `true` when no keyboard is present and `requiredModifier == None`, so touch/gamepad-only builds are unaffected
+- Hover events are intentionally unaffected by modifier state
+- Both custom editors (`InputMouseInteractionEditor`, `InputFPMouseInteractionEditor`) updated — `resetOnModifierRelease` is indented under `requiredModifier` and only shown when a modifier is selected
+
+#### Typical Use
+
+Two `InputMouseInteraction` components on the same object:
+- First: `Required Modifier = None` → `onMouseClick` wires normal behavior
+- Second: `Required Modifier = Alt` → `onMouseClick` wires alt-click behavior
+
+---
+
+### Improved: CharacterControllerFP Camera Feel
+
+Three targeted fixes to reduce camera jerk in first-person view.
+
+#### Changes — CharacterControllerFP
+
+- **`HandleLook()` moved to `LateUpdate()`** — was in `Update()`. Body position is settled by `FixedUpdate()` before the camera rotation is applied, eliminating the one-frame position/rotation desync that caused perceived jitter
+- **`mouseSmoothTime` field** — `[Range(0, 0.2)]`, defaults to `0.03`. Runs `lookInput` through `Vector2.SmoothDamp` before applying rotation. Set to `0` for raw input. Gamepad bypasses smoothing entirely (stick input is already continuous). New `SetMouseSmoothTime()` public setter not added — students can set via Inspector
+- **`onSteepSlope` event fixed** — was gated on `!wasGrounded`, so it only fired when landing on a steep slope from the air. Now uses `!wasOnSteepSlope` (new private bool mirroring the `wasGrounded` pattern), so it also fires when walking from flat ground onto a steep slope
+- **`TeleportTo()` resets smoothing state** — `smoothedLookInput` and `lookSmoothVelocity` are now cleared alongside `cameraPitch`, preventing camera drift after teleport if the player was mid-look
+
+---
+
 ## April 2026 - Documentation Scene Bootstrapper
 
 ### New: `EGTK_Documentation` Auto-Generate Scene
