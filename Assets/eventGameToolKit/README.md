@@ -16,8 +16,8 @@ The Event Game Toolkit is built around an **event-driven architecture** where st
 
 ### What's Included
 
-- **69 C# scripts** across 8 categories
-- **46 educational components** (100% XML-documented)
+- **65 educational components** (100% XML-documented)
+- **28 custom Inspector editors** for student-friendly UI
 - **Comprehensive documentation** system
 - **DOTween integration** for professional animations
 
@@ -50,7 +50,11 @@ Located in `Input/` folder:
 - **InputKeyPress** - Simple key press events
 - **InputKeyCountdown** - Countdown system with UI display
 - **InputCheckpointZone** - Checkpoint trigger system
-- **InputMouseInteraction** - Mouse-based interactions
+- **InputMouseInteraction** - Mouse click/hover on 3D objects with optional modifier keys (Alt, Ctrl, Shift)
+- **InputFPMouseInteraction** - First-person reticle-based interaction with optional modifier keys
+- **InputOnStart** - Fire events on Awake or Start
+- **InputInteractionZone** - Proximity interaction zone
+- **InputActionEvent** - Unity Input System action wrapper
 - **InputQuitGame** - Application quit handler
 
 ### Action Components (Event Targets)
@@ -82,7 +86,8 @@ Located in `Actions/` folder:
 Located in `Physics/` folder:
 
 **Player Controllers:**
-- **CharacterControllerCC** - Advanced humanoid controller with moving platforms, slopes, dodge mechanics
+- **CharacterControllerCC** - Advanced third-person humanoid controller with moving platforms, slopes, dodge mechanics
+- **CharacterControllerFP** - First-person controller with mouse look (LateUpdate smoothing), cursor lock, slope detection, and moving platforms
 - **PhysicsBallPlayerController** - Simple physics ball controller
 - **PhysicsCharacterController** - Rigidbody-based character controller
 
@@ -100,9 +105,12 @@ Located in `Game/` folder:
 
 - **GameStateManager** - Pause and victory state management
 - **GameTimerManager** - Comprehensive timer system (count-up/countdown)
-- **GameHealthManager** - Health system with thresholds and events
-- **GameCollectionManager** - Score/collection tracking
-- **GameInventorySlot** - Inventory management with capacity
+- **GameHealthManager** - Health system with thresholds, events, and optional self-contained UI
+- **GameCollectionManager** - Score/collection tracking with optional self-contained UI
+- **GameInventoryManager** - Multi-slot inventory with per-slot events and optional self-contained UI
+- **GameStoreManager** - Store system with persistent purchases
+- **GameFlagManager** - Named boolean flags that persist across scenes
+- **GameFlagListener** - Reacts to flag state on scene load and at runtime
 - **GameUIManager** - UI data display with animations
 - **GameAudioManager** - Audio system with mixer integration
 - **GameCameraManager** - Cinemachine camera switching
@@ -128,13 +136,19 @@ Located in `UI/` folder:
 
 ## 📖 Documentation
 
-### Auto-Generated Documentation
+### Online Documentation
+**[https://caseyfarina.github.io/egtk-docs/index.html](https://caseyfarina.github.io/egtk-docs/index.html)**
+
+Full component reference, setup guides, and tutorials.
+
+### In-Package Documentation
 The package includes a **Script Documentation Generator** accessible via **Tools > Script Documentation Generator**. This creates an interactive Canvas-based UI showing all components organized by category with their functions and events.
 
-### External Documentation
-- **CharacterControllerCC_Documentation.md** - Complete 940-line setup guide with Quick Start
-- **DecalAnimationSystem_Documentation.md** - Complete 830-line URP decal guide
-- **CLAUDE_STUDENT.md** - Student reference guide for Claude AI assistance
+### Reference Files (included in package)
+- **CharacterControllerCC_Documentation.md** - Complete setup guide with Quick Start
+- **CharacterControllerFP_Documentation.md** - First-person controller setup guide
+- **DecalAnimationSystem_Documentation.md** - Complete URP decal guide
+- **ComponentQuickReference.md** - One-page component discovery guide for students
 
 ---
 
@@ -187,7 +201,7 @@ Scripts follow educational naming:
 - **Game**[Purpose] - Game managers (e.g., `GameHealthManager`)
 
 ### XML Documentation
-All educational scripts (46/46) include XML documentation comments:
+All educational scripts (65/65) include XML documentation comments:
 ```csharp
 /// <summary>
 /// Detects when objects with specific tags enter a trigger zone and fires events
@@ -236,8 +250,8 @@ This is an educational package. For bug reports or feature requests, please cont
 
 ## 📞 Support
 
-- **Documentation Issues:** Check CLAUDE_STUDENT.md for comprehensive guidance
-- **Component Questions:** Use the Script Documentation Generator (Tools menu)
+- **Online Docs:** [https://caseyfarina.github.io/egtk-docs/index.html](https://caseyfarina.github.io/egtk-docs/index.html)
+- **Component Questions:** Use the Script Documentation Generator (Tools menu) or ComponentQuickReference.md
 - **Instructor Help:** Contact Casey Farina
 
 ---
@@ -246,4 +260,11 @@ This is an educational package. For bug reports or feature requests, please cont
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
-**Current Version: 1.0.0** - Initial release with 46 educational components
+**Current Version: 1.0.0** - 65 educational components, 28 custom editors
+
+### Recent Changes
+- **InputMouseInteraction / InputFPMouseInteraction** — modifier key support (Alt, Ctrl, Shift); `resetOnModifierRelease` safety checkbox
+- **CharacterControllerFP** — camera look moved to `LateUpdate` for smoother feel; optional `mouseSmoothTime` smoothing; `onSteepSlope` event now fires when walking onto slopes; `TeleportTo()` resets camera smoothing state
+- **GameFlagManager / GameFlagListener** — named boolean flags persisting across scenes
+- **GameStoreManager** — store system with persistent purchases
+- **GameHealthManager / GameCollectionManager / GameInventoryManager** — self-contained UI (text + bar)
