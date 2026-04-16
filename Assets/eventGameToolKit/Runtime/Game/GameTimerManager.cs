@@ -516,7 +516,7 @@ public class GameTimerManager : MonoBehaviour
         uiText.alignment = textAlignment;
         uiText.color = textColor;
         uiText.overflowMode = TextOverflowModes.Overflow;
-        uiText.enableWordWrapping = false;
+        uiText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
 
         if (customFont != null)
             uiText.font = customFont;
@@ -682,7 +682,7 @@ public class GameTimerManager : MonoBehaviour
             uiText.fontSize = fontSize;
             uiText.alignment = textAlignment;
             uiText.overflowMode = TextOverflowModes.Overflow;
-            uiText.enableWordWrapping = false;
+            uiText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
 
             // Preview at 75% progress
             float previewProgress = 0.75f;

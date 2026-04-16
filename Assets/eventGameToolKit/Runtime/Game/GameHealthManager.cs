@@ -29,6 +29,9 @@ public class GameHealthManager : MonoBehaviour
     [Tooltip("Save health when loading a new scene. Each scene can have its own manager — only the value carries over.")]
     [SerializeField] private bool persistAcrossScenes = false;
 
+    [Tooltip("What happens to health when the scene is loaded via RestartScene. Reset To Default returns to the Inspector starting value.")]
+    [SerializeField] private RestartBehavior onRestartBehavior = RestartBehavior.ResetToDefault;
+
     [Header("UI Text (Optional)")]
     [Tooltip("Enable to create a self-contained UI text display for health")]
     [SerializeField] private bool showUI = false;
@@ -156,7 +159,12 @@ public class GameHealthManager : MonoBehaviour
 
     private void SyncToGameData()
     {
-        if (persistAcrossScenes)
+        if (!persistAcrossScenes) return;
+        if (currentHealth <= 0)
+            // Clear instead of writing 0: scene reload starts from the Inspector default,
+            // avoiding a death-loop where the player reloads with 0 health.
+            GameData.Instance.ClearInt(GameData.HEALTH_SLOT);
+        else
             GameData.Instance.SetInt(GameData.HEALTH_SLOT, currentHealth);
     }
 
@@ -164,7 +172,12 @@ public class GameHealthManager : MonoBehaviour
     {
         // If persistence is enabled, read the carried-over value (or use Inspector default on first load)
         if (persistAcrossScenes)
-            currentHealth = GameData.Instance.GetInt(GameData.HEALTH_SLOT, currentHealth);
+        {
+            if (GameData.IsRestart && onRestartBehavior == RestartBehavior.ResetToDefault)
+                GameData.Instance.ClearInt(GameData.HEALTH_SLOT);
+            else
+                currentHealth = GameData.Instance.GetInt(GameData.HEALTH_SLOT, currentHealth);
+        }
 
         // Ensure health starts within valid range
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
@@ -405,7 +418,7 @@ public class GameHealthManager : MonoBehaviour
         uiText.alignment = textAlignment;
         uiText.color = textColor;
         uiText.overflowMode = TextOverflowModes.Overflow;
-        uiText.enableWordWrapping = false;
+        uiText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
 
         if (customFont != null)
         {
@@ -604,7 +617,7 @@ public class GameHealthManager : MonoBehaviour
             uiText.alignment = textAlignment;
             uiText.color = textColor;
             uiText.overflowMode = TextOverflowModes.Overflow;
-            uiText.enableWordWrapping = false;
+            uiText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
 
             if (showMaxInText)
                 uiText.text = labelPrefix + "75 / 100";

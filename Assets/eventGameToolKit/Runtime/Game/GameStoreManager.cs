@@ -568,7 +568,7 @@ public class GameStoreManager : MonoBehaviour
         titleTmp.color              = textColor;
         titleTmp.fontStyle          = FontStyles.Bold;
         titleTmp.alignment          = TextAlignmentOptions.MidlineLeft;
-        titleTmp.enableWordWrapping = false;
+        titleTmp.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
         if (customFont != null) titleTmp.font = customFont;
 
         // Close button
@@ -781,7 +781,7 @@ public class GameStoreManager : MonoBehaviour
         balanceText.fontSize      = fontSize;
         balanceText.color         = priceTextColor;
         balanceText.alignment     = TextAlignmentOptions.Center;
-        balanceText.enableWordWrapping = false;
+        balanceText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
         if (customFont != null) balanceText.font = customFont;
     }
 

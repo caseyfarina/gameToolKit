@@ -64,6 +64,9 @@ public class GameInventoryManager : MonoBehaviour
     [Tooltip("Save all slot counts when loading a new scene. Each scene can have its own manager — only the counts carry over. Limited to the first 20 slots.")]
     [SerializeField] private bool persistAcrossScenes = false;
 
+    [Tooltip("What happens to inventory counts when the scene is loaded via RestartScene. Reset To Default returns all slots to their Inspector starting values.")]
+    [SerializeField] private RestartBehavior onRestartBehavior = RestartBehavior.ResetToDefault;
+
     [Header("Inventory Slots")]
     [Tooltip("List of item slots - each tracks a different item type")]
     [SerializeField] private List<InventorySlot> slots = new List<InventorySlot> { new InventorySlot() };
@@ -114,10 +117,16 @@ public class GameInventoryManager : MonoBehaviour
             if (slots.Count > GameData.INVENTORY_SLOT_COUNT)
                 Debug.LogWarning($"[GameInventoryManager] Persistence is limited to the first {GameData.INVENTORY_SLOT_COUNT} slots.", this);
 
-            for (int i = 0; i < Mathf.Min(slots.Count, GameData.INVENTORY_SLOT_COUNT); i++)
+            int count = Mathf.Min(slots.Count, GameData.INVENTORY_SLOT_COUNT);
+            if (GameData.IsRestart && onRestartBehavior == RestartBehavior.ResetToDefault)
             {
-                slots[i].currentCount = GameData.Instance.GetInt(
-                    GameData.INVENTORY_SLOT_START + i, slots[i].currentCount);
+                for (int i = 0; i < count; i++)
+                    GameData.Instance.ClearInt(GameData.INVENTORY_SLOT_START + i);
+            }
+            else
+            {
+                for (int i = 0; i < count; i++)
+                    slots[i].currentCount = GameData.Instance.GetInt(GameData.INVENTORY_SLOT_START + i, slots[i].currentCount);
             }
         }
 
@@ -231,6 +240,17 @@ public class GameInventoryManager : MonoBehaviour
         return index >= 0 ? slots[index].currentCount : -1;
     }
 
+    /// <summary>
+    /// Clears all persisted slot counts so the next scene load starts from each slot's Inspector default.
+    /// Wire this to a game-over or restart event when you want inventory to reset on scene reload.
+    /// </summary>
+    public void ResetPersistence()
+    {
+        int count = Mathf.Min(slots.Count, GameData.INVENTORY_SLOT_COUNT);
+        for (int i = 0; i < count; i++)
+            GameData.Instance.ClearInt(GameData.INVENTORY_SLOT_START + i);
+    }
+
     // ──────────────────────────────────────────────
     // Private helpers
     // ──────────────────────────────────────────────
@@ -341,7 +361,7 @@ public class GameInventoryManager : MonoBehaviour
             slot.countText.fontSize = fontSize;
             slot.countText.color = textColor;
             slot.countText.alignment = TextAlignmentOptions.Center;
-            slot.countText.enableWordWrapping = false;
+            slot.countText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
             slot.countText.overflowMode = TextOverflowModes.Overflow;
 
             if (customFont != null)
