@@ -8,6 +8,7 @@ using UnityEngine.Events;
 /// Features: Random timing, positional variance, spawn limits, lifetime tracking, and automatic cleanup.
 /// Common use: Enemy spawners, item generators, particle effect triggers, or obstacle creation systems.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionAutoSpawner : MonoBehaviour
 {
     public enum SpawnMode

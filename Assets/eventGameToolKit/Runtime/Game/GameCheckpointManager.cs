@@ -15,6 +15,7 @@ using UnityEngine.SceneManagement;
 /// 
 /// Common use: Platformer checkpoints, racing game lap markers, save points in adventure games.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class GameCheckpointManager : MonoBehaviour, ISpawnPointProvider
 {
     private static GameCheckpointManager instance;

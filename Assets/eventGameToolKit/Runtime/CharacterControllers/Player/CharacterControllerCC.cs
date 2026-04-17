@@ -50,6 +50,7 @@ public enum MovementSpace
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(PlayerInput))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/character-controllers.html")]
 public class CharacterControllerCC : MonoBehaviour
 {
     [Header("Movement Settings")]

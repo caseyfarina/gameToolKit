@@ -7,6 +7,7 @@ using DG.Tweening;
 /// Centralized audio control with mixer integration, music crossfading, and sound effect management.
 /// Common use: Background music systems, ambient sound control, menu audio, or cinematic audio transitions.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class GameAudioManager : MonoBehaviour
 {
     [Header("Audio Mixer")]

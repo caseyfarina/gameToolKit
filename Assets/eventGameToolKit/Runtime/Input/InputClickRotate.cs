@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 /// Requires a Collider on the same GameObject.
 /// Common use: Dials, levers, spinning puzzles, or orientation controls.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputClickRotate : MonoBehaviour
 {
     public enum RotationAxis { WorldX, WorldY, WorldZ, LocalX, LocalY, LocalZ }

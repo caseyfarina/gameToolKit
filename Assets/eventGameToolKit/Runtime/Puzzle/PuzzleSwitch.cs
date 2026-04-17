@@ -21,6 +21,7 @@ public struct StateSoundData
 /// Configurable multi-state switch with visual and audio feedback that fires events on state changes.
 /// Common use: Combination locks, lever puzzles, dial interfaces, multi-position switches, or puzzle sequences.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class PuzzleSwitch : MonoBehaviour
 {
     [Header("Switch Configuration")]

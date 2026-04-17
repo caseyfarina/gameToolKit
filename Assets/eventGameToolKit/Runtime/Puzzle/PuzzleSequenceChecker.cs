@@ -10,6 +10,7 @@ using System.Collections.Generic;
 /// Common use: Musical combination locks, ordered button sequences, ritual step puzzles,
 /// Simon-says style challenges, or any puzzle where sequence matters as much as state.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class PuzzleSequenceChecker : MonoBehaviour
 {
     [Header("Sequence Configuration")]

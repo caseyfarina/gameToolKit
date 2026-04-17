@@ -6,6 +6,7 @@ using UnityEngine.Events;
 /// Rigidbody-based humanoid character controller with slope detection, dodge mechanics, and animation support.
 /// Common use: Third-person adventure games, action platformers, physics-based combat, or character movement systems.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/character-controllers.html")]
 public class PhysicsCharacterController : MonoBehaviour
 {
     [Header("Movement Settings")]

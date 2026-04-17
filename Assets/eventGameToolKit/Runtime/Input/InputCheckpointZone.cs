@@ -8,6 +8,7 @@ using UnityEngine.Events;
 /// Common use: Platformer checkpoints, racing lap markers, save points, respawn locations.
 /// </summary>
 [RequireComponent(typeof(Collider))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputCheckpointZone : MonoBehaviour
 {
     [Header("Checkpoint Settings")]

@@ -21,6 +21,7 @@ public enum ModifierKey
 /// For first-person games with a locked cursor, use InputFPMouseInteraction instead.
 /// Common use: Clickable buttons, interactive objects, hover tooltips, or selection systems.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputMouseInteraction : MonoBehaviour
 {
     [Header("Interaction Settings")]

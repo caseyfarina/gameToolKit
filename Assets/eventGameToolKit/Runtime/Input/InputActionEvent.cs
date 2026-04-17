@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 /// Use this to connect any button press, joystick movement, or other input to game events without writing code.
 /// Example: Wire Jump action to spawn objects, play sounds, or trigger animations.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputActionEvent : MonoBehaviour
 {
     [Header("Input Action Reference")]

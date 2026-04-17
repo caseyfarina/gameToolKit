@@ -17,6 +17,7 @@ using UnityEngine.SceneManagement;
 ///
 /// Common use: Multi-level games, hub worlds with connected areas, seamless scene transitions.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class GameSceneManager : MonoBehaviour
 {
     private static GameSceneManager instance;

@@ -58,6 +58,7 @@ public class InventorySlot
 ///
 /// Common use: Key collections, ammunition types, multi-resource systems, or collectible sets.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/inventory.html")]
 public class GameInventoryManager : MonoBehaviour
 {
     [Header("Scene Persistence")]

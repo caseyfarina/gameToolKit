@@ -11,6 +11,7 @@ using UnityEngine.Events;
 ///
 /// Common use: restoring door/pickup/NPC state after a scene load.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class GameFlagListener : MonoBehaviour
 {
     [Tooltip("The GameFlagManager that owns the flag to watch")]

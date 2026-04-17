@@ -10,6 +10,7 @@ using UnityEditor;
 /// Common use: Selective bounce pads, enemy-only launchers, or multi-faction bumper systems.
 /// </summary>
 [RequireComponent(typeof(Collider))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class PhysicsBumperTag : MonoBehaviour
 {
     [Header("Bumper Tag")]

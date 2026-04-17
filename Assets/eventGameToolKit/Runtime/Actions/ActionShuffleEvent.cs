@@ -21,6 +21,7 @@ public class ShuffleEntry
 /// before the sequence resets and reshuffles. Based on the urn model from probability theory.
 /// Common use: non-repeating random rewards, varied NPC dialogue, procedural level variety.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionShuffleEvent : MonoBehaviour
 {
     [Header("Entries")]

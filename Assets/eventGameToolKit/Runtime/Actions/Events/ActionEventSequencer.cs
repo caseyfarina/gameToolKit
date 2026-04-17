@@ -25,6 +25,7 @@ public struct TimelineEvent
 /// Triggers a sequence of timed events with configurable duration and looping.
 /// Common use: Cutscenes, timed puzzle sequences, wave spawners, tutorial sequences, or choreographed events.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionEventSequencer : MonoBehaviour
 {
     [Header("Timeline Settings")]

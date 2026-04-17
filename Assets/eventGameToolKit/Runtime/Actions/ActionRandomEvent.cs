@@ -25,6 +25,7 @@ public class WeightedEvent
 /// Weights are normalized automatically — students don't need to sum to 100.
 /// Common use: random rewards, branching dialogue, procedural variety, unpredictable hazards.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionRandomEvent : MonoBehaviour
 {
     [Header("Weighted Events")]

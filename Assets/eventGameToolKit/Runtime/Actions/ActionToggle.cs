@@ -8,6 +8,7 @@ using System.Collections.Generic;
 /// Use AllOn() or AllOff() to force a known state regardless of current state.
 /// Common use: Showing/hiding groups of objects, toggling hazards, switching between UI panels.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionToggle : MonoBehaviour
 {
     [Tooltip("GameObjects whose active state will be toggled. Each object flips independently based on its own current state.")]

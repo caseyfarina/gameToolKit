@@ -7,6 +7,7 @@ using System.Collections;
 /// Use this as an event source to trigger any action when the scene begins — no code required.
 /// Common use: opening cutscenes, intro dialogue, initial UI reveal, scene-start sound effects.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputOnStart : MonoBehaviour
 {
     [Header("Awake Event")]

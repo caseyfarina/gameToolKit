@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 /// Requires a Collider on the same GameObject.
 /// Common use: Puzzle pieces, sliders, object placement, drag-to-sort mechanics.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputClickDrag : MonoBehaviour
 {
     public enum DragPlane

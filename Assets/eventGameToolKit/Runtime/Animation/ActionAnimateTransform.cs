@@ -6,6 +6,7 @@ using DG.Tweening;
 /// Procedurally animates position, rotation, and scale using customizable animation curves with loop modes.
 /// Common use: Door animations, floating objects, rotating collectibles, platform movement, or UI transitions.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionAnimateTransform : MonoBehaviour
 {
     public enum TransformProperty

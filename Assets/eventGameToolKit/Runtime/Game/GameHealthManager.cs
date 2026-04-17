@@ -13,6 +13,7 @@ using DG.Tweening;
 ///
 /// Common use: Player or enemy health systems, destructible objects, shield mechanics, or boss health bars.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/health.html")]
 public class GameHealthManager : MonoBehaviour
 {
     /// <summary>

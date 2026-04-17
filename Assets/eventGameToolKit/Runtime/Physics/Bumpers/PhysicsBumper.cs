@@ -11,6 +11,7 @@ using UnityEditor;
 /// Common use: Bounce pads, pinball bumpers, launch mechanisms, or trampoline effects.
 /// </summary>
 [RequireComponent(typeof(Collider))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class PhysicsBumper : MonoBehaviour
 {
     [Header("Bumper Settings")]

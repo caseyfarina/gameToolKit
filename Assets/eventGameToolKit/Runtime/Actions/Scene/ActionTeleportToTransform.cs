@@ -9,6 +9,7 @@ using UnityEngine.Events;
 /// Includes immunity window to prevent teleport loops in two-way portal systems.
 /// Common use: Portal systems, fast travel, puzzle teleporters, level transitions.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionTeleportToTransform : MonoBehaviour
 {
     // Static dictionary tracks recent teleports per-object to prevent loops

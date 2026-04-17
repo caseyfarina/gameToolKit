@@ -11,6 +11,7 @@ using UnityEngine.InputSystem.Controls;
 /// For free-cursor games, use InputMouseInteraction instead.
 /// Common use: FPS interaction, picking up items, pressing buttons, opening doors.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputFPMouseInteraction : MonoBehaviour
 {
     [Header("Interaction Settings")]

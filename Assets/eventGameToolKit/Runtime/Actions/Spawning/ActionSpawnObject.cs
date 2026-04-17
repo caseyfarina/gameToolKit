@@ -6,6 +6,7 @@ using UnityEngine;
 /// Spawns a single prefab instance at this object's position and rotation when triggered.
 /// Common use: Manual spawn points, button-triggered creation, reward drops, or projectile firing systems.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionSpawnObject : MonoBehaviour
 {
 

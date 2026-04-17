@@ -13,6 +13,7 @@ using UnityEngine.Events;
 ///
 /// Common use: Level entry points, scene transitions, multiplayer spawn locations.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class SpawnPoint : MonoBehaviour, ISpawnPointProvider
 {
     [Header("Spawn Point Settings")]

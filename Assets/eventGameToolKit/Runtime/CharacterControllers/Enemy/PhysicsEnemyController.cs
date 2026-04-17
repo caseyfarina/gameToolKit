@@ -17,6 +17,7 @@ public enum EnemyJumpMode
 /// Common use: Patrolling enemies, chase sequences, monster AI, competitive racing opponents, or boss encounters.
 /// </summary>
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/character-controllers.html")]
 public class PhysicsEnemyController : MonoBehaviour
 {
     [Header("Movement Settings")]

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 /// Common use: Explosion zones, jump pads, wind tunnels, push traps, physics puzzles, gravity wells.
 /// </summary>
 [RequireComponent(typeof(Collider))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class PhysicsForceZone : MonoBehaviour
 {
     public enum ForceSpace { World, Local }

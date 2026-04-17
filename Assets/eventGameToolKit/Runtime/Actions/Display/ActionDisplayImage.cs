@@ -8,6 +8,7 @@ using UnityEngine.Events;
 /// Creates its own Canvas and Image at runtime - no manual UI setup required.
 /// Common use: Item pickup previews, achievement icons, cutscene frames, tutorial images, or inventory item displays.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionDisplayImage : MonoBehaviour
 {
     [Header("Image Settings")]

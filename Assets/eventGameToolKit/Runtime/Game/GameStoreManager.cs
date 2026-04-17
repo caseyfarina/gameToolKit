@@ -63,6 +63,7 @@ public enum StoreOpenMode
 /// on purchase. Open mode can be a key press or triggered via UnityEvents.
 /// Common use: upgrade shops, unlock screens, item vendors, ability stores.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/store.html")]
 public class GameStoreManager : MonoBehaviour
 {
     [Header("Currency Source")]

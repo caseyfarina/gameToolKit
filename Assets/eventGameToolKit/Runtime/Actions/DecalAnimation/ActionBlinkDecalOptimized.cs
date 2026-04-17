@@ -9,6 +9,7 @@ using System.Collections;
 /// Perfect for facial animations using texture-based eye decals.
 /// </summary>
 [RequireComponent(typeof(DecalProjector))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionBlinkDecalOptimized : MonoBehaviour
 {
     [Header("Decal Textures")]

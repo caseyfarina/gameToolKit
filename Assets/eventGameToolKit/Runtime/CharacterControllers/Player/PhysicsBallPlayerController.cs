@@ -6,6 +6,7 @@ using UnityEngine.Events;
 /// Physics-based player controller for rolling ball movement with camera-relative controls.
 /// Common use: Rolling ball games, marble platformers, physics-based puzzles, or Katamari-style games.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/character-controllers.html")]
 public class PhysicsBallPlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]

@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 /// Reloads the current scene, resetting all game state to initial conditions.
 /// Common use: Retry buttons after game over, level restart functionality, or debugging/testing tools.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionRestartScene : MonoBehaviour
 {
     /// <summary>

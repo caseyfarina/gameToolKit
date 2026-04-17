@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 /// Quits the application when the Escape key is pressed (works in builds, not editor).
 /// Common use: Exit buttons, debug shortcuts, or quick quit functionality in standalone applications.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputQuitGame : MonoBehaviour
 {
 	

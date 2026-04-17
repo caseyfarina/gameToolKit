@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 /// Plays character emote animations when pressing buttons. Students map keyboard/gamepad inputs to animator trigger parameters.
 /// Uses InputActionReference for easy dropdown selection of actions. Only supports Trigger parameters (for one-shot emote animations).
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionPlayCharacterEmoteAnimation : MonoBehaviour
 {
     [Header("Animator Setup")]

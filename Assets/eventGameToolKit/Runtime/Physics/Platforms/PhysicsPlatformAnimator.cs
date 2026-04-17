@@ -6,6 +6,7 @@ using System.Collections.Generic;
 /// Animates a platform between multiple waypoints with configurable easing and animation modes.
 /// Educational component for creating moving platform behaviors without coding.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class PhysicsPlatformAnimator : MonoBehaviour
 {
     [System.Serializable]

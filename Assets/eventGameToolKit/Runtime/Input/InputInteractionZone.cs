@@ -11,6 +11,7 @@ using DG.Tweening;
 /// Common use: Doors, NPCs, item pickups, puzzle activations, point-and-click interactions.
 /// </summary>
 [RequireComponent(typeof(Collider))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputInteractionZone : MonoBehaviour
 {
     /// <summary>How interaction is initiated</summary>

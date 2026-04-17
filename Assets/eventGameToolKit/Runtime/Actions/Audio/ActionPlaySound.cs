@@ -7,6 +7,7 @@ using UnityEngine.Events;
 /// Supports randomized pitch and volume ranges for natural variation.
 /// Common use: impact sounds, footstep variation, collectible pickups, button feedback.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionPlaySound : MonoBehaviour
 {
     [Header("Audio Clips")]

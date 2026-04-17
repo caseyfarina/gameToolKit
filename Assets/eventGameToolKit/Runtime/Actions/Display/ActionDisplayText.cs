@@ -10,6 +10,7 @@ using UnityEngine.Events;
 /// Creates its own Canvas and TextMeshProUGUI at runtime - no manual UI setup required.
 /// Common use: Tutorial hints, dialogue systems, notification messages, score popups, or objective updates.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionDisplayText : MonoBehaviour
 {
     [Header("Text Settings")]

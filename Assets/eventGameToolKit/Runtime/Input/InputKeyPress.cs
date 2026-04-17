@@ -7,6 +7,7 @@ using UnityEngine.Events;
 /// Detects when a specific keyboard key is pressed and fires an event.
 /// Common use: Ability activation, debug commands, door opening triggers, or custom input bindings.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputKeyPress : MonoBehaviour
 {
 

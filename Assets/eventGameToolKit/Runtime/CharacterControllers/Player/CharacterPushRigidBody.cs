@@ -7,6 +7,7 @@ using UnityEngine.Events;
 /// Common use: Pushing crates, opening doors with physics, interacting with movable objects.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/character-controllers.html")]
 public class CharacterPushRigidBody : MonoBehaviour
 {
     [Header("Push Settings")]

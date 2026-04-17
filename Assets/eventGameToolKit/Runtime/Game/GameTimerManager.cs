@@ -8,6 +8,7 @@ using TMPro;
 /// Enable Show UI for a text clock display and/or Show Bar for a fill bar — both support gradient color mapping over time.
 /// Common use: Level time limits, speedrun timers, cooldown indicators, wave spawn timers, or challenge countdowns.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/ui.html")]
 public class GameTimerManager : MonoBehaviour
 {
     /// <summary>

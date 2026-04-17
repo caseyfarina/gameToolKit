@@ -17,6 +17,7 @@ using UnityEngine.Events;
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(PlayerInput))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/character-controllers.html")]
 public class CharacterControllerFP : MonoBehaviour
 {
     [Header("Movement Settings")]

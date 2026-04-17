@@ -8,7 +8,7 @@ using UnityEngine.Events;
 /// Common use: Impact damage systems, collision-triggered events, breakable objects, or force-based interactions.
 /// </summary>
 [RequireComponent(typeof(Collider))]
-[HelpURL("https://docs.unity3d.com/Manual/CollidersOverview.html")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 [AddComponentMenu("Teaching/Input/Input Collision Enter")]
 public class InputCollisionEnter : MonoBehaviour
 {

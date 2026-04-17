@@ -6,6 +6,7 @@ using UnityEngine.Events;
 /// allowing students to switch between different facial animation sequences.
 /// Perfect for switching between expressions, dialogue states, and reactions.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionDecalSequenceLibrary : MonoBehaviour
 {
     [Header("Sequence Library")]

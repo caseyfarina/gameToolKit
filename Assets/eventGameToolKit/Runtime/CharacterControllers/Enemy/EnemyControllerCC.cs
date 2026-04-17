@@ -6,6 +6,7 @@ using UnityEngine.Events;
 /// Common use: Patrolling enemies, chase sequences, monster AI, or competitive racing opponents.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/character-controllers.html")]
 public class EnemyControllerCC : MonoBehaviour
 {
     [Header("Movement Settings")]

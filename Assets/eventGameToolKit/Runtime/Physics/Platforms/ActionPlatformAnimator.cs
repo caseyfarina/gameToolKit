@@ -6,6 +6,7 @@ using System.Collections.Generic;
 /// Animates objects between multiple waypoint positions with loop and ping-pong modes.
 /// Common use: Moving platforms, elevators, patrol routes, floating islands, or rotating mechanisms.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionPlatformAnimator : MonoBehaviour
 {
     [System.Serializable]

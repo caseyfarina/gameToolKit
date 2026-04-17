@@ -9,6 +9,7 @@ using UnityEngine.Events;
 /// as public methods for UnityEvent wiring.
 /// Common use: Floating collectibles, ambient prop oscillation, idle enemy drift, drifting obstacles.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionRandomMotion : MonoBehaviour
 {
     public enum MotionSpace

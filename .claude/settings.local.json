@@ -1,5 +1,9 @@
 {
   "permissions": {
+    "additionalDirectories": [
+      "C:\\Users\\casey\\Documents\\unityProjects\\egtkWorkingProject\\egtk-docs",
+      "C:\\Users\\casey\\Documents\\unityProjects\\egtkWorkingProject\\eventGameToolKit-Package"
+    ],
     "allow": [
       "Bash(git add:*)",
       "Bash(cp:*)",
@@ -26,7 +30,35 @@
       "Bash(git push:*)",
       "Bash(where:*)",
       "Bash(pip install:*)",
-      "Bash(python -m uv:*)"
+      "Bash(python -m uv:*)",
+      "Skill(schedule)",
+      "Bash(echo \"Exit: $?\")",
+      "mcp__coplay-mcp__get_unity_editor_state",
+      "mcp__coplay-mcp__create_game_object",
+      "mcp__coplay-mcp__list_unity_project_roots",
+      "mcp__coplay-mcp__set_unity_project_root",
+      "mcp__coplay-mcp__get_unity_logs",
+      "mcp__plugin_figma_figma__whoami",
+      "mcp__plugin_figma_figma__create_new_file",
+      "mcp__plugin_figma_figma__use_figma",
+      "mcp__plugin_figma_figma__get_screenshot",
+      "WebFetch(domain:caseyfarina.github.io)",
+      "Bash(mv index.html intro.html)",
+      "Bash(mkdir -p examples)",
+      "WebFetch(domain:www.informationisbeautifulawards.com)",
+      "Bash(xargs grep:*)",
+      "Bash(git:*)",
+      "Bash(ls -1 /c/Users/casey/Documents/unityProjects/egtkWorkingProject/gameToolKit/Assets/eventGameToolKit/Runtime/Game/*.cs)",
+      "Bash(echo \"Exit code: $?\")",
+      "mcp__coplay-mcp__open_scene",
+      "Skill(update-config)",
+      "mcp__coplay-mcp__list_game_objects_in_hierarchy",
+      "mcp__coplay-mcp__get_game_object_info",
+      "mcp__coplay-mcp__set_property",
+      "mcp__coplay-mcp__parent_game_object",
+      "mcp__coplay-mcp__add_component",
+      "mcp__coplay-mcp__add_persistent_listener",
+      "mcp__coplay-mcp__save_scene"
     ],
     "deny": [],
     "ask": []

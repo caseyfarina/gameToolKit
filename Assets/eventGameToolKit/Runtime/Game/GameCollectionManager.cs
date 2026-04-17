@@ -40,6 +40,7 @@ public class CollectionThreshold
 ///
 /// Common use: Score systems, collectible counters, resource tracking, or objective progress meters.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/examples/collection.html")]
 public class GameCollectionManager : MonoBehaviour
 {
     /// <summary>

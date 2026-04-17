@@ -6,6 +6,7 @@ using Unity.Cinemachine;
 /// Switches between Cinemachine virtual cameras by name, ensuring only one is active at a time.
 /// Common use: Cutscene transitions, gameplay camera angles, boss fight cameras, or cinematic sequences.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class GameCameraManager : MonoBehaviour
 {
     [System.Serializable]

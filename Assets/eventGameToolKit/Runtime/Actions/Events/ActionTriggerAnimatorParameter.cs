@@ -17,6 +17,7 @@ public enum AnimatorParameterType
 /// Can set Triggers, Bools, Ints, or Floats on an Animator Controller.
 /// Common use: Interact buttons triggering different animations at different locations (open door, pull lever, pick up item).
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionTriggerAnimatorParameter : MonoBehaviour
 {
     [Header("Animator Setup")]

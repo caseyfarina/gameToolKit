@@ -9,6 +9,7 @@ using DG.Tweening;
 /// Receives data from Game Managers via UnityEvents - does NOT manage game state itself.
 /// Enable editor preview to see and adjust UI layout before runtime.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/ui.html")]
 public class GameUIManager : MonoBehaviour
 {
     [Header("UI Element Toggles")]

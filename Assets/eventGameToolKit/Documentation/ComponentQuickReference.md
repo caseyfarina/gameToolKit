@@ -52,6 +52,7 @@ All components work the same way: wire them together using **UnityEvents** in th
 | **ActionDecalSequenceLibrary** | Switches between multiple decal sequences | Character with multiple animation states |
 | **ActionBlinkDecal** | Automatically blinks a character's eye decal | Any character that needs blinking |
 | **ActionToggle** | Flips the active state of a list of GameObjects; each object flips independently. AllOn() and AllOff() force a known state. | Show/hide groups, toggle hazards, switch between panels |
+| **ActionDestroyObject** | Destroys one or more GameObjects with an optional delay. Fires onBeforeDestroy first (use for effects). No targets = destroys self. | Click to remove, death cleanup, collectible removal |
 
 ---
 

@@ -6,6 +6,7 @@ using DG.Tweening;
 /// Animates material emission intensity using a configurable animation curve.
 /// Common use: Glowing teleporters, charging effects, pulsing pickups, alert indicators.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionEmissionAnimation : MonoBehaviour
 {
     [Header("Target")]

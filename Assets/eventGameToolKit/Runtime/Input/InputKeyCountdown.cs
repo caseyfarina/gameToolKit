@@ -9,6 +9,7 @@ using TMPro;
 /// Counts down each time a key is pressed, triggering an event when the countdown reaches zero.
 /// Common use: Multi-press unlock sequences, button mashing challenges, or limited-use abilities.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputKeyCountdown : MonoBehaviour
 {
 

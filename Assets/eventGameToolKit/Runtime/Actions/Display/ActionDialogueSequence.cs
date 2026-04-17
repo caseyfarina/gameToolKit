@@ -58,6 +58,7 @@ public struct DecisionChoice
 /// <summary>
 /// Streamlined dialogue system that handles sequential playback using a separate UI controller and DOTween for animation.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/dialogue.html")]
 public class ActionDialogueSequence : MonoBehaviour
 {
     // Keeping enums here for public access and Inspector use

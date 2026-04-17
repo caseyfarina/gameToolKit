@@ -7,6 +7,7 @@ using DG.Tweening;
 /// Designed to be placed on a child GameObject of the player or any rotating object.
 /// Common use: Bullet spawners, magic projectiles, arrows, rockets, or any forward-firing projectile system.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionSpawnProjectile : MonoBehaviour
 {
     [Header("Projectile Settings")]

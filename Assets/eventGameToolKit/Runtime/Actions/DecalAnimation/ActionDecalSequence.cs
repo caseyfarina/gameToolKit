@@ -23,6 +23,7 @@ public struct MaterialFrame
 /// Students can build custom animation sequences by adding material frames in the Inspector.
 /// </summary>
 [RequireComponent(typeof(DecalProjector))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionDecalSequence : MonoBehaviour
 {
     [Header("Material Sequence")]

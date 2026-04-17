@@ -6,6 +6,7 @@ using UnityEngine.Events;
 /// Detects when tagged objects enter, exit, or remain in a 3D trigger zone with optional continuous damage.
 /// Common use: Damage zones, checkpoints, area triggers, hazard areas, or proximity-based events.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputTriggerZone : MonoBehaviour
 {
     [Header("Trigger Detection")]

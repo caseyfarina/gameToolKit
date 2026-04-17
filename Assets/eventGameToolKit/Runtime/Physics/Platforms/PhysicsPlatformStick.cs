@@ -8,6 +8,7 @@ using UnityEditor;
 /// Common use: Players on elevators, objects on conveyor belts, characters on moving trains, or rotating platforms.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class PhysicsPlatformStick : MonoBehaviour
 {
     [Header("Platform Detection")]

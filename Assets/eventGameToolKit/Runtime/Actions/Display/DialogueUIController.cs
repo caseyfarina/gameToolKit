@@ -7,6 +7,7 @@ using TMPro;
 /// Decoupled from the main dialogue playback logic.
 /// </summary>
 [RequireComponent(typeof(ActionDialogueSequence))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/dialogue.html")]
 public class DialogueUIController : MonoBehaviour
 {
     // Cached values (moved from main script)

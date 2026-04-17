@@ -169,11 +169,12 @@ When adding, renaming, or modifying scripts, update these files before committin
 
 | What changed | Files to update |
 |---|---|
-| New script added | `runtime-structure.md`, `ComponentQuickReference.md`, CLAUDE.md script count |
+| New script added | `runtime-structure.md`, `ComponentQuickReference.md`, CLAUDE.md script count, add `[HelpURL]` attribute |
 | Script renamed or removed | `runtime-structure.md`, `ComponentQuickReference.md`, `custom-editors.md` (if applicable) |
 | New `[SerializeField]` on a script with a custom editor | The editor script (see [Custom Editors Guide](.claude/docs/custom-editors.md)) |
 | New custom editor created | `custom-editors.md` table |
 | Public API changed | XML doc comments in the script |
+| New documentation page published | Update `[HelpURL]` on all components that page covers |
 
 **`ComponentQuickReference.md`** (`Assets/eventGameToolKit/Documentation/`) is the student-facing one-page guide. It must stay current — students use it to discover what components exist.
 
@@ -194,6 +195,21 @@ See **[Custom Editor Scripts Guide](.claude/docs/custom-editors.md)** for the co
 - **UI**: TextMeshPro (`TMPro` namespace)
 - **Events**: UnityEvents for all student-facing interactions
 - **Documentation**: XML comments required for all public methods and UnityEvents
+
+### Inspector Help Button (`[HelpURL]`)
+
+**ALL educational scripts MUST have a `[HelpURL]` attribute** so the `?` button in the Inspector links to the docs site.
+
+```csharp
+[HelpURL("https://caseyfarina.github.io/egtk-docs/health.html")]
+public class GameHealthManager : MonoBehaviour
+```
+
+- If the component has a dedicated deep-dive page, link to that page directly.
+- If no dedicated page exists yet, link to the index: `https://caseyfarina.github.io/egtk-docs/`
+- When a new documentation page is published, update all relevant components to point to it.
+
+The `[HelpURL]` line goes **after** any `[RequireComponent]` attributes and **before** `public class`.
 
 ### XML Documentation Requirement
 
@@ -339,9 +355,9 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**65 Educational Scripts (100% XML Documented) | 28 Custom Editors**
+**66 Educational Scripts (100% XML Documented) | 28 Custom Editors**
 - 12 Input components
-- 21 Action components
+- 22 Action components
 - 7 Physics components
 - 15 Game managers (includes GameSceneManager, SpawnPoint, GameStoreManager, GameFlagManager, GameFlagListener)
 - 2 Puzzle components

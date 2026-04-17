@@ -7,6 +7,7 @@ using UnityEngine.Events;
 /// Works with GameCheckpointManager to restore position and optionally game state.
 /// Common use: Death respawn, fall zone recovery, manual respawn button, puzzle reset.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionRespawnPlayer : MonoBehaviour
 {
     [Header("Respawn Settings")]

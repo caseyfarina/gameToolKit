@@ -10,6 +10,7 @@ using DG.Tweening;
 /// Common use: Scene transition coverage, hiding checkpoint restoration, smooth restart transitions.
 /// </summary>
 [RequireComponent(typeof(Image))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class FadeInFromBlackOnRestart : MonoBehaviour
 {
     [Header("Fade Settings")]

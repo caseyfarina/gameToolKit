@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 /// Manages game pause, victory states, and automatically coordinates with timers across the scene.
 /// Common use: Pause menu systems, game over screens, victory conditions, or level completion handlers.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class GameStateManager : MonoBehaviour
 {
     [Header("Pause Settings")]
