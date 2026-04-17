@@ -53,6 +53,22 @@ public class GameInventoryManagerEditor : Editor
         EditorGUILayout.LabelField("Inventory Slots", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("slots"), true);
 
+        // Combination Check (Optional)
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Combination Check (Optional)", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("combinationRequirements"), new GUIContent("Requirements"), true);
+        SerializedProperty combReqs = serializedObject.FindProperty("combinationRequirements");
+        if (combReqs.arraySize > 0)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("onCombinationMet"), new GUIContent("On Combination Met"));
+            EditorGUI.indentLevel--;
+        }
+        else
+        {
+            EditorGUILayout.HelpBox("Add requirements above, then wire On Combination Met to respond when all are satisfied.", MessageType.None);
+        }
+
         // UI Cards (Optional)
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("UI Cards (Optional)", EditorStyles.boldLabel);

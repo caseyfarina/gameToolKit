@@ -12,6 +12,9 @@ using UnityEngine.Events;
 [HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ActionDestroyObject : MonoBehaviour
 {
+    [Tooltip("Automatically call DestroyObject when this GameObject is enabled. Useful for spawned effects that should clean themselves up.")]
+    [SerializeField] private bool destroyOnStart = false;
+
     [Tooltip("Objects to destroy. If empty, destroys the GameObject this component is on.")]
     [SerializeField] private List<GameObject> targets = new List<GameObject>();
 
@@ -23,6 +26,12 @@ public class ActionDestroyObject : MonoBehaviour
     /// Fires just before destruction (use for particle effects, sounds, etc.)
     /// </summary>
     public UnityEvent onBeforeDestroy;
+
+    private void OnEnable()
+    {
+        if (destroyOnStart)
+            DestroyObject();
+    }
 
     /// <summary>
     /// Destroys the target objects (or this GameObject if no targets are set).

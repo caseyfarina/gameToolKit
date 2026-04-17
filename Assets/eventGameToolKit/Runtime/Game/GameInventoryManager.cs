@@ -5,6 +5,19 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
+/// One item requirement in a combination check. Pair with GameInventoryManager's onCombinationMet event.
+/// </summary>
+[System.Serializable]
+public class InventoryRequirement
+{
+    [Tooltip("Must match the Item Name of a slot in this manager")]
+    public string itemName;
+
+    [Tooltip("Minimum count needed to satisfy this requirement")]
+    public int requiredCount = 1;
+}
+
+/// <summary>
 /// A single inventory slot with a name, icon, capacity, and change events.
 /// Configure slots in the GameInventoryManager Inspector.
 /// </summary>
@@ -72,6 +85,16 @@ public class GameInventoryManager : MonoBehaviour
     [Tooltip("List of item slots - each tracks a different item type")]
     [SerializeField] private List<InventorySlot> slots = new List<InventorySlot> { new InventorySlot() };
 
+    [Header("Combination Check (Optional)")]
+    [Tooltip("Define required counts per item. onCombinationMet fires when every requirement is satisfied simultaneously.")]
+    [SerializeField] private List<InventoryRequirement> combinationRequirements = new List<InventoryRequirement>();
+
+    /// <summary>
+    /// Fires when all combination requirements are met simultaneously. Re-fires if the combination
+    /// is broken (items used) and then met again.
+    /// </summary>
+    public UnityEvent onCombinationMet;
+
     [Header("UI Cards (Optional)")]
     [Tooltip("Enable to create a self-contained row of UI cards, one per slot")]
     [SerializeField] private bool showUI = false;
@@ -102,6 +125,7 @@ public class GameInventoryManager : MonoBehaviour
 
     // Runtime UI references
     private Canvas uiCanvas;
+    private bool combinationMet = false;
 
     private void SyncSlotToGameData(int slotIndex, InventorySlot slot)
     {
@@ -166,6 +190,8 @@ public class GameInventoryManager : MonoBehaviour
 
             if (slot.currentCount >= slot.maxCapacity && previous < slot.maxCapacity)
                 slot.onFull.Invoke();
+
+            CheckCombination();
         }
     }
 
@@ -187,6 +213,8 @@ public class GameInventoryManager : MonoBehaviour
 
             if (slot.currentCount <= 0 && previous > 0)
                 slot.onEmpty.Invoke();
+
+            CheckCombination();
         }
     }
 
@@ -255,6 +283,27 @@ public class GameInventoryManager : MonoBehaviour
     // ──────────────────────────────────────────────
     // Private helpers
     // ──────────────────────────────────────────────
+
+    private void CheckCombination()
+    {
+        if (combinationRequirements.Count == 0) return;
+
+        bool allMet = true;
+        foreach (var req in combinationRequirements)
+        {
+            int idx = FindSlotIndex(req.itemName);
+            if (idx < 0 || slots[idx].currentCount < req.requiredCount)
+            {
+                allMet = false;
+                break;
+            }
+        }
+
+        if (allMet && !combinationMet)
+            onCombinationMet.Invoke();
+
+        combinationMet = allMet;
+    }
 
     private bool IsValidIndex(int index)
     {
