@@ -41,7 +41,14 @@ public class GameCollectionManagerEditor : Editor
         // Scene Persistence
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Scene Persistence", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("persistAcrossScenes"), new GUIContent("Persist Across Scenes"));
+        SerializedProperty persistProp = serializedObject.FindProperty("persistAcrossScenes");
+        EditorGUILayout.PropertyField(persistProp, new GUIContent("Persist Across Scenes"));
+        if (persistProp.boolValue)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("onRestartBehavior"), new GUIContent("On Restart"));
+            EditorGUI.indentLevel--;
+        }
 
         // Value Settings
         EditorGUILayout.Space();

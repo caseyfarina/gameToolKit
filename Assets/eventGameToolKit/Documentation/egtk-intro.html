@@ -739,6 +739,19 @@ const GOALS = [
     delay: '.2s',
   },
   {
+    title:    'add a shop where the player can buy upgrades',
+    accent:   COLORS.green,
+    category: 'Game Manager',
+    src:      { label: 'InputTriggerZone', color: COLORS.teal },
+    tgt:      { label: 'GameStoreManager', color: COLORS.green },
+    steps: [
+      'Add GameCollectionManager for currency (coins, etc.)',
+      'Add GameStoreManager, assign Currency Source',
+      'Set Open Mode → Event Only, wire trigger → OpenStore()',
+    ],
+    delay: '.3s',
+  },
+  {
     title:    'create random outcomes (loot, varied responses)',
     accent:   COLORS.purple,
     category: 'Random',
@@ -816,6 +829,9 @@ const TABLES = [
       ['GameCameraManager',     'Switches between Cinemachine cameras by name',            'Multiple angles, cutscenes'],
       ['GameUIManager',         'Connects managers to HUD UI elements',                    'HUD wiring'],
       ['GameSceneManager',      'Loads scenes additively with spawn point coordination',   'Multi-level games and hub worlds'],
+      ['GameStoreManager',      'In-game shop with buy buttons, balance display, and persistent unlocks', 'Upgrade shops, vendors, item stores'],
+      ['GameFlagManager',       'Named boolean flags that persist across scene loads',     'One-time pickups, doors opened, events seen'],
+      ['GameFlagListener',      'Fires events based on a flag state on scene load',        'Restore world state when returning to a scene'],
     ],
   },
   {

@@ -119,6 +119,20 @@ public class ActionAutoSpawner : MonoBehaviour
     }
 
     /// <summary>
+    /// Spawns a single object immediately, respecting active and total limits
+    /// </summary>
+    public void SpawnSingle() => SpawnObject();
+
+    /// <summary>
+    /// Spawns the specified number of objects immediately, respecting active and total limits
+    /// </summary>
+    public void SpawnMultiple(int count)
+    {
+        for (int i = 0; i < count; i++)
+            SpawnObject();
+    }
+
+    /// <summary>
     /// Manually triggers a single spawn
     /// </summary>
     public void SpawnObject()

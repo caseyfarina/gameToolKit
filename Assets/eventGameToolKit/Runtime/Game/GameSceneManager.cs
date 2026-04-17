@@ -116,13 +116,41 @@ public class GameSceneManager : MonoBehaviour
     #region Scene Loading Methods
 
     /// <summary>
-    /// Load a scene by name. Player will spawn at the default SpawnPoint.
+    /// Load a scene by name as a progression (values persist to the new scene).
+    /// Player will spawn at the default SpawnPoint.
     /// Wire this to UnityEvents for no-code scene transitions.
     /// </summary>
     /// <param name="sceneName">Name of the scene to load (must be in Build Settings)</param>
     public void LoadScene(string sceneName)
     {
+        GameData.SetIsRestart(false);
         LoadSceneAtSpawnPoint(sceneName, "");
+    }
+
+    /// <summary>
+    /// Restart a scene after death or failure. Persistent managers with
+    /// Restart Behavior set to Reset To Default will return to their Inspector values.
+    /// Wire this to onDeath or game-over events.
+    /// </summary>
+    /// <param name="sceneName">Name of the scene to restart (must be in Build Settings)</param>
+    public void RestartScene(string sceneName)
+    {
+        GameData.SetIsRestart(true);
+        LoadSceneAtSpawnPoint(sceneName, "");
+    }
+
+    /// <summary>
+    /// Restart the current scene after death or failure.
+    /// </summary>
+    public void RestartCurrentScene()
+    {
+        if (string.IsNullOrEmpty(currentLevelScene))
+        {
+            Debug.LogWarning("GameSceneManager: No current level scene to restart.");
+            return;
+        }
+
+        RestartScene(currentLevelScene);
     }
 
     /// <summary>
@@ -143,7 +171,8 @@ public class GameSceneManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Reload the current level scene.
+    /// Reload the current level scene as a progression (values persist).
+    /// To restart after death, use RestartCurrentScene() instead.
     /// </summary>
     public void ReloadCurrentScene()
     {
@@ -169,6 +198,7 @@ public class GameSceneManager : MonoBehaviour
             return;
         }
 
+        GameData.SetIsRestart(false);
         StartCoroutine(LoadSceneSingleCoroutine(sceneName));
     }
 

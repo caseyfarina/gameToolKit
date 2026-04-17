@@ -1093,6 +1093,7 @@ MonoBehaviour:
   decisionImageSize: {x: 80, y: 80}
   decisionFontSize: 36
   decisionButtonOpacity: 0.9
+  fpController: {fileID: 0}
   onDialogueStart:
     m_PersistentCalls:
       m_Calls: []
@@ -1504,6 +1505,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 982044181878859162, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1729283555}
+    - targetCorrespondingSourceObject: {fileID: 982044181878859162, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1729283556}
   m_SourcePrefab: {fileID: 100100000, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
 --- !u!1 &1237553663
 GameObject:
@@ -6385,28 +6389,64 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8cec22a870217a64f956943aeb1243ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EventGameToolkit.Runtime::GameCollectionManager
+  persistAcrossScenes: 0
   currentValue: 0
   minValue: 0
   maxValue: 0
-  threshold: 8
-  onCountUpToThreshold:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1318718273}
-        m_TargetAssemblyTypeName: GameStateManager, EventGameToolkit.Runtime
-        m_MethodName: Victory
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  onCountDownToThreshold:
-    m_PersistentCalls:
-      m_Calls: []
+  thresholds:
+  - value: 10
+    onCrossedUp:
+      m_PersistentCalls:
+        m_Calls: []
+    onCrossedDown:
+      m_PersistentCalls:
+        m_Calls: []
+  showUI: 0
+  labelPrefix: 'Score: '
+  textPosition: {x: 60, y: -40}
+  fontSize: 40
+  textAlignment: 513
+  textColor: {r: 0.6, g: 0.85, b: 0.92, a: 1}
+  customFont: {fileID: 0}
+  valueAnimation: 1
+  animationDuration: 0.3
+  animationStrength: 0.2
+  showBar: 0
+  barPosition: {x: 60, y: -80}
+  barSize: {x: 200, y: 20}
+  barBackgroundColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.8}
+  barGradient:
+    serializedVersion: 2
+    key0: {r: 0.9, g: 0.15, b: 0.1, a: 1}
+    key1: {r: 1, g: 0.95, b: 0.2, a: 1}
+    key2: {r: 0.25, g: 0.9, b: 0.1, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 32768
+    ctime2: 65535
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 3
+    m_NumAlphaKeys: 2
+  animateBar: 1
+  barAnimationDuration: 0.2
   onValueChanged:
     m_PersistentCalls:
       m_Calls:
@@ -6824,6 +6864,7 @@ MonoBehaviour:
   dodgeSpeed: 20
   dodgeCooldown: 1
   allowAirDodge: 0
+  dodgeMode: 0
   rotationSmoothTime: 0.12
   controller: {fileID: 0}
   gravity: -20
@@ -6875,6 +6916,31 @@ MonoBehaviour:
   onSpawnPointUsed:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1818360608 &1729283556
+PositionConstraint:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1729283547}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Weight: 1
+  m_TranslationAtRest: {x: 2.1838, y: 2.31, z: 3.95466}
+  m_TranslationOffset: {x: 0, y: 0, z: 0}
+  m_AffectTranslationX: 0
+  m_AffectTranslationY: 0
+  m_AffectTranslationZ: 1
+  m_Active: 1
+  m_IsLocked: 1
+  m_Sources:
+  - sourceTransform: {fileID: 1729283562}
+    weight: 1
+--- !u!4 &1729283562 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7954006609252710534, guid: 0db4a24fa517ac045baebf3cda971978, type: 3}
+  m_PrefabInstance: {fileID: 1231405135}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1735775231
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -70,6 +70,7 @@ All components work the same way: wire them together using **UnityEvents** in th
 | **GameCameraManager** | Switches between Cinemachine cameras by name | Multiple camera angles, cutscenes |
 | **GameUIManager** | Connects health, score, and timer values to UI display elements | HUD wired to existing UI objects |
 | **GameSceneManager** | Loads scenes with transitions and spawn point selection | Multi-level games, hub worlds |
+| **GameStoreManager** | In-game store with purchasable items, affordability feedback, and pause-on-open. Connect to a GameCollectionManager for currency. | Upgrade shops, unlock screens, item vendors |
 
 ---
 

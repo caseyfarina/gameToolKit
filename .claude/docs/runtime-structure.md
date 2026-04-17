@@ -17,7 +17,7 @@ Runtime/
 ├── CharacterControllers/ # Player and enemy controllers (7 scripts)
 │   ├── Enemy/           # AI enemy controllers
 │   └── Player/          # Player controllers
-├── Game/                # Game managers (11 scripts)
+├── Game/                # Game managers (12 scripts)
 ├── Input/               # Event source components (9 scripts)
 ├── Interfaces/          # Core interfaces (1 interface)
 ├── Variables/           # ScriptableObject variables (2 scripts)
@@ -533,6 +533,21 @@ Manager systems for health, score, audio, state, etc.
 - Static RequestSpawnId()/ClearRequestedSpawnId() for GameSceneManager coordination
 - Editor gizmos: player silhouette, direction arrow, offset indicator
 - 1 UnityEvent: onPlayerSpawned
+
+### GameStoreManager.cs
+- In-game store connected to a GameCollectionManager for currency
+- Expandable list of StoreItem (name, icon, price, oneTimePurchase, onPurchased, onCannotAfford)
+- KeyCode field (default: B) to open/close — mirrors GameStateManager.pauseKey pattern
+- Pauses game (Time.timeScale=0) on open; restores on close
+- Optional CharacterControllerFP reference for cursor lock/unlock (ActionDialogueSequence pattern)
+- Optional GameAudioManager + storeMusic/previousMusic clips for music crossfade
+- Self-contained panel UI (sortingOrder=20): title bar, scrollable item rows, balance display
+- Per-row affordability feedback: greyed rows + disabled buttons for items player can't afford
+- One-time purchase items show "SOLD" after purchase and stay disabled
+- Full styling via Inspector: panel/row/button sprites and colors, icon size, fonts, spacing
+- Editor preview button (HideFlags.DontSave canvas in scene view)
+- 3 manager UnityEvents: onStoreOpened, onStoreClosed, onAnyPurchase
+- 2 per-item UnityEvents: onPurchased, onCannotAfford
 
 ---
 

@@ -1,4 +1,16 @@
+using System.Collections.Generic;
 using UnityEngine;
+
+/// <summary>
+/// Controls what happens to a manager's persisted value when a scene is loaded as a restart.
+/// </summary>
+public enum RestartBehavior
+{
+    /// <summary>Clear the persisted value so the manager starts from its Inspector default.</summary>
+    ResetToDefault,
+    /// <summary>Keep the persisted value even on restart (e.g. permanent store upgrades).</summary>
+    KeepValue
+}
 
 /// <summary>
 /// Internal runtime store for cross-scene persistent values.
@@ -20,6 +32,8 @@ public class GameData : ScriptableObject
     internal const int COLLECTION_SLOT      = 1;
     internal const int INVENTORY_SLOT_START = 2;
     internal const int INVENTORY_SLOT_COUNT = 20;   // slots 2–21
+    internal const int STORE_SLOT_START     = 22;
+    internal const int STORE_SLOT_COUNT     = 20;   // slots 22–41
     internal const int TIMER_FLOAT_SLOT     = 0;
 
     private const int INT_CAPACITY   = 100;
@@ -27,6 +41,7 @@ public class GameData : ScriptableObject
 
     // ── Singleton ─────────────────────────────────────────────────────
     private static GameData _instance;
+    private static bool _isRestart;
 
     /// <summary>Internal accessor used by the manager scripts.</summary>
     internal static GameData Instance
@@ -39,12 +54,19 @@ public class GameData : ScriptableObject
         }
     }
 
+    /// <summary>True when the current scene was loaded via RestartScene — managers use this to decide whether to restore or reset.</summary>
+    internal static bool IsRestart => _isRestart;
+
+    /// <summary>Set by GameSceneManager before loading — true for restarts, false for progression.</summary>
+    internal static void SetIsRestart(bool value) { _isRestart = value; }
+
     // Reset the singleton at the start of every play session so values
     // return to each manager's own Inspector defaults.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void OnBeforeSceneLoad()
     {
-        _instance = null;
+        _instance  = null;
+        _isRestart = false;
     }
 
     private static void CreateInstance()
@@ -55,10 +77,11 @@ public class GameData : ScriptableObject
     }
 
     // ── Runtime storage ───────────────────────────────────────────────
-    [System.NonSerialized] private int[]  runtimeInts;
-    [System.NonSerialized] private bool[] intSet;       // true once a manager has written to a slot
+    [System.NonSerialized] private int[]   runtimeInts;
+    [System.NonSerialized] private bool[]  intSet;       // true once a manager has written to a slot
     [System.NonSerialized] private float[] runtimeFloats;
-    [System.NonSerialized] private bool[] floatSet;
+    [System.NonSerialized] private bool[]  floatSet;
+    [System.NonSerialized] private HashSet<string> _flags;
 
     private void Initialize()
     {
@@ -66,6 +89,7 @@ public class GameData : ScriptableObject
         intSet        = new bool[INT_CAPACITY];
         runtimeFloats = new float[FLOAT_CAPACITY];
         floatSet      = new bool[FLOAT_CAPACITY];
+        _flags        = new HashSet<string>();
     }
 
     // ── Integer API (internal) ────────────────────────────────────────
@@ -98,6 +122,30 @@ public class GameData : ScriptableObject
         runtimeInts[slot] = value;
         intSet[slot]      = true;
     }
+
+    /// <summary>
+    /// Clear an integer slot so the next read returns the manager's Inspector default.
+    /// </summary>
+    internal void ClearInt(int slot)
+    {
+        if (slot < 0 || slot >= INT_CAPACITY) return;
+        runtimeInts[slot] = 0;
+        intSet[slot]      = false;
+    }
+
+    // ── Flag API (internal) ───────────────────────────────────────────
+
+    /// <summary>Returns true if the named flag has been set this session.</summary>
+    internal bool HasFlag(string flagName) => _flags.Contains(flagName);
+
+    /// <summary>Sets a named flag.</summary>
+    internal void SetFlag(string flagName) => _flags.Add(flagName);
+
+    /// <summary>Clears a named flag.</summary>
+    internal void ClearFlag(string flagName) => _flags.Remove(flagName);
+
+    /// <summary>Clears all flags (used on restart).</summary>
+    internal void ClearAllFlags() => _flags.Clear();
 
     // ── Float API (internal) ──────────────────────────────────────────
 
