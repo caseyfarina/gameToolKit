@@ -56,8 +56,11 @@ public class CharacterControllerCC : MonoBehaviour
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float maxVelocity = 8f;
-    [Tooltip("Acceleration and deceleration rate")]
-    [SerializeField] private float speedChangeRate = 10.0f;
+    [Tooltip("0 = instant stop, 1 = very icy. Default 0.5 feels like standard game movement.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float slideAmount = 0.5f;
+
+    private float Deceleration => 60f * Mathf.Pow(30f, -slideAmount);
     [SerializeField] private float airControlFactor = 0.5f;
 
     [Header("Sprint Settings (Optional)")]
@@ -638,6 +641,8 @@ public class CharacterControllerCC : MonoBehaviour
             else
             {
                 isDodging = false;
+                velocity.x = 0f;
+                velocity.z = 0f;
             }
         }
     }
@@ -667,7 +672,7 @@ public class CharacterControllerCC : MonoBehaviour
             Vector3 newHorizontalVelocity = Vector3.MoveTowards(
                 currentHorizontalVelocity,
                 targetVelocity,
-                speedChangeRate * Time.fixedDeltaTime
+                Deceleration * Time.fixedDeltaTime
             );
 
             if (newHorizontalVelocity.magnitude > effectiveMaxVelocity)
@@ -688,7 +693,7 @@ public class CharacterControllerCC : MonoBehaviour
             Vector3 newHorizontalVelocity = Vector3.MoveTowards(
                 currentHorizontalVelocity,
                 Vector3.zero,
-                speedChangeRate * Time.fixedDeltaTime
+                Deceleration * Time.fixedDeltaTime
             );
 
             velocity.x = newHorizontalVelocity.x;
@@ -870,7 +875,7 @@ public class CharacterControllerCC : MonoBehaviour
     public void SetMoveSpeed(float newSpeed) => moveSpeed = newSpeed;
     public void SetJumpHeight(float newHeight) => jumpHeight = newHeight;
     public void SetJumpTimeout(float newTimeout) => jumpTimeout = newTimeout;
-    public void SetSpeedChangeRate(float newRate) => speedChangeRate = newRate;
+    public void SetSlideAmount(float amount) => slideAmount = Mathf.Clamp01(amount);
     public void SetMaxVelocity(float newMax) => maxVelocity = newMax;
     public void SetRotationSmoothTime(float newSmoothTime) => rotationSmoothTime = newSmoothTime;
     public void SetDodgeDistance(float newDistance) => dodgeDistance = newDistance;

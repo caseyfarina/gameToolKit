@@ -353,7 +353,7 @@ Controllers for player and enemy characters.
 - **Auto-configures**: PlayerInput with "Player" action map via Reset()
 - **Spawn System**: Checks for ISpawnPointProvider in Awake() before physics runs
 - Spawns at checkpoint position BEFORE scene physics initializes (eliminates race conditions)
-- Smooth movement with acceleration/deceleration (speedChangeRate)
+- Smooth movement with configurable slide feel (slideAmount: 0 = instant stop, 1 = icy)
 - Optional sprint functionality with speed multiplier
 - Height-based jumping with physics formula and anti-spam timeout
 - SmoothDampAngle rotation for natural turning

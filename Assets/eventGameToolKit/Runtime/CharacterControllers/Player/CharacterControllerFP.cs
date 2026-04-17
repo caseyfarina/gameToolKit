@@ -32,10 +32,14 @@ public class CharacterControllerFP : MonoBehaviour
     [SerializeField] private float maxVelocity = 6f;
 
     /// <summary>
-    /// How quickly the character accelerates and decelerates
+    /// How much the character slides after releasing movement input. 0 = instant stop, 1 = very icy.
     /// </summary>
-    [Tooltip("Acceleration and deceleration rate")]
-    [SerializeField] private float speedChangeRate = 10.0f;
+    [Tooltip("0 = instant stop, 1 = very icy. Default 0.5 feels like standard game movement.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float slideAmount = 0.5f;
+
+    // Derived deceleration: exponential curve so 0.5 matches classic feel (~11 units/s²)
+    private float Deceleration => 60f * Mathf.Pow(30f, -slideAmount);
 
     /// <summary>
     /// Multiplier for movement control while airborne (0 = no air control, 1 = full)
@@ -863,6 +867,8 @@ public class CharacterControllerFP : MonoBehaviour
             else
             {
                 isDodging = false;
+                velocity.x = 0f;
+                velocity.z = 0f;
             }
         }
     }
@@ -901,7 +907,7 @@ public class CharacterControllerFP : MonoBehaviour
             Vector3 newHorizontalVelocity = Vector3.MoveTowards(
                 currentHorizontalVelocity,
                 targetVelocity,
-                speedChangeRate * Time.fixedDeltaTime
+                Deceleration * Time.fixedDeltaTime
             );
 
             if (newHorizontalVelocity.magnitude > effectiveMaxVelocity)
@@ -922,7 +928,7 @@ public class CharacterControllerFP : MonoBehaviour
             Vector3 newHorizontalVelocity = Vector3.MoveTowards(
                 currentHorizontalVelocity,
                 Vector3.zero,
-                speedChangeRate * Time.fixedDeltaTime
+                Deceleration * Time.fixedDeltaTime
             );
 
             velocity.x = newHorizontalVelocity.x;
@@ -1081,9 +1087,9 @@ public class CharacterControllerFP : MonoBehaviour
     public void SetJumpTimeout(float newTimeout) => jumpTimeout = newTimeout;
 
     /// <summary>
-    /// Sets the acceleration/deceleration rate
+    /// Sets the slide amount (0 = instant stop, 1 = very icy)
     /// </summary>
-    public void SetSpeedChangeRate(float newRate) => speedChangeRate = newRate;
+    public void SetSlideAmount(float amount) => slideAmount = Mathf.Clamp01(amount);
 
     /// <summary>
     /// Sets the maximum horizontal velocity
