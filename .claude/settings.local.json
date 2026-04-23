@@ -1,9 +1,5 @@
 {
   "permissions": {
-    "additionalDirectories": [
-      "C:\\Users\\casey\\Documents\\unityProjects\\egtkWorkingProject\\egtk-docs",
-      "C:\\Users\\casey\\Documents\\unityProjects\\egtkWorkingProject\\eventGameToolKit-Package"
-    ],
     "allow": [
       "Bash(git add:*)",
       "Bash(cp:*)",
@@ -58,9 +54,16 @@
       "mcp__coplay-mcp__parent_game_object",
       "mcp__coplay-mcp__add_component",
       "mcp__coplay-mcp__add_persistent_listener",
-      "mcp__coplay-mcp__save_scene"
+      "mcp__coplay-mcp__save_scene",
+      "Bash(python3 -c \"import sys,json; lines=sys.stdin.read\\(\\).strip\\(\\).split\\('\\\\n'\\); [print\\(json.loads\\(l\\).get\\('message',''\\)[:500] if 'message' in json.loads\\(l\\) else ''\\) for l in lines[-5:]]\")",
+      "Bash(python3 -c ' *)",
+      "Bash(node -e ' *)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\Users\\casey\\Documents\\unityProjects\\egtkWorkingProject\\egtk-docs",
+      "C:\\Users\\casey\\Documents\\unityProjects\\egtkWorkingProject\\eventGameToolKit-Package"
+    ]
   }
 }

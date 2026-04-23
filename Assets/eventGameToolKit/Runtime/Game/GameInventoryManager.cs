@@ -173,9 +173,14 @@ public class GameInventoryManager : MonoBehaviour
     // ──────────────────────────────────────────────
 
     /// <summary>
+    /// Adds 1 item to the slot at the given index, up to its maxCapacity. Use this overload in UnityEvents.
+    /// </summary>
+    public void Increment(int slotIndex) => Increment(slotIndex, 1);
+
+    /// <summary>
     /// Adds items to the slot at the given index, up to its maxCapacity
     /// </summary>
-    public void Increment(int slotIndex, int amount = 1)
+    public void Increment(int slotIndex, int amount)
     {
         if (!IsValidIndex(slotIndex)) return;
         InventorySlot slot = slots[slotIndex];
@@ -196,9 +201,14 @@ public class GameInventoryManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Removes 1 item from the slot at the given index, down to zero. Use this overload in UnityEvents.
+    /// </summary>
+    public void Decrement(int slotIndex) => Decrement(slotIndex, 1);
+
+    /// <summary>
     /// Removes items from the slot at the given index, down to zero
     /// </summary>
-    public void Decrement(int slotIndex, int amount = 1)
+    public void Decrement(int slotIndex, int amount)
     {
         if (!IsValidIndex(slotIndex)) return;
         InventorySlot slot = slots[slotIndex];
@@ -219,10 +229,15 @@ public class GameInventoryManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Uses 1 item from the slot if available. Use this overload in UnityEvents.
+    /// </summary>
+    public void UseItem(int slotIndex) => UseItem(slotIndex, 1);
+
+    /// <summary>
     /// Uses the specified number of items from the slot if available.
     /// Decrements the count and fires onChanged. Does nothing if not enough items.
     /// </summary>
-    public void UseItem(int slotIndex, int amount = 1)
+    public void UseItem(int slotIndex, int amount)
     {
         if (!IsValidIndex(slotIndex)) return;
         if (slots[slotIndex].currentCount >= amount)
@@ -243,18 +258,28 @@ public class GameInventoryManager : MonoBehaviour
     // ──────────────────────────────────────────────
 
     /// <summary>
+    /// Adds 1 item to the first slot whose itemName matches. Use this overload in UnityEvents.
+    /// </summary>
+    public void IncrementByName(string itemName) => IncrementByName(itemName, 1);
+
+    /// <summary>
     /// Adds items to the first slot whose itemName matches, up to its maxCapacity
     /// </summary>
-    public void IncrementByName(string itemName, int amount = 1)
+    public void IncrementByName(string itemName, int amount)
     {
         int index = FindSlotIndex(itemName);
         if (index >= 0) Increment(index, amount);
     }
 
     /// <summary>
+    /// Removes 1 item from the first slot whose itemName matches. Use this overload in UnityEvents.
+    /// </summary>
+    public void DecrementByName(string itemName) => DecrementByName(itemName, 1);
+
+    /// <summary>
     /// Removes items from the first slot whose itemName matches, down to zero
     /// </summary>
-    public void DecrementByName(string itemName, int amount = 1)
+    public void DecrementByName(string itemName, int amount)
     {
         int index = FindSlotIndex(itemName);
         if (index >= 0) Decrement(index, amount);

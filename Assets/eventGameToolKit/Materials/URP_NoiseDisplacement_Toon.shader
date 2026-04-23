@@ -187,12 +187,14 @@ Shader "Custom/URP_NoiseDisplacement_Toon"
             // Custom keywords
             #pragma multi_compile_local _ _DISPLACEMENT_ON
             #pragma shader_feature_local _EMISSION
+            #pragma multi_compile _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 
             #pragma vertex ToonVert
             #pragma fragment ToonFrag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
@@ -336,6 +338,22 @@ Shader "Custom/URP_NoiseDisplacement_Toon"
                 // Normal mapping
                 half3 normalTS = UnpackNormalScale(
                     SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, input.uv), _BumpScale);
+
+                // Apply DBuffer decals to albedo and normalTS before building normalWS
+                #if defined(_DBUFFER_MRT1) || defined(_DBUFFER_MRT2) || defined(_DBUFFER_MRT3)
+                {
+                    SurfaceData decalSurface = (SurfaceData)0;
+                    decalSurface.albedo    = albedo;
+                    decalSurface.normalTS  = normalTS;
+                    decalSurface.smoothness = 0.5;
+                    InputData decalInput = (InputData)0;
+                    decalInput.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
+                    ApplyDecalToSurfaceData(input.positionCS, decalSurface, decalInput);
+                    albedo   = decalSurface.albedo;
+                    normalTS = decalSurface.normalTS;
+                }
+                #endif
+
                 float sgn = input.tangentWS.w;
                 float3 bitangent = sgn * cross(input.normalWS, input.tangentWS.xyz);
                 half3x3 TBN = half3x3(input.tangentWS.xyz, bitangent, input.normalWS);

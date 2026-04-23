@@ -188,6 +188,30 @@ Some components have custom Inspector UI. When adding `[SerializeField]` fields 
 
 See **[Custom Editor Scripts Guide](.claude/docs/custom-editors.md)** for the complete list and workflow.
 
+### UnityEvent Inspector Visibility Rule
+
+Unity's event dropdown only shows public methods with **0 or 1 parameter**. Methods with 2+ parameters are invisible — even if extra parameters have C# default values.
+
+**The trap:** `public void Increment(int slotIndex, int amount = 1)` looks callable with one arg, but Unity's reflection sees 2 parameters and hides it entirely.
+
+**The fix:** Add a single-parameter overload that delegates to the full version:
+
+```csharp
+// Event-friendly (shows in Inspector)
+public void Increment(int slotIndex) => Increment(slotIndex, 1);
+
+// Full version (code use only)
+public void Increment(int slotIndex, int amount) { ... }
+```
+
+**Safe patterns (always visible in inspector):**
+- `public void DoThing()` — no params, always shows
+- `public void DoThing(int amount)` — 1 primitive param, shows as static field
+- `public void DoThing(string name)` — 1 string param, shows as static field
+
+**Hidden (needs overload if student-facing):**
+- `public void DoThing(int a, int b = 1)` — 2 params, hidden even with default
+
 ### Code Conventions
 
 - **Naming**: `[Category][Purpose]` format (e.g., `InputKeyPress`, `ActionSpawnObject`)
