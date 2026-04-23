@@ -163,6 +163,26 @@ public class PhysicsForceZone : MonoBehaviour
     /// </summary>
     public bool HasBeenForced(Rigidbody rb) => forcedThisStay.Contains(rb);
 
+    /// <summary>
+    /// Sets the target GameObject used for TowardTarget / AwayFromTarget mode at runtime
+    /// </summary>
+    public void SetDirectionTarget(GameObject target) => directionTarget = target;
+
+    /// <summary>
+    /// Sets the minimum force magnitude
+    /// </summary>
+    public void SetMinForce(float force) => minForce = Mathf.Max(0f, force);
+
+    /// <summary>
+    /// Sets the maximum force magnitude
+    /// </summary>
+    public void SetMaxForce(float force) => maxForce = Mathf.Max(minForce, force);
+
+    /// <summary>
+    /// Sets the base force direction (used when Target Mode is None)
+    /// </summary>
+    public void SetForceDirection(Vector3 direction) => forceDirection = direction;
+
     // ──────────────────────────────────────────────
     // Internal force helpers
     // ──────────────────────────────────────────────
