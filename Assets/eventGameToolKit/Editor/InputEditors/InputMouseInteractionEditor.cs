@@ -13,6 +13,9 @@ public class InputMouseInteractionEditor : Editor
     private SerializedProperty enableHoverProp;
     private SerializedProperty enableClickProp;
 
+    private SerializedProperty maxRaycastDistanceProp;
+    private SerializedProperty interactionLayerProp;
+
     private SerializedProperty hoverMaterialProp;
     private SerializedProperty scaleOnHoverProp;
     private SerializedProperty hoverScaleProp;
@@ -37,6 +40,9 @@ public class InputMouseInteractionEditor : Editor
         resetOnModifierReleaseProp = serializedObject.FindProperty("resetOnModifierRelease");
         enableHoverProp = serializedObject.FindProperty("enableHover");
         enableClickProp = serializedObject.FindProperty("enableClick");
+
+        maxRaycastDistanceProp = serializedObject.FindProperty("maxRaycastDistance");
+        interactionLayerProp = serializedObject.FindProperty("interactionLayer");
 
         hoverMaterialProp = serializedObject.FindProperty("hoverMaterial");
         scaleOnHoverProp = serializedObject.FindProperty("scaleOnHover");
@@ -78,6 +84,13 @@ public class InputMouseInteractionEditor : Editor
         }
         EditorGUILayout.PropertyField(enableHoverProp);
         EditorGUILayout.PropertyField(enableClickProp);
+
+        EditorGUILayout.Space();
+
+        // --- Raycast Settings ---
+        EditorGUILayout.LabelField("Raycast Settings", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(maxRaycastDistanceProp);
+        EditorGUILayout.PropertyField(interactionLayerProp);
 
         EditorGUILayout.Space();
 

@@ -34,6 +34,12 @@ public class InputMouseInteraction : MonoBehaviour
     [SerializeField] private bool enableHover = true;
     [SerializeField] private bool enableClick = true;
 
+    [Header("Raycast Settings")]
+    [Tooltip("Maximum distance for the interaction raycast")]
+    [SerializeField] private float maxRaycastDistance = Mathf.Infinity;
+    [Tooltip("Which layers can be interacted with")]
+    [SerializeField] private LayerMask interactionLayer = ~0;
+
     [Header("Visual Feedback")]
     [Tooltip("Material to use when hovering (optional)")]
     [SerializeField] private Material hoverMaterial;
@@ -113,7 +119,7 @@ public class InputMouseInteraction : MonoBehaviour
 
         Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
 
-        bool isHit = Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ~0, QueryTriggerInteraction.Collide)
+        bool isHit = Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactionLayer, QueryTriggerInteraction.Collide)
                      && hit.collider.gameObject == gameObject;
 
         // Hover state
