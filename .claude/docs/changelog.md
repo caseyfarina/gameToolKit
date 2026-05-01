@@ -4,6 +4,20 @@ Recent updates, refactorings, and improvements to the eventGameToolKit.
 
 ---
 
+## April 2026 - GameStateManager Quit On Escape
+
+### New: Quit on Escape in GameStateManager
+
+`GameStateManager` now handles `Application.Quit()` directly — no separate quit script needed.
+
+#### Changes — GameStateManager
+
+- **`quitOnEscape` field** — `bool`, defaults to `true`, exposed as a checkbox under a "Quit Settings" header at the top of the Inspector
+- Checked every `Update()` via `Input.GetKeyDown(KeyCode.Escape)`; calls `Application.Quit()` when true
+- Disable the checkbox if Escape is reserved for something else (e.g. a pause menu)
+
+---
+
 ## April 2026 - Mouse Interaction Modifier Keys & FP Camera Smoothing
 
 ### New: Modifier Key Support for Mouse Interaction Components

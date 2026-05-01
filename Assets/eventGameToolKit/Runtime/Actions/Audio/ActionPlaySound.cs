@@ -7,7 +7,7 @@ using UnityEngine.Events;
 /// Supports randomized pitch and volume ranges for natural variation.
 /// Common use: impact sounds, footstep variation, collectible pickups, button feedback.
 /// </summary>
-[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/audio.html")]
 public class ActionPlaySound : MonoBehaviour
 {
     [Header("Audio Clips")]
@@ -23,7 +23,10 @@ public class ActionPlaySound : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float volumeMax = 1f;
 
-    [Header("Mixer")]
+    [Header("Routing")]
+    [Tooltip("If enabled, this sound's volume is multiplied by the GameAudioManager's SFX Volume. Lets a single slider in GameAudioManager control all opted-in sound effects.")]
+    [SerializeField] private bool routeThroughAudioManager = false;
+
     [Tooltip("Optional Audio Mixer Group to route this sound through (e.g. SFX, Music, Ambience). Leave empty to use the default output.")]
     [SerializeField] private AudioMixerGroup outputMixerGroup;
 
@@ -43,6 +46,7 @@ public class ActionPlaySound : MonoBehaviour
     public UnityEvent onPlay;
 
     private AudioSource audioSource;
+    private GameAudioManager _audioManager;
 
     private void Awake()
     {
@@ -55,6 +59,8 @@ public class ActionPlaySound : MonoBehaviour
         // so the PlayOneShot volume parameter represents the true 0–1 range.
         audioSource.volume = 1f;
         audioSource.outputAudioMixerGroup = outputMixerGroup;
+
+        _audioManager = FindFirstObjectByType<GameAudioManager>();
     }
 
     private void OnValidate()
@@ -83,8 +89,12 @@ public class ActionPlaySound : MonoBehaviour
             return;
         }
 
+        float volume = Random.Range(volumeMin, volumeMax);
+        if (routeThroughAudioManager && _audioManager != null)
+            volume *= _audioManager.SFXVolume;
+
         audioSource.pitch = Random.Range(pitchMin, pitchMax);
-        audioSource.PlayOneShot(clip, Random.Range(volumeMin, volumeMax));
+        audioSource.PlayOneShot(clip, volume);
         onPlay?.Invoke();
     }
 

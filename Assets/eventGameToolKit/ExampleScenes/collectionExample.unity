@@ -794,6 +794,71 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3238096004823721420, guid: c8ef175e226ecce4f9b08458286ef055, type: 3}
   m_PrefabInstance: {fileID: 635307346}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &532411552
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 5170478649874053651, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6738140709875306943, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 7.009525
+      objectReference: {fileID: 0}
+    - target: {fileID: 6738140709875306943, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6738140709875306943, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.4604752
+      objectReference: {fileID: 0}
+    - target: {fileID: 6738140709875306943, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6738140709875306943, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6738140709875306943, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6738140709875306943, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6738140709875306943, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6738140709875306943, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6738140709875306943, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8318201848435308818, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      propertyPath: m_Name
+      value: clickToExplodeFPCube
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 5170478649874053651, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8318201848435308818, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1748652307}
+  m_SourcePrefab: {fileID: 100100000, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
 --- !u!1001 &635307346
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6390,6 +6455,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: EventGameToolkit.Runtime::GameCollectionManager
   persistAcrossScenes: 0
+  onRestartBehavior: 0
   currentValue: 0
   minValue: 0
   maxValue: 0
@@ -6497,6 +6563,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64ce91d9f67e9884e8c49acffe38d10c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EventGameToolkit.Runtime::GameStateManager
+  quitOnEscape: 1
   pauseKey: 112
   startPaused: 0
   autoPauseTimers: 1
@@ -6850,7 +6917,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: EventGameToolkit.Runtime::CharacterControllerCC
   moveSpeed: 8
   maxVelocity: 8
-  speedChangeRate: 10
+  slideAmount: 0.5
   airControlFactor: 0.5
   enableSprint: 0
   sprintSpeedMultiplier: 1.5
@@ -7002,6 +7069,80 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c8ef175e226ecce4f9b08458286ef055, type: 3}
+--- !u!1 &1748652298 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8318201848435308818, guid: 8e1abb70b1d342b4bb4273bdcc2de65e, type: 3}
+  m_PrefabInstance: {fileID: 532411552}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1748652307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1748652298}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e50d9877b1c68b49b089bdca27e7261, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EventGameToolkit.Runtime::InputMouseInteraction
+  mouseButton: 0
+  requiredModifier: 0
+  resetOnModifierRelease: 1
+  enableHover: 1
+  enableClick: 1
+  maxRaycastDistance: Infinity
+  interactionLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  hoverMaterial: {fileID: 0}
+  scaleOnHover: 0
+  hoverScale: {x: 1.1, y: 1.1, z: 1.1}
+  useScaleEasing: 0
+  scaleAnimationDuration: 0.2
+  scaleEasingCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  onMouseClick:
+    m_PersistentCalls:
+      m_Calls: []
+  onMouseDown:
+    m_PersistentCalls:
+      m_Calls: []
+  onMouseUp:
+    m_PersistentCalls:
+      m_Calls: []
+  onMouseEnter:
+    m_PersistentCalls:
+      m_Calls: []
+  onMouseExit:
+    m_PersistentCalls:
+      m_Calls: []
+  onMouseHover:
+    m_PersistentCalls:
+      m_Calls: []
+  showDebugInfo: 0
 --- !u!4 &1777780128 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3238096004823721420, guid: c8ef175e226ecce4f9b08458286ef055, type: 3}
@@ -7268,3 +7409,4 @@ SceneRoots:
   - {fileID: 1019942057}
   - {fileID: 926159875}
   - {fileID: 1237553666}
+  - {fileID: 532411552}

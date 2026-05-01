@@ -9,6 +9,10 @@ using UnityEngine.SceneManagement;
 [HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class GameStateManager : MonoBehaviour
 {
+    [Header("Quit Settings")]
+    [Tooltip("Press Escape to quit the application. Disable if you want to use Escape for something else (e.g. a pause menu).")]
+    [SerializeField] private bool quitOnEscape = true;
+
     [Header("Pause Settings")]
     [SerializeField] private KeyCode pauseKey = KeyCode.P;
     [SerializeField] private bool startPaused = false;
@@ -69,11 +73,11 @@ public class GameStateManager : MonoBehaviour
 
     private void Update()
     {
-        // Check for pause key input
+        if (quitOnEscape && Input.GetKeyDown(KeyCode.Escape))
+            Application.Quit();
+
         if (Input.GetKeyDown(pauseKey))
-        {
             TogglePause();
-        }
     }
 
     /// <summary>

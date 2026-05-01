@@ -455,6 +455,7 @@ Manager systems for health, score, audio, state, etc.
 
 ### GameStateManager.cs
 - Simplified pause and victory state management
+- `quitOnEscape` checkbox (default on) — pressing Escape calls `Application.Quit()`; disable if Escape is used for a pause menu or other action
 - Configurable pause key with automatic timer coordination
 - Pause panel and restart button management
 - Automatic discovery and control of GameTimerManager
