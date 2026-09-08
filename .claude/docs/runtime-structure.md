@@ -6,32 +6,33 @@ Complete inventory of all educational scripts in the eventGameToolKit.
 
 ```
 Runtime/
-├── Actions/              # Event target components (21 scripts)
+├── Actions/              # Event target components (22 scripts)
 │   ├── Audio/           # Sound playback
 │   ├── DecalAnimation/  # URP decal material animations
 │   ├── Display/         # UI text and images
 │   ├── Events/          # Event sequencing and animation triggers
 │   ├── Scene/           # Scene management
 │   └── Spawning/        # Object instantiation
-├── Animation/           # Transform animations (1 script)
+├── Animation/           # Transform animations (3 scripts)
 ├── CharacterControllers/ # Player and enemy controllers (7 scripts)
 │   ├── Enemy/           # AI enemy controllers
 │   └── Player/          # Player controllers
-├── Game/                # Game managers (12 scripts)
-├── Input/               # Event source components (9 scripts)
+├── Game/                # Game managers (14 scripts)
+├── Input/               # Event source components (12 scripts)
 ├── Interfaces/          # Core interfaces (1 interface)
-├── Variables/           # ScriptableObject variables (2 scripts)
-├── Physics/             # Physics systems (5 scripts)
+├── Variables/           # Internal persistence (1 script)
+├── Physics/             # Physics systems (6 scripts)
 │   ├── Bumpers/         # Repulsion forces
 │   └── Platforms/       # Moving platforms
-├── Puzzle/              # Puzzle mechanics (2 scripts)
+├── PostProcessingAnimation/ # Stop motion look (3 scripts)
+├── Puzzle/              # Puzzle mechanics (3 scripts)
 ├── UI/                  # UI helpers (1 script)
 └── Utilities/           # Legacy/helper scripts (3 scripts)
 ```
 
 ---
 
-## Input Components (10 scripts)
+## Input Components (12 scripts)
 
 **Location**: `Runtime/Input/`
 
@@ -121,9 +122,15 @@ Event sources triggered by player input or game state.
 - Tag-based filtering
 - Fires UnityEvent on collision
 
+### InputInteractionZone.cs
+- Proximity + keypress interaction zone (the "press E to open" pattern)
+- Fires enter/exit events and a separate interact event on the configured key
+- Has a custom editor (InputInteractionZoneEditor)
+- See [InteractionZone_QuickStart.md](../../Assets/eventGameToolKit/Documentation/InteractionZone_QuickStart.md)
+
 ---
 
-## Action Components (21 scripts)
+## Action Components (22 scripts)
 
 **Location**: `Runtime/Actions/`
 
@@ -230,7 +237,7 @@ Event targets that perform actions when triggered.
 - Supports bool, int, float, and trigger parameters
 - No-code animation control
 
-### Toggle (1 script)
+### Toggle (2 scripts)
 
 **Location**: `Actions/`
 
@@ -263,7 +270,7 @@ Event targets that perform actions when triggered.
 - `Reset()` provides three default entries (A, B, C)
 - Custom Inspector shows per-entry queue status (fired / next / queued), cycle progress bar, and Play-mode "▶ Trigger Next" and "↺ Reshuffle" buttons
 
-### Scene (2 scripts)
+### Scene (3 scripts)
 
 **Location**: `Actions/Scene/`
 
@@ -297,9 +304,18 @@ Event targets that perform actions when triggered.
 - Direction and force control
 - Pooling support for performance
 
+#### ActionTeleportToTransform.cs
+- Moves a target object to a destination Transform
+- Handles CharacterController disable/re-enable so teleports are not fought by physics
+- See [ActionTeleportToTransform_QuickStart.md](../../Assets/eventGameToolKit/Documentation/ActionTeleportToTransform_QuickStart.md)
+
+#### ActionDestroyObject.cs
+- Destroys a target GameObject, optionally after a delay
+- Event target for pickups, breakables, and despawns
+
 ---
 
-## Animation Components (1 script)
+## Animation Components (3 scripts)
 
 **Location**: `Runtime/Animation/`
 
@@ -313,6 +329,14 @@ Event targets that perform actions when triggered.
 - Unscaled time support
 - 4 UnityEvents: onAnimationStart, onAnimationComplete, onAnimationLoop, onAnimationUpdate
 - **Note**: usePhysicsUpdate not supported (use PhysicsPlatformAnimator instead)
+
+### ActionEmissionAnimation.cs
+- Animates a material's emission color/intensity via DOTween
+- Used for glow pulses, power-up feedback, and highlight states
+
+### ActionRandomMotion.cs
+- Continuous randomized transform motion (drift, wobble, float)
+- Has a custom editor (ActionRandomMotionEditor)
 
 ---
 
@@ -404,7 +428,7 @@ Controllers for player and enemy characters.
 
 ---
 
-## Game Management Components (9 scripts)
+## Game Management Components (14 scripts)
 
 **Location**: `Runtime/Game/`
 
@@ -550,30 +574,38 @@ Manager systems for health, score, audio, state, etc.
 - 3 manager UnityEvents: onStoreOpened, onStoreClosed, onAnyPurchase
 - 2 per-item UnityEvents: onPurchased, onCannotAfford
 
+### GameFlagManager.cs
+- Named boolean flags that persist across scene loads via GameData
+- SetFlag(name) / ClearFlag(name) are UnityEvent-friendly
+- Always persists — no checkbox needed
+- Has a custom editor (GameFlagManagerEditor)
+
+### GameFlagListener.cs
+- Reads a named flag on scene load and at runtime, fires events to restore state
+- Pairs with GameFlagManager for one-time events (doors opened, pickups taken)
+- Has a custom editor (GameFlagListenerEditor)
+
 ---
 
-## Variables (2 scripts)
+## Variables (1 script)
 
 **Location**: `Runtime/Variables/`
 
-ScriptableObject assets for cross-scene data persistence.
+### GameData.cs
+- Auto-created runtime ScriptableObject singleton — the persistence hub
+- **Internal: students never see or touch this**
+- Backs persistence for GameHealthManager, GameCollectionManager, GameInventoryManager,
+  GameStoreManager, and GameFlagManager (see CLAUDE.md § Scene Persistence for slot allocation)
+- Resets automatically at the start of each play session
 
-### IntVariable.cs
-- ScriptableObject holding an integer value that persists across scene loads
-- Resets to defaultValue when entering Play mode
-- Optional min/max constraints
-- Add(), Subtract(), SetValue(), ResetToDefault()
-- 1 UnityEvent: onValueChanged
-
-### FloatVariable.cs
-- ScriptableObject holding a float value that persists across scene loads
-- Same API as IntVariable plus GetNormalized() for 0-1 percentage
-- Optional min/max constraints
-- 1 UnityEvent: onValueChanged
+> **Removed**: `IntVariable.cs` and `FloatVariable.cs` were the previous student-configured
+> persistence design. They were replaced by `GameData` and deleted — they are in git history if
+> needed. The published website no longer lists them, but the **stale in-package copy**
+> `Assets/eventGameToolKit/Documentation/egtk-intro.html` still does.
 
 ---
 
-## Physics Components (5 scripts)
+## Physics Components (6 scripts)
 
 **Location**: `Runtime/Physics/`
 
@@ -619,9 +651,45 @@ Physics-based systems for forces, platforms, and movement.
 - Tag/layer detection for automatic attachment
 - Works with PhysicsPlatformAnimator
 
+### PhysicsForceZone.cs
+
+**Location**: `Physics/`
+
+- Applies continuous directional or radial force to Rigidbodies inside a trigger volume
+- Wind zones, updrafts, currents, repulsion fields
+- Has a custom editor (PhysicsForceZoneEditor)
+
 ---
 
-## Puzzle Components (2 scripts)
+## PostProcessingAnimation (3 scripts)
+
+**Location**: `Runtime/PostProcessingAnimation/`
+
+Student-facing components for a stop motion / "on twos" look. Two different scopes — pick one:
+
+### applicationFPSLimiting.cs
+- Locks the **whole application** to a low framerate via `Application.targetFrameRate`
+- `targetFPS` (1-60, default 6): 6 = strong stop motion, 12 = "on twos", 24 = film-like
+- `SetTargetFPS(int)` is UnityEvent-friendly — switch the look on or off mid-game
+- Place one anywhere in the scene; everything shares the same choppy cadence
+- Use for a whole-scene stop motion style
+
+### StopMotionPostProcess.cs
+- Quantizes **one Animator's** bone pose updates to a target framerate, while the rest of the
+  scene keeps rendering smoothly
+- `targetFPS` (1-30): 12 = classic "on twos", 8 = Rankin/Bass, 24 = effectively off
+- Requires an Animator. Place it on the Animator GameObject, which should be a **child** of the
+  GameObject carrying the CharacterController — this keeps character translation smooth while the
+  pose stays quantized. The component logs a warning if this convention is broken.
+- Use to make one character look stop motion inside an otherwise smooth game
+
+### StopMotionJob.cs
+- Burst `AnimationScriptPlayable` job that performs the pose hold
+- **Internal**: implementation detail of StopMotionPostProcess, not student-facing
+
+---
+
+## Puzzle Components (3 scripts)
 
 **Location**: `Runtime/Puzzle/`
 
@@ -638,6 +706,11 @@ Switch and checker mechanics for puzzle design.
 - Checks if all required switches are activated
 - Fires event when puzzle is solved
 - Reset functionality
+
+### PuzzleSequenceChecker.cs
+- Fires when a set of switches is activated in the correct ORDER
+- Sibling to PuzzleSwitchChecker, which ignores order
+- Has a custom editor (PuzzleSequenceCheckerEditor)
 
 ---
 
@@ -704,45 +777,63 @@ Core interfaces for extensible systems.
 
 ## Script Count Summary
 
-**Total: 60 Scripts + 1 Interface**
+**Total: 76 runtime `.cs` files**
 
-- **Input Components**: 10 scripts
-- **Action Components**: 21 scripts (+ 1 helper)
-- **Animation Components**: 1 script
-- **Character Controllers**: 7 scripts
-- **Game Managers**: 9 scripts
-- **Physics Components**: 5 scripts
-- **Puzzle Components**: 2 scripts
-- **UI Components**: 1 script
-- **Utilities**: 3 scripts
-- **Interfaces**: 1 interface (ISpawnPointProvider)
+| Folder | Count |
+|---|---:|
+| Input | 12 |
+| Actions | 22 (21 + `DialogueUIController` helper) |
+| Game | 14 |
+| Character Controllers | 7 (5 Player + 2 Enemy) |
+| Physics | 6 |
+| Animation | 3 |
+| PostProcessingAnimation | 3 (2 student-facing + `StopMotionJob`) |
+| Puzzle | 3 |
+| Utilities | 3 |
+| UI | 1 |
+| Variables | 1 (`GameData`, internal) |
+| Interfaces | 1 (`ISpawnPointProvider`) |
+| **Total** | **76** |
 
-**XML Documentation Compliance**: 50/50 educational scripts (100%)
-(Utilities excluded from doc generator)
+Not all 76 are student-facing: `GameData`, `StopMotionJob`, `ISpawnPointProvider`, and
+`DialogueUIController` are internal.
+
+**Verify from disk rather than trusting this table:**
+
+```bash
+find Assets/eventGameToolKit/Runtime -name '*.cs' | wc -l
+```
+
+### Documentation coverage
+
+`[HelpURL]` is on 100% of runtime MonoBehaviours — this is the requirement that matters, since it
+drives the Inspector `?` button. XML coverage is no longer tracked as a percentage; see
+[CLAUDE.md § Documentation Strategy](../../CLAUDE.md) for the current policy.
 
 ---
 
 ## Custom Editor Scripts
 
-18 scripts have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)):
+28 components have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)).
+`Editor/` also holds 3 documentation tools that are not inspectors.
 
-- ActionDialogueSequence
-- ActionDecalSequence
-- ActionDecalSequenceLibrary
-- ActionDisplayImage
-- ActionDisplayText
-- ActionPlatformAnimator
-- ActionRandomEvent
-- ActionShuffleEvent
-- GameCollectionManager
-- GameHealthManager
-- GameTimerManager
-- InputFPMouseInteraction
-- InputOnStart
-- InputMouseInteraction
-- PhysicsPlatformAnimator
-- PuzzleSwitch
-- PuzzleSwitchChecker
+| Actions (9) | Game (7) | Input (6) | Puzzle (3) | Physics (2) | Animation (1) |
+|---|---|---|---|---|---|
+| ActionDecalSequence | GameCollectionManager | InputClickDrag | PuzzleSequenceChecker | PhysicsForceZone | ActionRandomMotion |
+| ActionDecalSequenceLibrary | GameFlagListener | InputClickRotate | PuzzleSwitch | PhysicsPlatformAnimator | |
+| ActionDialogueSequence | GameFlagManager | InputFPMouseInteraction | PuzzleSwitchChecker | | |
+| ActionDisplayImage | GameHealthManager | InputInteractionZone | | | |
+| ActionDisplayText | GameInventoryManager | InputMouseInteraction | | | |
+| ActionPlatformAnimator | GameStoreManager | InputOnStart | | | |
+| ActionPlaySound | GameTimerManager | | | | |
+| ActionRandomEvent | | | | | |
+| ActionShuffleEvent | | | | | |
+
+**Verify from disk:**
+
+```bash
+grep -rhoE 'CustomEditor\(typeof\(([A-Za-z0-9_]+)\)' Assets/eventGameToolKit/Editor --include=*.cs   | sed 's/.*typeof(//;s/)//' | sort -u
+```
 
 ---
 

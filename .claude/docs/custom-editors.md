@@ -39,6 +39,19 @@ When adding new `[SerializeField]` properties to scripts with custom editors, yo
 | **InputClickRotate.cs** | `InputEditors/InputClickRotateEditor.cs` | Hides snapAngle when snapping off, hides limit fields when limits off, play-mode angle readout |
 | **InputInteractionZone.cs** | `InputEditors/InputInteractionZoneEditor.cs` | Hides all prompt sub-fields when Show Prompt is off, hides hover/glow sub-fields when each is off, play-mode zone status and Test Interact button |
 | **ActionRandomMotion.cs** | `AnimationEditors/ActionRandomMotionEditor.cs` | Axis toggle + range inline per row, play-mode Play/Pause/Stop/Return controls |
+| **GameStoreManager.cs** | `GameEditors/GameStoreManagerEditor.cs` | Per-item purchase/persistence fields, store item list management |
+| **GameFlagManager.cs** | `GameEditors/GameFlagManagerEditor.cs` | Flag list with play-mode set/clear state readout |
+| **GameFlagListener.cs** | `GameEditors/GameFlagListenerEditor.cs` | Flag name field with play-mode current-state readout |
+
+> **Editor folder contents**: `Editor/` holds 31 `.cs` files — the 28 custom editors listed above
+> plus 3 documentation tools in `Editor/Documentation/` (`script_doc_generator.cs`,
+> `SceneEventReporter.cs`, `DocumentationSceneBootstrapper.cs`) that are not Inspector code.
+> Verify the editor count with:
+>
+> ```bash
+> grep -rl "CustomEditor" Assets/eventGameToolKit/Editor --include=*.cs | wc -l
+> ```
+
 
 **Total**: 24 scripts with custom editors
 

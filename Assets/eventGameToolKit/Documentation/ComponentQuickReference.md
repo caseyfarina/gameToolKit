@@ -119,6 +119,28 @@ All components work the same way: wire them together using **UnityEvents** in th
 | Component | What it does | Basic use |
 |---|---|---|
 | **FadeInFromBlackOnRestart** | Fades the screen in from black every time the scene loads | Scene transitions, respawn fade-in |
+| **lockMouseCursorToDisplay** | Confines the mouse cursor to the game window, toggled with Escape | First-person and windowed games |
+| **ObjectAttractor** | Pulls Rigidbodies toward a target with distance falloff | Gravity wells, magnets, tractor beams |
+
+---
+
+## Stop Motion Look
+
+Two ways to get a choppy, stop motion cadence. Pick the one that matches the scope you want.
+
+| Component | What it does | Basic use |
+|---|---|---|
+| **applicationFPSLimiting** | Locks the **whole game** to a low framerate (`Target FPS`, default 6) | Whole-scene stop motion style — drop one anywhere in the scene |
+| **StopMotionPostProcess** | Quantizes **one character's** animation to a target framerate while everything else stays smooth | One stop motion character in a normal-looking game |
+
+**StopMotionPostProcess setup**: put it on the GameObject that has the Animator, and make that
+GameObject a **child** of the one with the CharacterController. That way the character still glides
+smoothly around the level while only the pose snaps frame to frame. Set `targetFPS` to 12 for the
+classic "on twos" look, or 8 for a chunkier Rankin/Bass feel.
+
+**applicationFPSLimiting setup**: drop it on any GameObject and set `Target FPS`. You can also wire
+`SetTargetFPS()` to a UnityEvent to change the framerate during play — for example, dropping to 6
+FPS during a cutscene and back to 60 for normal gameplay.
 
 ---
 

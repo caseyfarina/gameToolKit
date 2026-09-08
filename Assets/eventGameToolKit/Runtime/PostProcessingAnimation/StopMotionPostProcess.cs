@@ -14,6 +14,7 @@ using Unity.Collections;
 /// This keeps smooth character translation separate from quantized pose.
 /// </summary>
 [RequireComponent(typeof(Animator))]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class StopMotionPostProcess : MonoBehaviour
 {
     [Tooltip("Target pose update rate. 12 = classic 'on twos', 8 = Rankin/Bass, " +

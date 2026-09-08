@@ -1,12 +1,32 @@
 # Script Documentation Generator Guide
 
-The Script Documentation Generator creates visual, in-Unity documentation of all educational scripts.
+> ## ⚠️ Status: Dormant — superseded by the website
+>
+> **The primary student-facing documentation is now https://caseyfarina.github.io/egtk-docs/**,
+> reached from the Inspector `?` button via `[HelpURL]`. See
+> [CLAUDE.md § Documentation Strategy](../../CLAUDE.md) for the current policy.
+>
+> This generator is the only tool that ever consumed XML comments, and it is **not currently
+> working**:
+>
+> - Its default `rootFolderPath` is `"Assets/Scripts"`, a folder that no longer exists in this
+>   project. Runtime scripts live in `Assets/eventGameToolKit/Runtime/`. (`Assets/Scripts.meta`
+>   survives as an orphaned meta file.)
+> - The tool itself moved to `Assets/eventGameToolKit/Editor/Documentation/script_doc_generator.cs`.
+> - The compliance table below (46/46) describes a codebase that had 46 scripts. There are now 76.
+>
+> **Before relying on anything in this document**, decide the generator's fate — repoint
+> `rootFolderPath` to `Assets/eventGameToolKit/Runtime`, or retire the tool. Until then, treat this
+> page as historical background on the XML conventions, not as an active requirement.
+>
+> **What is still required** regardless of the generator: `[HelpURL]` on every MonoBehaviour,
+> `[Tooltip]` on student-facing serialized fields, and XML `<summary>` on classes and UnityEvents.
 
 ---
 
 ## Purpose
 
-**Tool**: `Assets/Scripts/Documentation/Editor/script_doc_generator.cs`
+**Tool**: `Assets/eventGameToolKit/Editor/Documentation/script_doc_generator.cs`
 
 **Access**: Tools > Script Documentation Generator
 
@@ -24,7 +44,9 @@ The Script Documentation Generator creates visual, in-Unity documentation of all
 
 ## XML Documentation Requirements
 
-**⚠️ CRITICAL: ALL educational MonoBehaviour scripts MUST include XML documentation comments.**
+**Historical requirement.** These were mandatory when the generator was the documentation pipeline.
+Under the current policy, class summaries and UnityEvent summaries are kept; per-method summaries
+are optional. The guidance below is still the house style for XML you *do* write.
 
 ---
 
@@ -125,7 +147,12 @@ The generator automatically includes:
 
 ---
 
-## Current Compliance Status
+## Compliance Status (historical)
+
+**⚠️ Stale — retained for context only. This describes a 46-script codebase; there are now 76
+runtime scripts, and XML coverage is no longer tracked as a percentage.**
+
+The tracked metric today is `[HelpURL]` coverage, which is at 100% of runtime MonoBehaviours.
 
 **As of October 2025: 46/46 scripts (100%) fully compliant**
 
@@ -379,11 +406,11 @@ Students can reference this visual guide instead of digging through code!
 
 **Possible Causes**:
 1. Script is in Editor folder (excluded)
-2. Script isn't in `Assets/Scripts/` or subfolders
+2. Script isn't under the window's `rootFolderPath` (default `Assets/Scripts`, which no longer exists — set it to `Assets/eventGameToolKit/Runtime`)
 3. Script doesn't inherit from MonoBehaviour
 4. Script is private or internal
 
-**Solution**: Ensure script is public MonoBehaviour in `Assets/Scripts/`.
+**Solution**: Ensure script is a public MonoBehaviour under `Assets/eventGameToolKit/Runtime/`, and that `rootFolderPath` points there.
 
 ### Methods Don't Show
 
@@ -466,6 +493,7 @@ public void MyMethod() { }
 ✅ **Update docs when changing functionality**
 ✅ **Use the generator to verify compliance**
 
-**Current Status**: 46/46 scripts (100%) compliant
+**Current Status**: Generator dormant; see the status banner at the top of this page.
 
-The Documentation Generator ensures students have visual, accessible reference material without needing to read source code!
+Students now get accessible reference material from the website
+(https://caseyfarina.github.io/egtk-docs/) via the Inspector `?` button, not from this generator.

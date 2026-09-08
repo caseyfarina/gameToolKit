@@ -28,7 +28,7 @@ This project provides a modular, no-code toolkit for students to create interact
 
 ### Machines
 - **Laptop** (hostname: `electricEye`): `C:\Users\casey\Documents\unityProjects\egtkWorkingProject\`
-- **Desktop** (hostname: `BLD`): `F:\Unity Projects 2025\gameToolKitFarina\`
+- **Desktop** (hostname: `BLD`): `F:\Unity Projects 2026\eventGameToolKit\`
 
 Run `hostname` to determine the current machine, then use the matching paths and sync command below.
 
@@ -36,14 +36,14 @@ Run `hostname` to determine the current machine, then use the matching paths and
 - **Purpose**: Main Unity project where all development and testing happens
 - **Contains**: Full Unity project with scenes, testing assets, and eventGameToolKit package at `Assets/eventGameToolKit/`
 - **Laptop path**: `C:\Users\casey\Documents\unityProjects\egtkWorkingProject\gameToolKit\`
-- **Desktop path**: `F:\Unity Projects 2025\gameToolKitFarina\gameToolKit\`
+- **Desktop path**: `F:\Unity Projects 2026\eventGameToolKit\gameToolKit\`
 
 ### 2. Unity Package Repository (Separate Git Repo)
 - **Purpose**: Standalone Unity package with its own git repository
 - **Contains**: Only package contents (no test scenes or development assets)
 - **Used By**: Students via Unity Package Manager
 - **Laptop path**: `C:\Users\casey\Documents\unityProjects\egtkWorkingProject\eventGameToolKit-Package\`
-- **Desktop path**: `F:\Unity Projects 2025\eventGameToolKit-Package\`
+- **Desktop path**: `F:\Unity Projects 2026\eventGameToolKit\eventGameToolKit-Package\`
 
 ### **CRITICAL SYNC RULE**
 
@@ -61,7 +61,7 @@ cmd //c robocopy "C:\Users\casey\Documents\unityProjects\egtkWorkingProject\game
 
 **Sync Command (Desktop)**:
 ```bash
-cmd //c robocopy "F:\Unity Projects 2025\gameToolKitFarina\gameToolKit\Assets\eventGameToolKit" "F:\Unity Projects 2025\eventGameToolKit-Package" //MIR //XD .git
+cmd //c robocopy "F:\Unity Projects 2026\eventGameToolKit\gameToolKit\Assets\eventGameToolKit" "F:\Unity Projects 2026\eventGameToolKit\eventGameToolKit-Package" //MIR //XD .git
 ```
 
 **IMPORTANT**: Use `cmd //c` and double slashes `//` to avoid Git Bash path conversion errors (Git Bash converts `/MIR` to `C:/Program Files/Git/MIR` without the double slashes).
@@ -83,6 +83,7 @@ Assets/
 │   │   ├── Input/         # Event sources (triggers, keys, mouse, etc.)
 │   │   ├── Interfaces/    # Core interfaces (ISpawnPointProvider)
 │   │   ├── Physics/       # Bumpers, platforms, physics systems
+│   │   ├── PostProcessingAnimation/  # Stop motion look (global FPS + per-Animator)
 │   │   ├── Puzzle/        # Puzzle mechanics
 │   │   ├── UI/            # UI helpers and effects
 │   │   ├── Utilities/     # Legacy/helper scripts
@@ -160,6 +161,8 @@ Students create interactions by wiring UnityEvents in the Inspector:
 | **Puzzle** | Switch and checker mechanics | PuzzleSwitch, PuzzleSwitchChecker, PuzzleSequenceChecker |
 | **UI** | User interface helpers | FadeInFromBlackOnRestart |
 | **Animation** | Transform animations | ActionAnimateTransform |
+| **PostProcessingAnimation** | Stop motion / low-framerate look | applicationFPSLimiting, StopMotionPostProcess |
+| **Utilities** | Cursor and force helpers | lockMouseCursorToDisplay, ObjectAttractor |
 
 ## Development Workflow
 
@@ -175,6 +178,7 @@ When adding, renaming, or modifying scripts, update these files before committin
 | New custom editor created | `custom-editors.md` table |
 | Public API changed | XML doc comments in the script |
 | New documentation page published | Update `[HelpURL]` on all components that page covers |
+| New student-facing component added | Add a row to the website catalog (`egtk-docs` repo) — the site does not update itself |
 
 **`ComponentQuickReference.md`** (`Assets/eventGameToolKit/Documentation/`) is the student-facing one-page guide. It must stay current — students use it to discover what components exist.
 
@@ -235,9 +239,40 @@ public class GameHealthManager : MonoBehaviour
 
 The `[HelpURL]` line goes **after** any `[RequireComponent]` attributes and **before** `public class`.
 
-### XML Documentation Requirement
+### Documentation Strategy — Transitioning to the Website
 
-**ALL educational scripts MUST have XML documentation for the Documentation Generator:**
+**The website at https://caseyfarina.github.io/egtk-docs/ is the primary student-facing
+documentation.** Source repo: `egtk-docs`, cloned alongside this project at
+`F:\Unity Projects 2026\eventGameToolKit\egtk-docs\`. XML comments are being demoted from "required everywhere" to a smaller,
+targeted role.
+
+**Why the change:**
+
+- Unity's Inspector does **not** read XML comments. Students see `[Tooltip]` text and the `?`
+  button (`[HelpURL]`) — never a `<summary>`. XML has no student-facing payoff in the editor.
+- The one tool that consumed XML, the in-Unity Script Documentation Generator, still defaults to
+  scanning `Assets/Scripts/` — a folder that no longer exists in this project. It is effectively
+  dormant. See [Documentation Generator Guide](.claude/docs/documentation-generator.md).
+- The website's component catalog is **hand-authored prose** (`Component / What It Does / Good For`),
+  not generated from XML. It lists no methods or events at all, so XML could not have produced it.
+  There is no pipeline between code and site — the site is maintained by hand in the `egtk-docs` repo.
+
+**Current requirements, in priority order:**
+
+| Requirement | Status | Why |
+|---|---|---|
+| `[HelpURL]` on every MonoBehaviour | **Required** | The `?` button is how students reach the docs |
+| `[Tooltip]` on every student-facing `[SerializeField]` | **Required** | The only text students read in the Inspector |
+| Website page or catalog row for every student-facing component | **Required** | Primary documentation |
+| XML `<summary>` on the class | **Keep** | Cheap; seeds the website entry and orients anyone reading the code |
+| XML `<summary>` on public UnityEvents | **Keep** | Describes *when* an event fires — the hardest thing to infer from code |
+| XML `<summary>` on every public method | **Optional** | Was for the dormant generator; write it where the method is non-obvious |
+
+**Do not** claim "100% XML documented" in docs or commit messages — it is no longer a tracked goal.
+
+### XML Documentation Format
+
+When you do write XML (class summaries and UnityEvents at minimum):
 
 ```csharp
 /// <summary>
@@ -257,7 +292,8 @@ public class MyComponent : MonoBehaviour
 }
 ```
 
-See **[Documentation Generator Guide](.claude/docs/documentation-generator.md)** for complete requirements.
+See **[Documentation Generator Guide](.claude/docs/documentation-generator.md)** for the generator's
+status and the historical XML requirements.
 
 ## Common Tasks
 
@@ -379,16 +415,36 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**66 Educational Scripts (100% XML Documented) | 28 Custom Editors**
-- 12 Input components
-- 22 Action components
-- 7 Physics components
-- 15 Game managers (includes GameSceneManager, SpawnPoint, GameStoreManager, GameFlagManager, GameFlagListener)
-- 2 Puzzle components
-- 1 UI component
-- 3 Animation components
-- 3 Root character controllers
-- 1 ScriptableObject variable (GameData — internal, invisible to students)
+**76 Runtime Scripts | 28 Custom Editors | 3 Documentation Tools**
+
+Runtime breakdown (`Assets/eventGameToolKit/Runtime/`, verified against disk):
+
+| Folder | Count | Notes |
+|---|---:|---|
+| `Input/` | 12 | Event sources |
+| `Actions/` | 22 | 21 actions + `DialogueUIController` (helper, not student-facing) |
+| `Game/` | 14 | Managers, incl. GameSceneManager, SpawnPoint, GameStoreManager, GameFlagManager, GameFlagListener |
+| `CharacterControllers/` | 7 | 5 Player + 2 Enemy |
+| `Physics/` | 6 | Bumpers (2), Platforms (3), PhysicsForceZone |
+| `Animation/` | 3 | |
+| `PostProcessingAnimation/` | 3 | `applicationFPSLimiting`, `StopMotionPostProcess`, `StopMotionJob` (Burst job, internal) |
+| `Puzzle/` | 3 | |
+| `Utilities/` | 3 | `InputCollisionEnter`, `lockMouseCursorToDisplay`, `ObjectAttractor` |
+| `UI/` | 1 | |
+| `Variables/` | 1 | `GameData` — internal, invisible to students |
+| `Interfaces/` | 1 | `ISpawnPointProvider` |
+| **Total** | **76** | |
+
+`Editor/` holds 31 files: 28 with `[CustomEditor]` plus 3 documentation tools in `Editor/Documentation/`.
+
+**Counting rule**: the totals above are raw `.cs` file counts. Not every file is a student-facing
+component — `StopMotionJob`, `GameData`, `ISpawnPointProvider`, and `DialogueUIController` are
+internal. When you update these numbers, get them from disk:
+
+```bash
+find Assets/eventGameToolKit/Runtime -name '*.cs' | wc -l
+grep -rl "CustomEditor" Assets/eventGameToolKit/Editor --include=*.cs | wc -l
+```
 
 For complete script inventory with features, see **[Runtime Structure](.claude/docs/runtime-structure.md)**.
 

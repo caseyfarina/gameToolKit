@@ -4,6 +4,7 @@ using UnityEngine;
 /// Confines the mouse cursor to the game window with toggle controls via Escape and mouse clicks.
 /// Common use: First-person games, strategy games requiring cursor confinement, or windowed game applications.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class lockMouseCursorToDisplay : MonoBehaviour
 {
     [SerializeField] private bool lockOnStart = true;

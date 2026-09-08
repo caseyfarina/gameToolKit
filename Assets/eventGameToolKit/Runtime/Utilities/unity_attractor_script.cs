@@ -4,6 +4,7 @@ using UnityEngine;
 /// Applies continuous attraction force toward a target object with distance-based falloff options.
 /// Common use: Gravity wells, magnetic effects, object orbits, tractor beams, or black hole mechanics.
 /// </summary>
+[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class ObjectAttractor : MonoBehaviour
 {
     [Header("Attraction Settings")]
