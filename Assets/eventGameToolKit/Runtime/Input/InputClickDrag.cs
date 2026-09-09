@@ -80,13 +80,21 @@ public class InputClickDrag : MonoBehaviour
     private Vector3 dampingVelocity;  // SmoothDamp velocity reference
     private Camera mainCamera;
 
+
+    // Cached in Start: whether this object uses 2D physics, resolved from its collider.
+    // A sprite with a Collider2D is picked with Physics2D; a mesh with a Collider uses a
+    // 3D raycast. Nothing for students to configure.
+    private bool _is2D;
+
     private void Start()
     {
         mainCamera = Camera.main;
         if (mainCamera == null)
             Debug.LogWarning("[InputClickDrag] No main camera found in scene.", this);
 
-        if (GetComponent<Collider>() == null)
+        _is2D = EGTKPhysics.Is2D(gameObject);
+
+        if (GetComponent<Collider>() == null && GetComponent<Collider2D>() == null)
             Debug.LogError("[InputClickDrag] Requires a Collider on this GameObject.", this);
     }
 
@@ -111,9 +119,14 @@ public class InputClickDrag : MonoBehaviour
 
     private void TryStartDrag(Vector2 screenPos)
     {
+        if (EGTKPhysics.PickAtScreenPoint(screenPos, Mathf.Infinity,
+                                          Physics.DefaultRaycastLayers, _is2D) != gameObject) return;
+
+        // The pick above decides what was grabbed; this ray is still needed to work out
+        // where on the drag plane the grab happened. It stays a 3D ray because the drag
+        // plane maths is the same in both dimensions — for a 2D game the plane is WorldXY
+        // and an orthographic camera gives a straight ray into the screen.
         Ray ray = mainCamera.ScreenPointToRay(screenPos);
-        if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
-        if (hit.collider.gameObject != gameObject) return;
 
         // Record the drag plane at the object's current position
         dragPlanePoint = transform.position;

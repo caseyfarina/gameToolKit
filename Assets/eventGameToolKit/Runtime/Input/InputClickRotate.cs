@@ -81,13 +81,21 @@ public class InputClickRotate : MonoBehaviour
     private Vector3 rotationAxisInWorld;     // captured in world space at drag start
     private Camera mainCamera;
 
+
+    // Cached in Start: whether this object uses 2D physics, resolved from its collider.
+    // A sprite with a Collider2D is picked with Physics2D; a mesh with a Collider uses a
+    // 3D raycast. Nothing for students to configure.
+    private bool _is2D;
+
     private void Start()
     {
         mainCamera = Camera.main;
         if (mainCamera == null)
             Debug.LogWarning("[InputClickRotate] No main camera found in scene.", this);
 
-        if (GetComponent<Collider>() == null)
+        _is2D = EGTKPhysics.Is2D(gameObject);
+
+        if (GetComponent<Collider>() == null && GetComponent<Collider2D>() == null)
             Debug.LogError("[InputClickRotate] Requires a Collider on this GameObject.", this);
     }
 
@@ -112,9 +120,8 @@ public class InputClickRotate : MonoBehaviour
 
     private void TryStartRotate(Vector2 screenPos)
     {
-        Ray ray = mainCamera.ScreenPointToRay(screenPos);
-        if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
-        if (hit.collider.gameObject != gameObject) return;
+        if (EGTKPhysics.PickAtScreenPoint(screenPos, Mathf.Infinity,
+                                          Physics.DefaultRaycastLayers, _is2D) != gameObject) return;
 
         startRotation = transform.rotation;
         cumulativeAngle = 0f;

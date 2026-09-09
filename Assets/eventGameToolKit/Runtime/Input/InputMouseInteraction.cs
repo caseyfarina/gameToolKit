@@ -89,6 +89,11 @@ public class InputMouseInteraction : MonoBehaviour
 
     // Raycast-based state
     private bool wasHitLastFrame = false;
+    // Cached in Start: whether this object uses 2D physics. Resolved from the collider
+    // attached to it, so a sprite with a Collider2D is picked with Physics2D and a mesh
+    // with a Collider is picked with a 3D raycast. No setting for students to choose.
+    private bool _is2D;
+
     private bool isMouseDown = false;
 
     public bool IsHovering => isHovering;
@@ -104,9 +109,12 @@ public class InputMouseInteraction : MonoBehaviour
 
         originalScale = transform.localScale;
 
-        if (GetComponent<Collider>() == null)
+        _is2D = EGTKPhysics.Is2D(gameObject);
+
+        if (GetComponent<Collider>() == null && GetComponent<Collider2D>() == null)
         {
-            Debug.LogWarning($"InputMouseInteraction on {gameObject.name} requires a Collider component!");
+            Debug.LogWarning($"InputMouseInteraction on {gameObject.name} requires a Collider " +
+                             "(3D) or Collider2D (2D sprite) to be clickable!", this);
         }
     }
 
@@ -117,10 +125,9 @@ public class InputMouseInteraction : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null) return;
 
-        Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
-
-        bool isHit = Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactionLayer, QueryTriggerInteraction.Collide)
-                     && hit.collider.gameObject == gameObject;
+        bool isHit = EGTKPhysics.PickAtScreenPoint(Mouse.current.position.ReadValue(),
+                                                   maxRaycastDistance, interactionLayer,
+                                                   _is2D) == gameObject;
 
         // Hover state
         if (enableHover)
