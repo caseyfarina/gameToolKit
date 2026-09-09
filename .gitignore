@@ -79,3 +79,6 @@ crashlytics-build.properties
 .Trashes
 ehthumbs.db
 Thumbs.db
+# Unity PlayMode test runner leaves these behind
+/[Aa]ssets/InitTestScene*.unity
+/[Aa]ssets/InitTestScene*.unity.meta
