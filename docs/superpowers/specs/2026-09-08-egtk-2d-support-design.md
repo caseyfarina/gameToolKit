@@ -67,8 +67,15 @@ Scripts that initiate a physics query have nothing to infer from, so they call
 
 ### Rules
 
-- **Ambiguity** (both 2D and 3D colliders present, mode `Auto`): resolve to 2D, log a
-  one-time warning naming the object.
+- **Ambiguity is impossible** (verified 2026-09-08 on 6000.3.7f1). Unity refuses to place 2D and
+  3D physics components on the same GameObject — `AddComponent` returns null, in either order,
+  for colliders and rigidbodies alike. The originally-planned "resolve to 2D and warn" rule was
+  therefore unreachable and has been removed from `Is2D`. The engine behavior is pinned by
+  `EGTKPhysicsTests.Unity_RefusesToMix2DAnd3DPhysicsOnOneObject`, which fails loudly if a future
+  Unity version relaxes it.
+- **Bare objects report 3D.** An object with no collider and no body resolves to 3D, matching
+  pre-2D behavior. A 2D component on a bare GameObject needs an explicit `PhysicsMode.TwoD`
+  override — this, not ambiguity, is what the override exists for.
 - **Cross-boundary mismatch**: warn when a callback fires but the target carries the
   opposite body type. A 3D bumper cannot push a 2D player — this is an engine limit,
   and silent no-ops are a real teaching-failure mode.
