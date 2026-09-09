@@ -3,7 +3,12 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// Detects when tagged objects enter, exit, or remain in a 3D trigger zone with optional continuous damage.
+/// Detects when tagged objects enter, exit, or remain in a trigger zone, with optional
+/// repeating stay events.
+///
+/// Works in both 2D and 3D. Give the zone a Collider for a 3D game or a Collider2D for a
+/// 2D game — the component responds to whichever one is attached, with no setting to change.
+///
 /// Common use: Damage zones, checkpoints, area triggers, hazard areas, or proximity-based events.
 /// </summary>
 [HelpURL("https://caseyfarina.github.io/egtk-docs/")]
@@ -33,7 +38,8 @@ public class InputTriggerZone : MonoBehaviour
     /// </summary>
     public UnityEvent onTriggerExitEvent;
 
-    private readonly HashSet<Collider> occupants = new HashSet<Collider>();
+    // Holds Collider or Collider2D; both derive from Component, so one set serves both.
+    private readonly HashSet<Component> occupants = new HashSet<Component>();
     private float lastStayEventTime = 0f;
 
     private void OnValidate()
@@ -49,44 +55,56 @@ public class InputTriggerZone : MonoBehaviour
         occupants.Clear();
     }
 
-    private void OnTriggerEnter(Collider other)
+    // Unity dispatches the 3D and 2D callbacks independently: a zone with a Collider only
+    // ever hears the 3D pair, one with a Collider2D only ever hears the 2D pair. Both
+    // delegate to the same handlers, so behaviour is identical in either dimension.
+
+    private void OnTriggerEnter(Collider other) => HandleEnter(other, other.tag);
+    private void OnTriggerEnter2D(Collider2D other) => HandleEnter(other, other.tag);
+
+    private void OnTriggerExit(Collider other) => HandleExit(other, other.tag);
+    private void OnTriggerExit2D(Collider2D other) => HandleExit(other, other.tag);
+
+    private void HandleEnter(Component other, string otherTag)
     {
-        if (other.CompareTag(triggerObjectTag))
+        if (otherTag != triggerObjectTag) return;
+
+        bool wasEmpty = occupants.Count == 0;
+        occupants.Add(other);
+
+        if (wasEmpty)
         {
-            bool wasEmpty = occupants.Count == 0;
-            occupants.Add(other);
-
-            if (wasEmpty)
-            {
-                lastStayEventTime = Time.time;
-            }
-
-            onTriggerEnterEvent?.Invoke();
+            lastStayEventTime = Time.time;
         }
+
+        onTriggerEnterEvent?.Invoke();
     }
 
-    private void OnTriggerStay(Collider other)
+    // Stay events are driven from Update rather than OnTriggerStay, because physics
+    // stops delivering stay callbacks once a body falls asleep — which a stationary
+    // player does within a second. Relying on those callbacks meant a damage-over-time
+    // zone quietly stopped damaging anyone who stood still. Tracking occupancy from
+    // enter/exit and running the timer ourselves fires reliably in both 2D and 3D.
+    private void Update()
     {
-        if (other.CompareTag(triggerObjectTag) && enableStayEvent)
-        {
-            // Clean up any destroyed objects still in the set
-            occupants.RemoveWhere(c => c == null);
+        if (!enableStayEvent) return;
 
-            if (occupants.Count > 0 && Time.time >= lastStayEventTime + stayInterval)
-            {
-                lastStayEventTime = Time.time;
-                onTriggerStayEvent?.Invoke();
-            }
-        }
+        // Drop occupants destroyed while inside the zone
+        occupants.RemoveWhere(c => c == null);
+
+        if (occupants.Count == 0) return;
+        if (Time.time < lastStayEventTime + stayInterval) return;
+
+        lastStayEventTime = Time.time;
+        onTriggerStayEvent?.Invoke();
     }
 
-    private void OnTriggerExit(Collider other)
+    private void HandleExit(Component other, string otherTag)
     {
-        if (other.CompareTag(triggerObjectTag))
-        {
-            occupants.Remove(other);
-            onTriggerExitEvent?.Invoke();
-        }
+        if (otherTag != triggerObjectTag) return;
+
+        occupants.Remove(other);
+        onTriggerExitEvent?.Invoke();
     }
 
     /// <summary>

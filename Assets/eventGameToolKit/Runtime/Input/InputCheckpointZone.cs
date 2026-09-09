@@ -4,10 +4,15 @@ using UnityEngine.Events;
 /// <summary>
 /// Checkpoint trigger zone that saves player position when entered.
 /// Integrates with GameCheckpointManager (or any ISpawnPointProvider) for scene reload survival.
+///
+/// Works in both 2D and 3D. Give the checkpoint a Collider for a 3D game or a Collider2D
+/// for a 2D game; either is set to a trigger automatically.
 /// 
 /// Common use: Platformer checkpoints, racing lap markers, save points, respawn locations.
 /// </summary>
-[RequireComponent(typeof(Collider))]
+// No [RequireComponent(typeof(Collider))]: that forces a 3D collider, and Unity then
+// refuses to add a Collider2D, making 2D checkpoints impossible. Start() validates that
+// some trigger collider is present instead.
 [HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputCheckpointZone : MonoBehaviour
 {
@@ -59,12 +64,23 @@ public class InputCheckpointZone : MonoBehaviour
 
     private void Start()
     {
-        // Ensure collider is a trigger
-        Collider col = GetComponent<Collider>();
-        if (col != null && !col.isTrigger)
+        // Ensure whichever collider is present is a trigger
+        Collider col3D = GetComponent<Collider>();
+        Collider2D col2D = GetComponent<Collider2D>();
+
+        if (col3D != null && !col3D.isTrigger)
         {
-            col.isTrigger = true;
+            col3D.isTrigger = true;
             Debug.LogWarning($"InputCheckpointZone '{gameObject.name}': Collider set to trigger automatically.");
+        }
+        else if (col2D != null && !col2D.isTrigger)
+        {
+            col2D.isTrigger = true;
+            Debug.LogWarning($"InputCheckpointZone '{gameObject.name}': Collider2D set to trigger automatically.");
+        }
+        else if (col3D == null && col2D == null)
+        {
+            Debug.LogWarning($"InputCheckpointZone '{gameObject.name}': needs a Collider or Collider2D set to trigger, or it will never activate.", this);
         }
 
         // Find checkpoint manager if not assigned
@@ -93,9 +109,12 @@ public class InputCheckpointZone : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other) => HandleEnter(other.tag);
+    private void OnTriggerEnter2D(Collider2D other) => HandleEnter(other.tag);
+
+    private void HandleEnter(string otherTag)
     {
-        if (!other.CompareTag(triggerObjectTag)) return;
+        if (otherTag != triggerObjectTag) return;
         if (oneTimeUse && hasBeenActivated) return;
 
         ActivateCheckpoint();
@@ -136,7 +155,7 @@ public class InputCheckpointZone : MonoBehaviour
 
         if (oneTimeUse)
         {
-            GetComponent<Collider>().enabled = false;
+            SetColliderEnabled(false);
         }
     }
 
@@ -159,7 +178,7 @@ public class InputCheckpointZone : MonoBehaviour
     public void ResetCheckpoint()
     {
         hasBeenActivated = false;
-        GetComponent<Collider>().enabled = true;
+        SetColliderEnabled(true);
 
         if (visualEffect != null)
         {
@@ -192,8 +211,28 @@ public class InputCheckpointZone : MonoBehaviour
     /// </summary>
     public Vector3 SpawnPosition => transform.position + transform.TransformDirection(spawnOffset);
 
+    // Enables or disables whichever collider type this checkpoint uses.
+    private void SetColliderEnabled(bool value)
+    {
+        Collider col3D = GetComponent<Collider>();
+        if (col3D != null) col3D.enabled = value;
+
+        Collider2D col2D = GetComponent<Collider2D>();
+        if (col2D != null) col2D.enabled = value;
+    }
+
     private void OnDrawGizmos()
     {
+        Collider2D col2D = GetComponent<Collider2D>();
+        if (col2D != null)
+        {
+            Gizmos.color = hasBeenActivated ? Color.green : Color.yellow;
+            Gizmos.matrix = transform.localToWorldMatrix;
+            Bounds b = col2D.bounds;
+            Gizmos.matrix = Matrix4x4.identity;
+            Gizmos.DrawWireCube(b.center, b.size);
+        }
+
         Collider col = GetComponent<Collider>();
         if (col != null)
         {
