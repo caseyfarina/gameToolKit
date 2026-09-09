@@ -42,8 +42,9 @@ When adding new `[SerializeField]` properties to scripts with custom editors, yo
 | **GameStoreManager.cs** | `GameEditors/GameStoreManagerEditor.cs` | Per-item purchase/persistence fields, store item list management |
 | **GameFlagManager.cs** | `GameEditors/GameFlagManagerEditor.cs` | Flag list with play-mode set/clear state readout |
 | **GameFlagListener.cs** | `GameEditors/GameFlagListenerEditor.cs` | Flag name field with play-mode current-state readout |
+| **CharacterController2D.cs** | `CharacterControllerEditors/CharacterController2DEditor.cs` | Hides Platformer fields in Top-Down and vice versa; warns when Ground Layer is unset or a Collider2D is missing |
 
-> **Editor folder contents**: `Editor/` holds 31 `.cs` files — the 28 custom editors listed above
+> **Editor folder contents**: `Editor/` holds 32 `.cs` files — the 29 custom editors listed above
 > plus 3 documentation tools in `Editor/Documentation/` (`script_doc_generator.cs`,
 > `SceneEventReporter.cs`, `DocumentationSceneBootstrapper.cs`) that are not Inspector code.
 > Verify the editor count with:

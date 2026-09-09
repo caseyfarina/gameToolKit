@@ -14,12 +14,12 @@ Runtime/
 │   ├── Scene/           # Scene management
 │   └── Spawning/        # Object instantiation
 ├── Animation/           # Transform animations (3 scripts)
-├── CharacterControllers/ # Player and enemy controllers (7 scripts)
+├── CharacterControllers/ # Player and enemy controllers (8 scripts)
 │   ├── Enemy/           # AI enemy controllers
 │   └── Player/          # Player controllers
 ├── Game/                # Game managers (14 scripts)
 ├── Input/               # Event source components (12 scripts)
-├── Interfaces/          # Core interfaces (1 interface)
+├── Interfaces/          # Core interfaces (2 interfaces)
 ├── Variables/           # Internal persistence (1 script)
 ├── Physics/             # Physics systems (6 scripts)
 │   ├── Bumpers/         # Repulsion forces
@@ -27,7 +27,7 @@ Runtime/
 ├── PostProcessingAnimation/ # Stop motion look (3 scripts)
 ├── Puzzle/              # Puzzle mechanics (3 scripts)
 ├── UI/                  # UI helpers (1 script)
-└── Utilities/           # Legacy/helper scripts (3 scripts)
+└── Utilities/           # Legacy/helper scripts (4 scripts)
 ```
 
 ---
@@ -340,13 +340,13 @@ Event targets that perform actions when triggered.
 
 ---
 
-## Character Controllers (7 scripts)
+## Character Controllers (8 scripts)
 
 **Location**: `Runtime/CharacterControllers/`
 
 Controllers for player and enemy characters.
 
-### Player Controllers (5 scripts)
+### Player Controllers (6 scripts)
 
 **Location**: `CharacterControllers/Player/`
 
@@ -408,6 +408,21 @@ Controllers for player and enemy characters.
 - Player push physics for moving objects
 - Force-based pushing with configurable strength
 - Works with CharacterControllerCC
+
+#### CharacterController2D.cs
+- 2D player controller, Rigidbody2D based
+- `Movement Style` dropdown: Platformer (gravity + jumping) or Top-Down (free movement)
+- Platformer: jump height, coyote time, jump buffering, gravity scale, max fall speed,
+  layer-based ground check via `Physics2D.OverlapBox`
+- Mirrors `CharacterControllerCC`'s public surface — same event names (`onGrounded`, `onJump`,
+  `onLanding`, `onStartMoving`, `onStopMoving`, `onTeleport`, `onSpawnPointUsed`), same
+  `OnMove`/`OnJump` PlayerInput pattern, same one-line setters
+- Implements `ITeleportableCharacter`
+- Has a custom editor (CharacterController2DEditor) that hides the inactive style section and
+  warns when Ground Layer is unset or a Collider2D is missing
+- Requires Rigidbody2D; needs a Collider2D and a PlayerInput to function
+
+---
 
 ### Enemy Controllers (2 scripts)
 
@@ -729,7 +744,7 @@ Switch and checker mechanics for puzzle design.
 
 ---
 
-## Utilities (3 scripts)
+## Utilities (4 scripts)
 
 **Location**: `Runtime/Utilities/`
 
@@ -743,6 +758,13 @@ Legacy and helper scripts.
 - Locks and hides cursor for first-person games
 - Toggle with Escape key
 
+### EGTKPhysics.cs
+- **Internal**: students never see or use this
+- Static helper owning every 2D-versus-3D decision, so the rules cannot drift across call sites
+- `Is2D`, `TryAddImpulse`, `TryAddForce`, `TryStopMotion`, `PickAtScreenPoint`
+- Also declares the `PhysicsMode` enum (Auto / TwoD / ThreeD)
+- See [CLAUDE.md § 2D Support](../../CLAUDE.md)
+
 ### unity_attractor_script.cs
 - Legacy attraction/gravity system
 - Applies forces to pull objects toward attractor
@@ -750,7 +772,7 @@ Legacy and helper scripts.
 
 ---
 
-## Interfaces (1 interface)
+## Interfaces (2 interfaces)
 
 **Location**: `Runtime/Interfaces/`
 
@@ -773,30 +795,38 @@ Core interfaces for extensible systems.
 - CharacterControllerCC checks for this interface in Awake() before physics runs
 - See [Development Patterns: Spawn Point Provider](development-patterns.md#spawn-point-provider-pattern)
 
+### ITeleportableCharacter
+- `void TeleportTo(Vector3 position)`
+- Lets teleporters and checkpoints move any controller without naming a concrete type
+- Implemented by `CharacterController2D`
+- **Not yet implemented** by `CharacterControllerCC` or `CharacterControllerFP`, and
+  `GameCheckpointManager` / `ActionTeleportToTransform` still hard-code `CharacterControllerCC`,
+  so 2D respawn and teleport do not work yet
+
 ---
 
 ## Script Count Summary
 
-**Total: 76 runtime `.cs` files**
+**Total: 79 runtime `.cs` files**
 
 | Folder | Count |
 |---|---:|
 | Input | 12 |
 | Actions | 22 (21 + `DialogueUIController` helper) |
 | Game | 14 |
-| Character Controllers | 7 (5 Player + 2 Enemy) |
+| Character Controllers | 8 (6 Player + 2 Enemy) |
 | Physics | 6 |
 | Animation | 3 |
 | PostProcessingAnimation | 3 (2 student-facing + `StopMotionJob`) |
 | Puzzle | 3 |
-| Utilities | 3 |
+| Utilities | 4 (incl. `EGTKPhysics`, internal) |
 | UI | 1 |
 | Variables | 1 (`GameData`, internal) |
-| Interfaces | 1 (`ISpawnPointProvider`) |
-| **Total** | **76** |
+| Interfaces | 2 (`ISpawnPointProvider`, `ITeleportableCharacter`) |
+| **Total** | **79** |
 
-Not all 76 are student-facing: `GameData`, `StopMotionJob`, `ISpawnPointProvider`, and
-`DialogueUIController` are internal.
+Not all 79 are student-facing: `GameData`, `StopMotionJob`, `EGTKPhysics`,
+`ISpawnPointProvider`, `ITeleportableCharacter`, and `DialogueUIController` are internal.
 
 **Verify from disk rather than trusting this table:**
 
@@ -814,12 +844,12 @@ drives the Inspector `?` button. XML coverage is no longer tracked as a percenta
 
 ## Custom Editor Scripts
 
-28 components have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)).
+29 components have custom Inspector UI (see [Custom Editors Guide](custom-editors.md)).
 `Editor/` also holds 3 documentation tools that are not inspectors.
 
-| Actions (9) | Game (7) | Input (6) | Puzzle (3) | Physics (2) | Animation (1) |
+| Actions (9) | Game (7) | Input (6) | Puzzle (3) | Physics (2) | Animation (1) | Controllers (1) |
 |---|---|---|---|---|---|
-| ActionDecalSequence | GameCollectionManager | InputClickDrag | PuzzleSequenceChecker | PhysicsForceZone | ActionRandomMotion |
+| ActionDecalSequence | GameCollectionManager | InputClickDrag | PuzzleSequenceChecker | PhysicsForceZone | ActionRandomMotion | CharacterController2D |
 | ActionDecalSequenceLibrary | GameFlagListener | InputClickRotate | PuzzleSwitch | PhysicsPlatformAnimator | |
 | ActionDialogueSequence | GameFlagManager | InputFPMouseInteraction | PuzzleSwitchChecker | | |
 | ActionDisplayImage | GameHealthManager | InputInteractionZone | | | |

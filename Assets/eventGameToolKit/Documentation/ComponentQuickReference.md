@@ -144,6 +144,55 @@ FPS during a cutscene and back to 60 for normal gameplay.
 
 ---
 
+## Making a 2D Game
+
+EGTK works with sprites. The rule is simple: **put a Collider 2D on a sprite instead of a
+Collider, and the component figures out the rest.** There is no 2D checkbox to find.
+
+### 2D components
+
+| Component | What it does | Basic use |
+|---|---|---|
+| **CharacterController2D** | Moves a sprite as a player. Movement Style picks Platformer (gravity + jumping) or Top-Down (free movement) | Any 2D player character |
+| **InputMouseInteraction** | Click and hover a sprite | Point-and-click, clickable objects |
+| **InputClickDrag** | Drag a sprite with the mouse. Set Drag Plane to **World XY** for 2D | Puzzle pieces, draggable items |
+| **InputClickRotate** | Rotate a sprite by dragging | Dials, valves, rotating puzzles |
+| **InputTriggerZone** | Fires events when a tagged object enters a 2D trigger | Collectibles, damage zones, doors |
+| **InputCheckpointZone** | Saves the player's position when entered | Platformer checkpoints |
+
+### CharacterController2D setup
+
+1. Add **Rigidbody 2D** and a **Capsule Collider 2D** to your sprite
+2. Add **Player Input**, set its Actions to `EGTK_InputSystem_Actions`
+3. Add **CharacterController2D** and pick a Movement Style
+4. For Platformer: put your floor objects on a layer, then set **Ground Layer** to it
+
+> **If your character will not jump**, Ground Layer is almost certainly empty or pointing at the
+> wrong layer. The Inspector shows a warning when it is unset.
+
+### What is not 2D yet
+
+These are still 3D-only. They will not respond to 2D colliders:
+
+- **PhysicsBumper**, **PhysicsBumperTag**, **PhysicsForceZone**
+- **ActionRespawnPlayer**, **ActionSpawnProjectile**
+- **ActionPlatformAnimator**, **PhysicsPlatformStick**
+- **InputInteractionZone**, **InputCollisionEnter**
+- Enemy controllers, and the Decal components
+- **InputFPMouseInteraction** — first-person only, no 2D version planned
+
+**GameCheckpointManager and ActionTeleportToTransform do not yet move a 2D player.** The
+checkpoint zone fires, but nothing moves. Avoid respawn and teleport in 2D projects for now.
+
+### Example scenes
+
+- **Example2D_Platformer** — jumping, collectibles and a score display
+- **Example2D_ClickToToggle** — click a sprite to turn another sprite on and off
+
+Both are in `ExampleScenes/`, with Kenney pixel art (public domain) in `ExampleScenes/Art2D/`.
+
+---
+
 ## The Basic Pattern
 
 Every interaction in EGTK follows the same structure:

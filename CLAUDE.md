@@ -162,6 +162,7 @@ Students create interactions by wiring UnityEvents in the Inspector:
 | **UI** | User interface helpers | FadeInFromBlackOnRestart |
 | **Animation** | Transform animations | ActionAnimateTransform |
 | **PostProcessingAnimation** | Stop motion / low-framerate look | applicationFPSLimiting, StopMotionPostProcess |
+| **2D** | Sprite-based games (see § 2D Support) | CharacterController2D |
 | **Utilities** | Cursor and force helpers | lockMouseCursorToDisplay, ObjectAttractor |
 
 ## Development Workflow
@@ -415,7 +416,7 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**76 Runtime Scripts | 28 Custom Editors | 3 Documentation Tools**
+**79 Runtime Scripts | 29 Custom Editors | 3 Documentation Tools**
 
 Runtime breakdown (`Assets/eventGameToolKit/Runtime/`, verified against disk):
 
@@ -424,22 +425,22 @@ Runtime breakdown (`Assets/eventGameToolKit/Runtime/`, verified against disk):
 | `Input/` | 12 | Event sources |
 | `Actions/` | 22 | 21 actions + `DialogueUIController` (helper, not student-facing) |
 | `Game/` | 14 | Managers, incl. GameSceneManager, SpawnPoint, GameStoreManager, GameFlagManager, GameFlagListener |
-| `CharacterControllers/` | 7 | 5 Player + 2 Enemy |
+| `CharacterControllers/` | 8 | 6 Player + 2 Enemy (incl. `CharacterController2D`) |
 | `Physics/` | 6 | Bumpers (2), Platforms (3), PhysicsForceZone |
 | `Animation/` | 3 | |
 | `PostProcessingAnimation/` | 3 | `applicationFPSLimiting`, `StopMotionPostProcess`, `StopMotionJob` (Burst job, internal) |
 | `Puzzle/` | 3 | |
-| `Utilities/` | 3 | `InputCollisionEnter`, `lockMouseCursorToDisplay`, `ObjectAttractor` |
+| `Utilities/` | 4 | `InputCollisionEnter`, `lockMouseCursorToDisplay`, `ObjectAttractor`, `EGTKPhysics` (internal) |
 | `UI/` | 1 | |
 | `Variables/` | 1 | `GameData` — internal, invisible to students |
-| `Interfaces/` | 1 | `ISpawnPointProvider` |
-| **Total** | **76** | |
+| `Interfaces/` | 2 | `ISpawnPointProvider`, `ITeleportableCharacter` |
+| **Total** | **79** | |
 
-`Editor/` holds 31 files: 28 with `[CustomEditor]` plus 3 documentation tools in `Editor/Documentation/`.
+`Editor/` holds 32 files: 29 with `[CustomEditor]` plus 3 documentation tools in `Editor/Documentation/`.
 
 **Counting rule**: the totals above are raw `.cs` file counts. Not every file is a student-facing
-component — `StopMotionJob`, `GameData`, `ISpawnPointProvider`, and `DialogueUIController` are
-internal. When you update these numbers, get them from disk:
+component — `StopMotionJob`, `GameData`, `EGTKPhysics`, `ISpawnPointProvider`,
+`ITeleportableCharacter`, and `DialogueUIController` are internal. When you update these numbers, get them from disk:
 
 ```bash
 find Assets/eventGameToolKit/Runtime -name '*.cs' | wc -l
@@ -447,6 +448,117 @@ grep -rl "CustomEditor" Assets/eventGameToolKit/Editor --include=*.cs | wc -l
 ```
 
 For complete script inventory with features, see **[Runtime Structure](.claude/docs/runtime-structure.md)**.
+
+---
+
+## 2D Support
+
+The toolkit works with sprites and 2D colliders. Support is **partial** — the table below is
+the authoritative list of what has been converted. Anything not listed is still 3D-only.
+
+### How it works
+
+Components resolve 2D-versus-3D **per instance**, from the collider on their own GameObject.
+There is no project setting and nothing for students to choose: put a `Collider2D` on a sprite
+and the component uses 2D physics; put a `Collider` on a mesh and it uses 3D.
+
+Unity's 2D and 3D physics are separate engines (Box2D and PhysX) that never interact, so both
+can coexist in one scene as independent worlds. A 3D bumper cannot push a 2D player — that is an
+engine limit, not a toolkit one.
+
+Unity refuses to put 2D and 3D physics components on the same GameObject (`AddComponent` returns
+null, either order, colliders and rigidbodies alike — verified on 6000.3.7f1). Detection therefore
+cannot be ambiguous. `EGTKPhysicsTests.Unity_RefusesToMix2DAnd3DPhysicsOnOneObject` pins that
+behaviour so a future Unity relaxing it fails loudly.
+
+Two callback shapes are involved:
+
+- **Callback-driven components** (trigger zones) gain a parallel `OnTriggerEnter2D` alongside
+  `OnTriggerEnter`. The callback that fires proves the dimension, so no detection is needed.
+- **Initiator components** (mouse picking) call `EGTKPhysics.Is2D(gameObject)`, cached in `Start`.
+
+### Status
+
+| Component | 2D | Notes |
+|---|---|---|
+| `InputTriggerZone` | ✅ | `Collider2D` or `Collider`, no setting |
+| `InputCheckpointZone` | ✅ | `[RequireComponent(typeof(Collider))]` removed — it made 2D impossible |
+| `InputMouseInteraction` | ✅ | Clicking and hovering sprites |
+| `InputClickDrag` | ✅ | Use Drag Plane `WorldXY` for 2D |
+| `InputClickRotate` | ✅ | |
+| `CharacterController2D` | ✅ | New. Platformer or Top-Down |
+| `InputFPMouseInteraction` | ❌ | **Intentional.** First-person reticle raycast has no 2D counterpart |
+| `PhysicsBumper`, `PhysicsBumperTag` | ❌ | Not yet converted |
+| `PhysicsForceZone`, `InputCollisionEnter` | ❌ | Not yet converted |
+| `PhysicsEnemyController` | ❌ | No 2D enemy controller exists yet |
+| `ActionRespawnPlayer`, `ActionSpawnProjectile` | ❌ | Not yet converted |
+| `ActionPlatformAnimator`, `PhysicsPlatformStick` | ❌ | Not yet converted |
+| `CharacterPushRigidBody`, `ObjectAttractor` | ❌ | Not yet converted |
+| `InputInteractionZone` | ❌ | Not yet converted |
+| `GameCheckpointManager`, `ActionTeleportToTransform` | ⚠️ | Still hard-code `CharacterControllerCC`, so **2D respawn and teleport silently do nothing** |
+| Decal components | ❌ | URP decals are 3D-only; no 2D analog exists |
+
+Everything with no physics dependency — managers, timers, flags, audio, key input, most Actions —
+already worked in 2D and needed no change.
+
+### `EGTKPhysics`
+
+`Runtime/Utilities/EGTKPhysics.cs` — internal static helper owning every 2D/3D decision, so the
+rules cannot drift across call sites. Students never see it, same posture as `GameData`.
+
+```csharp
+static bool Is2D(GameObject go, PhysicsMode mode = PhysicsMode.Auto);
+static bool TryAddImpulse(GameObject target, Vector3 force);
+static bool TryAddForce(GameObject target, Vector3 force);
+static bool TryStopMotion(GameObject target);
+static GameObject PickAtScreenPoint(Vector2 screenPos, float maxDistance, LayerMask mask, bool is2D);
+```
+
+An object with **no collider and no body resolves to 3D**, matching pre-2D behaviour. A 2D
+component on a bare GameObject needs an explicit `PhysicsMode.TwoD` override — that, not
+ambiguity, is what the override exists for.
+
+### `CharacterController2D`
+
+`Rigidbody2D`-based, with a `Movement Style` dropdown (Platformer / Top-Down) and a custom editor
+that hides the inactive section. Mirrors `CharacterControllerCC`'s public surface — same event
+names, same `OnMove`/`OnJump` PlayerInput pattern, same one-line setters — so wiring transfers.
+
+Needs a `Collider2D` and a `PlayerInput` using `EGTK_InputSystem_Actions`. **Ground Layer must be
+set** or jumping never works; the custom editor warns when it is empty.
+
+Implements `ITeleportableCharacter`, so teleporters and checkpoints can find any controller
+without naming a concrete type. `CharacterControllerCC` and `CharacterControllerFP` do **not**
+implement it yet — that is why 2D respawn is still broken.
+
+### Example scenes
+
+- `ExampleScenes/Example2D_Platformer.unity` — collectibles wired to `GameCollectionManager`
+- `ExampleScenes/Example2D_ClickToToggle.unity` — click a sprite to toggle another
+
+Art is Kenney Pixel Platformer (CC0 public domain) in `ExampleScenes/Art2D/`. Terrain tiles are
+18x18 px and characters 24x24, so each folder has its own Pixels Per Unit to make every sprite
+exactly one world unit. The pack readme's "24x24" describes tilesheet cells including padding.
+
+Both scenes are generated by `Assets/SceneBuilders/` (harness only, never shipped) and rebuildable
+from the **EGTK** menu. Level geometry is sprite GameObjects with `BoxCollider2D` rather than a
+Tilemap, which keeps the package free of the 2D Tilemap authoring dependency.
+
+### Tests
+
+`Assets/Tests/` — outside the package, so never shipped. 13 EditMode + 37 PlayMode.
+
+```bash
+unity command run_tests                              # EditMode
+unity command run_tests --mode playmode --async_tests # PlayMode, then poll test_status
+```
+
+**The two modes cannot run at once** — starting one aborts the other. Run them separately.
+
+**Frame-sensitive behaviour cannot be tested from outside the editor.** Each command-server request
+stalls Unity's main thread, so the next `Time.deltaTime` absorbs the delay and drains coyote/jump
+buffers, and click state machines never see down-then-up on consecutive frames. Anything timing
+dependent belongs in a PlayMode test.
 
 ---
 
