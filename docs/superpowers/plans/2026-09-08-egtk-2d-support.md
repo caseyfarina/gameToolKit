@@ -23,6 +23,11 @@
 - **DOTween**: use `DOTween.To()`; never module extensions like `rigidbody.DOMove()`.
 - **Tests never ship.** All test files live in `Assets/Tests/`, outside `Assets/eventGameToolKit/`.
 - **Verify after every task**: `unity command recompile` then `unity command recompile_status` must report `"failed":false,"errors":[]`.
+- **Regression gate (amended 2026-09-08)**: only 8 of the 19 affected scripts appear in any
+  scene, so scenes alone cannot catch a regression. Every task that changes physics behavior
+  must first add a PlayMode test that passes against **current 3D behavior**, then make the
+  change, then confirm the test still passes. Writing the test after the change proves nothing.
+  A 2D variant of each test is added once the change lands.
 - **Do not run the robocopy sync or push** until Task 11.
 
 ---
@@ -33,6 +38,12 @@ Establishes what "unchanged" means before 19 shared scripts are edited. **This t
 
 **Files:**
 - Create: `docs/superpowers/plans/2026-09-08-3d-baseline.md`
+
+> **Amended after execution began.** The original Task 1 assumed `ballPlayer.unity` exercised
+> six behaviors. It does not — it contains only `InputTriggerZone`, `PhysicsBumper` and
+> `InputCollisionEnter`. A GUID-to-scene scan found 11 of the 19 affected scripts have **no
+> scene coverage at all**. The baseline is therefore a written coverage matrix plus a PlayMode
+> test harness, not a list of observed behaviors.
 
 - [ ] **Step 1: Confirm the editor is connected**
 
