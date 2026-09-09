@@ -45,8 +45,8 @@ public static class Build2DClickToggleScene
 
         Sprite ground = Tile("tile_0000.png");
         Sprite crate = Tile("tile_0130.png");
-        Sprite lamp = Tile("tile_0109.png");
-        if (ground == null || crate == null || lamp == null) return;
+        Sprite tree = Tile("tile_0126.png");
+        if (ground == null || crate == null || tree == null) return;
 
         // ---- Camera -------------------------------------------------------------
         GameObject camGo = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -64,8 +64,8 @@ public static class Build2DClickToggleScene
             MakeSprite($"Ground_{x}", ground, new Vector2(x, -1f), level.transform);
         }
 
-        // ---- The lamp that gets toggled ------------------------------------------
-        GameObject lampGo = MakeSprite("Lamp", lamp, new Vector2(6f, 0.5f), null, 5);
+        // ---- The tree that gets toggled ------------------------------------------
+        GameObject treeGo = MakeSprite("Tree", tree, new Vector2(6f, 0.5f), null, 5);
 
         // ---- The clickable crate -------------------------------------------------
         GameObject switchGo = MakeSprite("ClickableSwitch", crate, new Vector2(2f, 0f), null, 5);
@@ -78,11 +78,11 @@ public static class Build2DClickToggleScene
         InputMouseInteraction click = switchGo.AddComponent<InputMouseInteraction>();
         ActionToggle toggle = switchGo.AddComponent<ActionToggle>();
 
-        // Point the toggle at the lamp.
+        // Point the toggle at the tree.
         SerializedObject toggleSo = new SerializedObject(toggle);
         SerializedProperty targets = toggleSo.FindProperty("targets");
         targets.arraySize = 1;
-        targets.GetArrayElementAtIndex(0).objectReferenceValue = lampGo;
+        targets.GetArrayElementAtIndex(0).objectReferenceValue = treeGo;
         toggleSo.ApplyModifiedPropertiesWithoutUndo();
 
         // AddComponent leaves serialized UnityEvent fields null; the Inspector would have
