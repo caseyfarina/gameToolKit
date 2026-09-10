@@ -297,14 +297,14 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 205257860}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 12
   m_Type: 1
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 0.83
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
-  m_CookieSize: 10
+  m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
     m_Type: 2
     m_Resolution: -1
@@ -1036,7 +1036,7 @@ MonoBehaviour:
   invertY: 0
   mouseSmoothTime: 0.1611
   lockCursorOnStart: 1
-  cursorToggleKey: 27
+  cursorToggleInputKey: 60
   reticleTexture: {fileID: 10912, guid: 0000000000000000f000000000000000, type: 0}
   reticleSize: 10
   jumpHeight: 1.2
@@ -1488,7 +1488,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64ce91d9f67e9884e8c49acffe38d10c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EventGameToolkit.Runtime::GameStateManager
-  pauseKey: 112
+  quitOnEscape: 1
+  pauseInputKey: 30
   startPaused: 0
   autoPauseTimers: 1
   pausePanel: {fileID: 1867609274}
@@ -1671,6 +1672,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1420971907
 MeshFilter:
@@ -1944,7 +1946,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fd2ea39e917e8b4388cf849b5a2fc73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EventGameToolkit.Runtime::InputKeyPress
-  thisKey: 102
+  activationKey: 20
   onPressEvent:
     m_PersistentCalls:
       m_Calls:

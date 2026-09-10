@@ -129,7 +129,7 @@ public class CharacterControllerFP : MonoBehaviour
     /// Key to toggle cursor lock/unlock (useful for menus and pause screens)
     /// </summary>
     [Tooltip("Key to toggle cursor lock/unlock")]
-    [SerializeField] private KeyCode cursorToggleKey = KeyCode.Escape;
+    [SerializeField] private Key cursorToggleInputKey = Key.Escape;
 
     [Header("Reticle")]
     /// <summary>
@@ -504,7 +504,7 @@ public class CharacterControllerFP : MonoBehaviour
     private void HandleCursorToggle()
     {
         if (!_inputEnabled) return;
-        if (Input.GetKeyDown(cursorToggleKey))
+        if (EGTKInput.WasKeyPressedThisFrame(cursorToggleInputKey))
         {
             ToggleCursor();
         }

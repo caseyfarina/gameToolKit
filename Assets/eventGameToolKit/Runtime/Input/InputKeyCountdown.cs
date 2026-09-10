@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Events;
 using TMPro;
 
@@ -13,7 +14,8 @@ using TMPro;
 public class InputKeyCountdown : MonoBehaviour
 {
 
-    public KeyCode  thisKey = KeyCode.Space;
+    [Tooltip("Which key activates this. Uses the Input System Key list.")]
+    public Key activationKey = Key.Space;
     public int countDownValue = 10;
     /// <summary>
     /// Fires each time the key is pressed while countdown value is above zero
@@ -38,7 +40,7 @@ public class InputKeyCountdown : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(thisKey))
+        if (EGTKInput.WasKeyPressedThisFrame(activationKey))
         {
             //countDown the number of clicks
             if (countDownValue > 0)

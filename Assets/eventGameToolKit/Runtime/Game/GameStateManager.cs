@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
@@ -14,7 +15,8 @@ public class GameStateManager : MonoBehaviour
     [SerializeField] private bool quitOnEscape = true;
 
     [Header("Pause Settings")]
-    [SerializeField] private KeyCode pauseKey = KeyCode.P;
+    [Tooltip("Key that toggles pause. Uses the Input System Key list.")]
+    [SerializeField] private Key pauseInputKey = Key.P;
     [SerializeField] private bool startPaused = false;
     [SerializeField] private bool autoPauseTimers = true;
 
@@ -73,10 +75,10 @@ public class GameStateManager : MonoBehaviour
 
     private void Update()
     {
-        if (quitOnEscape && Input.GetKeyDown(KeyCode.Escape))
+        if (quitOnEscape && EGTKInput.WasKeyPressedThisFrame(Key.Escape))
             Application.Quit();
 
-        if (Input.GetKeyDown(pauseKey))
+        if (EGTKInput.WasKeyPressedThisFrame(pauseInputKey))
             TogglePause();
     }
 

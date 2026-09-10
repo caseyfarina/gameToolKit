@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
@@ -78,7 +79,7 @@ public class GameStoreManager : MonoBehaviour
     [SerializeField] private StoreOpenMode openMode = StoreOpenMode.Key;
 
     [Tooltip("Key that opens and closes the store (only used when Open Mode is Key)")]
-    [SerializeField] private KeyCode storeKey = KeyCode.B;
+    [SerializeField] private Key storeInputKey = Key.B;
 
     [Header("Character Controller (Optional)")]
     [Tooltip("Assign a CharacterControllerFP to unlock the cursor and disable look input while the store is open")]
@@ -272,7 +273,7 @@ public class GameStoreManager : MonoBehaviour
 
     private void Update()
     {
-        if (openMode == StoreOpenMode.Key && Input.GetKeyDown(storeKey))
+        if (openMode == StoreOpenMode.Key && EGTKInput.WasKeyPressedThisFrame(storeInputKey))
             ToggleStore();
     }
 

@@ -46,7 +46,7 @@ public class InputInteractionZone : MonoBehaviour
     [SerializeField] private InputActionReference interactAction;
 
     [Tooltip("Keyboard fallback used when no Input Action is assigned.")]
-    [SerializeField] private KeyCode fallbackKey = KeyCode.E;
+    [SerializeField] private Key fallbackInputKey = Key.E;
 
     // ── Mouse settings ─────────────────────────────────────────────────────────
     [Header("Mouse Settings")]
@@ -211,7 +211,7 @@ public class InputInteractionZone : MonoBehaviour
     private void HandleProximityFallbackKey()
     {
         if (!isInteractable) return;
-        if (_interactInputAction == null && Input.GetKeyDown(fallbackKey))
+        if (_interactInputAction == null && EGTKInput.WasKeyPressedThisFrame(fallbackInputKey))
             onInteract.Invoke();
     }
 

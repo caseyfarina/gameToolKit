@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Confines the mouse cursor to the game window with toggle controls via Escape and mouse clicks.
@@ -21,13 +22,13 @@ public class lockMouseCursorToDisplay : MonoBehaviour
     void Update()
     {
         // Optional: Allow user to toggle cursor lock with Escape key
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (EGTKInput.WasKeyPressedThisFrame(Key.Escape))
         {
             UnlockCursor();
         }
         
         // Optional: Re-lock cursor when clicking back into the game window
-        if (Input.GetMouseButtonDown(0) && Cursor.lockState != lockMode)
+        if (EGTKInput.WasMouseButtonPressedThisFrame(0) && Cursor.lockState != lockMode)
         {
             LockCursor();
         }

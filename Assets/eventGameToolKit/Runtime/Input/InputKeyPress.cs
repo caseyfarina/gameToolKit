@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Events;
 
 /// <summary>
@@ -11,7 +12,8 @@ using UnityEngine.Events;
 public class InputKeyPress : MonoBehaviour
 {
 
-    public KeyCode  thisKey = KeyCode.Space;
+    [Tooltip("Which key activates this. Uses the Input System Key list.")]
+    public Key activationKey = Key.Space;
 
     /// <summary>
     /// Fires when the specified key is pressed down
@@ -26,7 +28,7 @@ public class InputKeyPress : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(thisKey))
+        if (EGTKInput.WasKeyPressedThisFrame(activationKey))
         {
             onPressEvent?.Invoke();
         }
