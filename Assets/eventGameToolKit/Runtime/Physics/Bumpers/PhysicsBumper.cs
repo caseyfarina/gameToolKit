@@ -8,12 +8,20 @@ using UnityEditor;
 
 /// <summary>
 /// Applies repulsion forces to colliding objects with animated visual feedback and cooldown system.
+///
+/// Set Bumper Tag to choose which objects it reacts to, or leave it empty to bounce
+/// anything with a Rigidbody.
+///
 /// Common use: Bounce pads, pinball bumpers, launch mechanisms, or trampoline effects.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 [HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class PhysicsBumper : MonoBehaviour
 {
+    [Header("Bumper Tag")]
+    [Tooltip("Only objects with this tag are bounced. Leave empty to bounce anything with a Rigidbody.")]
+    [SerializeField] private string bumperTag = "Player";
+
     [Header("Bumper Settings")]
     [Tooltip("Force applied to the player on collision")]
     [SerializeField] private float bumperForce = 20f;
@@ -142,7 +150,9 @@ public class PhysicsBumper : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (!collision.gameObject.CompareTag("Player")) return;
+        // An empty tag means "react to anything", which is what the separate
+        // PhysicsBumperTag component used to be for.
+        if (!string.IsNullOrEmpty(bumperTag) && !collision.gameObject.CompareTag(bumperTag)) return;
 
         // Check if cooldown has elapsed
         if (!CanTrigger()) return;
