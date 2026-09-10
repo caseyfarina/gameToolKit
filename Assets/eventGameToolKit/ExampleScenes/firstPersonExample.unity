@@ -1946,7 +1946,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fd2ea39e917e8b4388cf849b5a2fc73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EventGameToolkit.Runtime::InputKeyPress
-  activationKey: 20
+  activation:
+    m_Name: Activation
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: c543734b-236e-4c35-9bd9-eaea0510132e
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 204d17e4-6fc9-4150-8961-8987b60dd0af
+      m_Path: <Keyboard>/f
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Activation
+      m_Flags: 0
+    m_Flags: 0
   onPressEvent:
     m_PersistentCalls:
       m_Calls:

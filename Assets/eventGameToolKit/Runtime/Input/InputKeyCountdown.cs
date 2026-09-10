@@ -14,8 +14,8 @@ using TMPro;
 public class InputKeyCountdown : MonoBehaviour
 {
 
-    [Tooltip("Which key activates this. Uses the Input System Key list.")]
-    public Key activationKey = Key.Space;
+    [Tooltip("What counts down. Press + then Listen, then the key or button you want.")]
+    [SerializeField] private InputAction activation = new InputAction("Activation", InputActionType.Button);
     public int countDownValue = 10;
     /// <summary>
     /// Fires each time the key is pressed while countdown value is above zero
@@ -31,35 +31,37 @@ public class InputKeyCountdown : MonoBehaviour
     private TextMeshProUGUI countDownnNumberText; // Reference to the TextMeshPro text field
 
 
-    // Start is called before the first frame update
-    void Start()
+    // Gives a newly added component a working default binding.
+    private void Reset()
     {
-        
+        activation = new InputAction("Activation", InputActionType.Button);
+        activation.AddBinding("<Keyboard>/space");
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnEnable()
     {
-        if (EGTKInput.WasKeyPressedThisFrame(activationKey))
+        activation.performed += OnActivated;
+        activation.Enable();
+    }
+
+    private void OnDisable()
+    {
+        activation.performed -= OnActivated;
+        activation.Disable();
+    }
+
+    private void OnActivated(InputAction.CallbackContext context)
+    {
+        if (countDownValue <= 0) return;
+
+        onCountDownKey?.Invoke();
+        countDownValue--;
+        UpdateCountdownNumberText();
+
+        if (countDownValue == 0)
         {
-            //countDown the number of clicks
-            if (countDownValue > 0)
-            {
-                //send the event
-                onCountDownKey?.Invoke();
-
-                countDownValue = countDownValue - 1;
-
-                UpdateCountdownNumberText();
-
-                if (countDownValue == 0)
-                {
-                    onCountLimitKey?.Invoke();
-                }
-            }
+            onCountLimitKey?.Invoke();
         }
-
-
     }
 
     private void UpdateCountdownNumberText()

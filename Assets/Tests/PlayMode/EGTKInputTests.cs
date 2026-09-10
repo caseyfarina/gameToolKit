@@ -98,14 +98,33 @@ public class EGTKInputTests : InputTestFixture
         yield return null;
     }
 
+
+    // The activation InputAction is private and is subscribed in OnEnable, so the object is
+    // built inactive, given its binding, then enabled.
+    private InputKeyPress BuildKeyPress(string name, string binding)
+    {
+        _go = new GameObject(name);
+        _go.SetActive(false);
+
+        InputKeyPress press = _go.AddComponent<InputKeyPress>();
+        var field = typeof(InputKeyPress).GetField("activation",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(field, "InputKeyPress has no private 'activation' field.");
+
+        var action = new InputAction("Activation", InputActionType.Button);
+        action.AddBinding(binding);
+        field.SetValue(press, action);
+
+        _go.SetActive(true);
+        return press;
+    }
+
     // ---- The component students actually use -------------------------------------
 
     [UnityTest]
     public IEnumerator InputKeyPress_FiresOnConfiguredKey()
     {
-        _go = new GameObject("keypress");
-        InputKeyPress press = _go.AddComponent<InputKeyPress>();
-        press.activationKey = Key.G;
+        InputKeyPress press = BuildKeyPress("keypress", "<Keyboard>/g");
 
         int fired = 0;
         press.onPressEvent ??= new UnityEngine.Events.UnityEvent();
@@ -127,9 +146,7 @@ public class EGTKInputTests : InputTestFixture
     [UnityTest]
     public IEnumerator InputKeyPress_IgnoresOtherKeys()
     {
-        _go = new GameObject("keypress_other");
-        InputKeyPress press = _go.AddComponent<InputKeyPress>();
-        press.activationKey = Key.G;
+        InputKeyPress press = BuildKeyPress("keypress_other", "<Keyboard>/g");
 
         int fired = 0;
         press.onPressEvent ??= new UnityEngine.Events.UnityEvent();

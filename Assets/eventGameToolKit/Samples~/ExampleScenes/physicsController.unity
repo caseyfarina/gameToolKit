@@ -1356,7 +1356,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fd2ea39e917e8b4388cf849b5a2fc73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  activationKey: 27
+  activation:
+    m_Name: Activation
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: e660ad88-d345-47d3-98dd-25d98d1bc026
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: e78ca0ea-ff53-45fd-9d32-971afe0b10cc
+      m_Path: <Keyboard>/m
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Activation
+      m_Flags: 0
+    m_Flags: 0
   onPressEvent:
     m_PersistentCalls:
       m_Calls:
