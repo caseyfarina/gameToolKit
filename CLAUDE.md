@@ -440,7 +440,7 @@ Students using `GameInventorySlot` will need to:
 
 ## Quick Reference
 
-**79 Runtime Scripts | 29 Custom Editors | 3 Documentation Tools**
+**80 Runtime Scripts | 29 Custom Editors | 3 Documentation Tools**
 
 Runtime breakdown (`Assets/eventGameToolKit/Runtime/`, verified against disk):
 
@@ -454,16 +454,16 @@ Runtime breakdown (`Assets/eventGameToolKit/Runtime/`, verified against disk):
 | `Animation/` | 3 | |
 | `PostProcessingAnimation/` | 3 | `applicationFPSLimiting`, `StopMotionPostProcess`, `StopMotionJob` (Burst job, internal) |
 | `Puzzle/` | 3 | |
-| `Utilities/` | 4 | `InputCollisionEnter`, `lockMouseCursorToDisplay`, `ObjectAttractor`, `EGTKPhysics` (internal) |
+| `Utilities/` | 5 | `InputCollisionEnter`, `lockMouseCursorToDisplay`, `ObjectAttractor`, plus `EGTKPhysics` and `EGTKInput` (internal) |
 | `UI/` | 1 | |
 | `Variables/` | 1 | `GameData` — internal, invisible to students |
 | `Interfaces/` | 2 | `ISpawnPointProvider`, `ITeleportableCharacter` |
-| **Total** | **79** | |
+| **Total** | **80** | |
 
 `Editor/` holds 32 files: 29 with `[CustomEditor]` plus 3 documentation tools in `Editor/Documentation/`.
 
 **Counting rule**: the totals above are raw `.cs` file counts. Not every file is a student-facing
-component — `StopMotionJob`, `GameData`, `EGTKPhysics`, `ISpawnPointProvider`,
+component — `StopMotionJob`, `GameData`, `EGTKPhysics`, `EGTKInput`, `ISpawnPointProvider`,
 `ITeleportableCharacter`, and `DialogueUIController` are internal. When you update these numbers, get them from disk:
 
 ```bash
@@ -511,14 +511,15 @@ Two callback shapes are involved:
 | `InputClickDrag` | ✅ | Use Drag Plane `WorldXY` for 2D |
 | `InputClickRotate` | ✅ | |
 | `CharacterController2D` | ✅ | New. Platformer or Top-Down |
+| `InputInteractionZone` | ✅ | Proximity and mouse modes both |
+| `InputCollisionEnter` | ✅ | `OnCollisionEnter2D` feeds the same handler |
 | `InputFPMouseInteraction` | ❌ | **Intentional.** First-person reticle raycast has no 2D counterpart |
 | `PhysicsBumper`, `PhysicsBumperTag` | ❌ | Not yet converted |
-| `PhysicsForceZone`, `InputCollisionEnter` | ❌ | Not yet converted |
+| `PhysicsForceZone` | ❌ | Not yet converted |
 | `PhysicsEnemyController` | ❌ | No 2D enemy controller exists yet |
 | `ActionRespawnPlayer`, `ActionSpawnProjectile` | ❌ | Not yet converted |
 | `ActionPlatformAnimator`, `PhysicsPlatformStick` | ❌ | Not yet converted |
 | `CharacterPushRigidBody`, `ObjectAttractor` | ❌ | Not yet converted |
-| `InputInteractionZone` | ❌ | Not yet converted |
 | `GameCheckpointManager`, `ActionTeleportToTransform` | ⚠️ | Still hard-code `CharacterControllerCC`, so **2D respawn and teleport silently do nothing** |
 | Decal components | ❌ | URP decals are 3D-only; no 2D analog exists |
 
@@ -583,6 +584,125 @@ unity command run_tests --mode playmode --async_tests # PlayMode, then poll test
 stalls Unity's main thread, so the next `Time.deltaTime` absorbs the delay and drains coyote/jump
 buffers, and click state machines never see down-then-up on consecutive frames. Anything timing
 dependent belongs in a PlayMode test.
+
+---
+
+## Input System
+
+**The toolkit reads all input through the Input System. The legacy `UnityEngine.Input`
+class is not used anywhere and must not be reintroduced.**
+
+Unity 6.3 creates projects with Active Input Handling set to **Input System Package (New)**,
+which disables the legacy backend. Verified across the Unity projects on this machine: every
+6.3 project is New-only; only the 6.0-era one is "Both". A student's fresh project is
+New-only, so any legacy `Input` call is dead code for them.
+
+This bit hard once: seven scripts still called `UnityEngine.Input`, including `InputKeyPress`,
+the toolkit's most-used component. Pressing a key did nothing in a student's project. It was
+invisible here only because this project is set to "Both".
+
+### Three ways input is read
+
+| Mechanism | Used by | Why |
+|---|---|---|
+| `PlayerInput` + `EGTK_InputSystem_Actions` | Character controllers | A whole control scheme; Unity's recommended workflow |
+| Inline serialized `InputAction` | `InputKeyPress`, `InputKeyCountdown` | Student picks one key per object via the binding UI |
+| `EGTKInput` direct polling | Manager secondary keys (pause, store, cursor toggle) | Not input-source components; a binding UI there is noise |
+
+**Why inline actions rather than `InputActionReference`.** The package's action asset ships
+inside the package, and the recommended install is a git URL, so it lands read-only in
+`Library/PackageCache`. A student cannot add an action to it. Requiring a reference would
+mean creating their own asset, action map, action, control type and binding before a key
+press does anything — six concepts ahead of "press E opens the door".
+
+Unity documents Actions as the recommended workflow and direct polling as suitable for
+simple single-platform cases. The split above is a deliberate reading of that for a no-code
+educational toolkit, not an oversight.
+
+### `EGTKInput`
+
+`Runtime/Utilities/EGTKInput.cs` — internal, invisible to students. Every method is
+null-safe, because `Keyboard.current` and `Mouse.current` are null when no device is
+attached and reading them directly throws.
+
+```csharp
+static bool WasKeyPressedThisFrame(Key key);
+static bool IsKeyHeld(Key key);
+static bool WasKeyReleasedThisFrame(Key key);
+static bool WasMouseButtonPressedThisFrame(int button);
+static bool IsMouseButtonHeld(int button);
+static Vector2 MousePosition { get; }
+```
+
+### Renaming a serialized field
+
+**Rename the field and its custom editor in the same commit.** `FindProperty` takes a
+string, so a rename that misses the editor makes `PropertyField(null)` throw and breaks that
+component's whole Inspector — with no compiler error.
+
+This has happened twice: `storeKey` → `storeInputKey` and `fallbackKey` → `fallbackInputKey`
+broke `GameStoreManager`'s and `InputInteractionZone`'s Inspectors in their *default*
+configurations, and neither was noticed until a manual review days later.
+
+`CustomEditorBindingTests` now fails the test run when it happens.
+
+---
+
+## Testing
+
+`Assets/ProjectAssets/Dev/Tests/` — outside the package, so never shipped.
+
+```bash
+unity command run_tests                                # EditMode
+unity command run_tests --mode playmode --async_tests  # PlayMode, then poll test_status
+```
+
+**The two modes cannot run at once** — starting one aborts the other. Run them separately
+and wait for `test_status` to report `completed`.
+
+| Suite | Covers |
+|---|---|
+| `SceneSmokeTests` | Loads all 12 example scenes, fails on any error or exception |
+| `CustomEditorBindingTests` | Every `FindProperty` matches a real serialized field |
+| `EGTKPhysicsTests`, `EGTKPhysicsPickingTests` | 2D/3D detection and screen-point picking |
+| `EGTKInputTests` | Input System reads via a virtual keyboard and mouse |
+| `InputTriggerZoneTests`, `InputMouseInteraction2DTests` | Trigger and click behaviour, 2D and 3D |
+| `CharacterController2DTests` | Movement, jumping, teleport |
+
+**`SceneSmokeTests` is the highest-value suite.** It needs no per-scene assertions and
+catches the class of bug that compiles fine and only fails when a scene runs — a null
+dereference after a `RequireComponent` is removed, a validation routine that rejects a valid
+setup, a missing reference. It reads its scene list from Build Settings, so a new example
+scene is covered as soon as it is added there. It is also what made a 1463-file asset move
+safe to attempt.
+
+It is named to sort last on purpose: loading real scenes pairs input devices via
+`PlayerInput`, which corrupts the virtual devices `InputTestFixture` creates. NUnit's
+`[Order]` cannot express this — it is valid on methods only, and orders within a fixture.
+
+**Frame-sensitive behaviour cannot be tested from outside the editor.** Each command-server
+request stalls Unity's main thread, so the next `Time.deltaTime` absorbs the delay and drains
+coyote and jump-buffer timers, and click state machines never see down-then-up on
+consecutive frames. Anything timing dependent belongs in a PlayMode test.
+
+---
+
+## Known Issues
+
+**The package depends on assets it does not ship.** A transitive GUID walk found four
+references from package content into `ProjectAssets/ThirdParty/`:
+
+| Asset | Lives in | Referenced by |
+|---|---|---|
+| `Armature_Arms_RGB.tif` | StarterAssets | `eventGameToolKit/Materials/alwaysOnTop.mat` |
+| `UI_Icon_Jump.png` | StarterAssets | `storeExample.unity` |
+| `CircleSprite.png` | Cinemachine Samples | `storeExample.unity` |
+| `GlowingGold.mat` | Cinemachine Samples | `checkPointExample.unity` |
+
+A student installing via Package Manager gets a material with a missing texture and two
+example scenes with missing assets. Copying Unity's sample assets into a public repo is a
+licensing grey area, so the fix is to replace these four references with assets the package
+owns. This is why StarterAssets and Samples were kept rather than deleted.
 
 ---
 

@@ -144,6 +144,49 @@ FPS during a cutscene and back to 60 for normal gameplay.
 
 ---
 
+## Setting a Key
+
+**This changed.** Key components no longer have a key dropdown. They have an **Input
+Action** with a binding list:
+
+1. Find **Activation** in the Inspector
+2. Click **+** to add a binding
+3. Click **Listen**, then press the key you want
+4. Click anywhere to finish
+
+A newly added component comes pre-bound to **Space**, so it works before you touch it.
+
+Because it is a real Input Action rather than a fixed key, the same binding also accepts a
+gamepad button, and one action can hold several bindings at once — keyboard *and* gamepad
+for the same event.
+
+Affects **InputKeyPress** and **InputKeyCountdown**.
+
+> **Upgrading an older project?** Key fields were replaced, not renamed, so any key you
+> set previously is gone and needs setting again through the binding UI.
+
+### Two ways to read input
+
+| Component | Use when |
+|---|---|
+| **InputKeyPress** | One key on one object. Self-contained, nothing else to set up. |
+| **InputActionEvent** | An action shared across objects, from an Input Actions asset. |
+
+Both go through Unity's Input System. The whole toolkit does — the old `Input` class does
+not work in Unity 6.3 projects, which are created with Input System only.
+
+---
+
+## Try Everything: the Input Test Scene
+
+**`ExampleScenes/Example2D_InputTest.unity`** has one labelled station for every input
+component. Walk the character through the floor stations, and use the mouse and keys for
+the row above. Each station toggles a sprite so you can see it fire.
+
+Fastest way to see what each input component does before choosing one.
+
+---
+
 ## Making a 2D Game
 
 EGTK works with sprites. The rule is simple: **put a Collider 2D on a sprite instead of a
@@ -159,6 +202,8 @@ Collider, and the component figures out the rest.** There is no 2D checkbox to f
 | **InputClickRotate** | Rotate a sprite by dragging | Dials, valves, rotating puzzles |
 | **InputTriggerZone** | Fires events when a tagged object enters a 2D trigger | Collectibles, damage zones, doors |
 | **InputCheckpointZone** | Saves the player's position when entered | Platformer checkpoints |
+| **InputInteractionZone** | Fires when the player is close and presses a key | "Press E to open" doors, NPCs |
+| **InputCollisionEnter** | Fires when something collides, with impact strength | Impact sounds, breakables |
 
 ### CharacterController2D setup
 
@@ -177,7 +222,6 @@ These are still 3D-only. They will not respond to 2D colliders:
 - **PhysicsBumper**, **PhysicsBumperTag**, **PhysicsForceZone**
 - **ActionRespawnPlayer**, **ActionSpawnProjectile**
 - **ActionPlatformAnimator**, **PhysicsPlatformStick**
-- **InputInteractionZone**, **InputCollisionEnter**
 - Enemy controllers, and the Decal components
 - **InputFPMouseInteraction** — first-person only, no 2D version planned
 

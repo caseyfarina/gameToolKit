@@ -27,7 +27,7 @@ Runtime/
 ├── PostProcessingAnimation/ # Stop motion look (3 scripts)
 ├── Puzzle/              # Puzzle mechanics (3 scripts)
 ├── UI/                  # UI helpers (1 script)
-└── Utilities/           # Legacy/helper scripts (4 scripts)
+└── Utilities/           # Legacy/helper scripts (5 scripts)
 ```
 
 ---
@@ -37,6 +37,11 @@ Runtime/
 **Location**: `Runtime/Input/`
 
 Event sources triggered by player input or game state.
+
+> **Input note**: `InputKeyPress` and `InputKeyCountdown` expose a serialized `InputAction`
+> rather than a key enum. Students bind a key in the Inspector with **+** then **Listen**.
+> A newly added component defaults to `<Keyboard>/space`. See
+> [CLAUDE.md § Input System](../../CLAUDE.md).
 
 ### InputKeyPress.cs
 - Simple key press event system
@@ -744,7 +749,7 @@ Switch and checker mechanics for puzzle design.
 
 ---
 
-## Utilities (4 scripts)
+## Utilities (5 scripts)
 
 **Location**: `Runtime/Utilities/`
 
@@ -757,6 +762,16 @@ Legacy and helper scripts.
 - Cursor management utility
 - Locks and hides cursor for first-person games
 - Toggle with Escape key
+
+### EGTKInput.cs
+- **Internal**: students never see or use this
+- Reads the keyboard and mouse through the Input System; the legacy `UnityEngine.Input`
+  class does not work in a student's Unity 6.3 project
+- `WasKeyPressedThisFrame`, `IsKeyHeld`, `WasKeyReleasedThisFrame`,
+  `WasMouseButtonPressedThisFrame`, `IsMouseButtonHeld`, `MousePosition`
+- Every method is null-safe: `Keyboard.current` and `Mouse.current` are null with no device
+- Used for secondary keys on managers. Input-source components use InputActions instead
+- See [CLAUDE.md § Input System](../../CLAUDE.md)
 
 ### EGTKPhysics.cs
 - **Internal**: students never see or use this
@@ -807,7 +822,7 @@ Core interfaces for extensible systems.
 
 ## Script Count Summary
 
-**Total: 79 runtime `.cs` files**
+**Total: 80 runtime `.cs` files**
 
 | Folder | Count |
 |---|---:|
@@ -819,13 +834,13 @@ Core interfaces for extensible systems.
 | Animation | 3 |
 | PostProcessingAnimation | 3 (2 student-facing + `StopMotionJob`) |
 | Puzzle | 3 |
-| Utilities | 4 (incl. `EGTKPhysics`, internal) |
+| Utilities | 5 (incl. `EGTKPhysics` and `EGTKInput`, internal) |
 | UI | 1 |
 | Variables | 1 (`GameData`, internal) |
 | Interfaces | 2 (`ISpawnPointProvider`, `ITeleportableCharacter`) |
-| **Total** | **79** |
+| **Total** | **80** |
 
-Not all 79 are student-facing: `GameData`, `StopMotionJob`, `EGTKPhysics`,
+Not all 80 are student-facing: `GameData`, `StopMotionJob`, `EGTKPhysics`, `EGTKInput`,
 `ISpawnPointProvider`, `ITeleportableCharacter`, and `DialogueUIController` are internal.
 
 **Verify from disk rather than trusting this table:**
