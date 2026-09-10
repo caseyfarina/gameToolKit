@@ -229,21 +229,37 @@ public class ProjectileVelocity : MonoBehaviour
 {
     private Vector3 velocity;
     private Rigidbody rb;
+    private Rigidbody2D rb2D;
     private bool usePhysics;
     private bool isInitialized = false;
 
     void Awake()
     {
-        // Check if this projectile has a Rigidbody
+        // Either dimension works. A projectile with no body at all moves by transform
+        // instead, which is the third supported case.
         rb = GetComponent<Rigidbody>();
-        usePhysics = rb != null;
+        rb2D = GetComponent<Rigidbody2D>();
+        usePhysics = rb != null || rb2D != null;
 
-        if (usePhysics)
+        if (rb != null)
         {
-            // Configure Rigidbody for projectile behavior
-            rb.useGravity = false;  // Projectiles typically don't use gravity
-            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;  // Prevents tunneling through objects
+            // Projectiles fly straight, and continuous detection stops fast ones
+            // tunnelling through thin walls.
+            rb.useGravity = false;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         }
+        else if (rb2D != null)
+        {
+            rb2D.gravityScale = 0f;
+            rb2D.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        }
+    }
+
+    // Assigning through one place keeps the 2D and 3D paths from drifting apart.
+    private void ApplyVelocityToBody()
+    {
+        if (rb2D != null) rb2D.linearVelocity = velocity;
+        else if (rb != null) rb.linearVelocity = velocity;
     }
 
     /// <summary>
@@ -254,10 +270,9 @@ public class ProjectileVelocity : MonoBehaviour
         isInitialized = true;
         velocity = direction.normalized * speed;
 
-        if (usePhysics && rb != null)
+        if (usePhysics)
         {
-            // Set Rigidbody velocity directly for physics-based movement
-            rb.linearVelocity = velocity;
+            ApplyVelocityToBody();
         }
     }
 
@@ -284,9 +299,9 @@ public class ProjectileVelocity : MonoBehaviour
 
         // Maintain constant velocity for physics-based projectiles
         // (prevents slowdown from drag or collisions)
-        if (usePhysics && rb != null)
+        if (usePhysics)
         {
-            rb.linearVelocity = velocity;
+            ApplyVelocityToBody();
         }
     }
 
@@ -303,9 +318,9 @@ public class ProjectileVelocity : MonoBehaviour
 
         velocity = newVelocity;
 
-        if (usePhysics && rb != null)
+        if (usePhysics)
         {
-            rb.linearVelocity = velocity;
+            ApplyVelocityToBody();
         }
     }
 

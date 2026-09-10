@@ -28,15 +28,17 @@ public class ObjectAttractor : MonoBehaviour
     public bool useSquareFalloff = true;
     
     private Rigidbody rb;
-    
+    private Rigidbody2D rb2D;
+
     void Start()
     {
-        // Get the Rigidbody component
+        // Either dimension is fine; whichever body is present receives the force.
         rb = GetComponent<Rigidbody>();
-        
-        if (rb == null)
+        rb2D = GetComponent<Rigidbody2D>();
+
+        if (rb == null && rb2D == null)
         {
-            Debug.LogError("ObjectAttractor requires a Rigidbody component on " + gameObject.name);
+            Debug.LogError("ObjectAttractor requires a Rigidbody or Rigidbody2D on " + gameObject.name);
         }
         
         if (targetObject == null)
@@ -47,8 +49,9 @@ public class ObjectAttractor : MonoBehaviour
     
     void FixedUpdate()
     {
-        // Only apply attraction if we have valid components and target
-        if (rb != null && targetObject != null)
+        // Only apply attraction if we have valid components and target.
+        // Checks both body types, or a 2D-only object would silently never attract.
+        if ((rb != null || rb2D != null) && targetObject != null)
         {
             ApplyAttraction();
         }
@@ -87,8 +90,20 @@ public class ObjectAttractor : MonoBehaviour
         // Calculate final force vector
         Vector3 attractionForce = direction * forceMagnitude;
         
-        // Apply the force to the rigidbody
-        rb.AddForce(attractionForce, forceMode);
+        // Apply the force to whichever body this object has.
+        if (rb2D != null)
+        {
+            // ForceMode has no direct 2D equivalent for Acceleration/VelocityChange, so
+            // anything impulse-like maps to Impulse and everything else to Force.
+            ForceMode2D mode2D = (forceMode == ForceMode.Impulse || forceMode == ForceMode.VelocityChange)
+                ? ForceMode2D.Impulse
+                : ForceMode2D.Force;
+            rb2D.AddForce(attractionForce, mode2D);
+        }
+        else if (rb != null)
+        {
+            rb.AddForce(attractionForce, forceMode);
+        }
     }
     
     // Optional: Draw gizmos in the scene view to visualize attraction

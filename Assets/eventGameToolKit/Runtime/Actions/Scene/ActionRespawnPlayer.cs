@@ -156,13 +156,10 @@ public class ActionRespawnPlayer : MonoBehaviour
             return;
         }
 
-        // Disable physics momentarily
-        Rigidbody rb = player.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-        }
+        // Cancel momentum first, or the player keeps its old velocity after the
+        // teleport and immediately slides away from the spawn point. Handles a
+        // Rigidbody or a Rigidbody2D, so this works for 2D players too.
+        EGTKPhysics.TryStopMotion(player);
 
         // Move player
         player.transform.position = position;
