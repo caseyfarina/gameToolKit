@@ -54,7 +54,7 @@ public class GameStoreManagerEditor : Editor
         if (openModeProp.enumValueIndex == (int)StoreOpenMode.Key)
         {
             EditorGUI.indentLevel++;
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("storeKey"), new GUIContent("Open / Close Key"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("storeInputKey"), new GUIContent("Open / Close Key"));
             EditorGUI.indentLevel--;
         }
         else

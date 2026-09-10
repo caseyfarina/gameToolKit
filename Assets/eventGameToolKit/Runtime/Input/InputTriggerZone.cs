@@ -52,7 +52,17 @@ public class InputTriggerZone : MonoBehaviour
 
     private void OnDisable()
     {
+        // Physics stops delivering enter/exit while this is disabled, and re-enabling does
+        // not replay an enter for anything still overlapping. Rather than leave listeners
+        // believing an object is still inside, treat disabling as everyone leaving: fire
+        // exit once if the zone was occupied, then clear.
+        bool wasOccupied = occupants.Count > 0;
         occupants.Clear();
+
+        if (wasOccupied)
+        {
+            onTriggerExitEvent?.Invoke();
+        }
     }
 
     // Unity dispatches the 3D and 2D callbacks independently: a zone with a Collider only
@@ -103,7 +113,11 @@ public class InputTriggerZone : MonoBehaviour
     {
         if (otherTag != triggerObjectTag) return;
 
-        occupants.Remove(other);
+        // Only report an exit for something being tracked. Without this, an object that
+        // leaves after the zone was disabled and re-enabled fires a second, phantom exit
+        // that never had a matching enter.
+        if (!occupants.Remove(other)) return;
+
         onTriggerExitEvent?.Invoke();
     }
 

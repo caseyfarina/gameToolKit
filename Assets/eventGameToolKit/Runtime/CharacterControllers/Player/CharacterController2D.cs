@@ -37,13 +37,13 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
 
     [Header("Platformer Settings")]
     [Tooltip("Peak height of a jump, in world units")]
-    [SerializeField] private float jumpHeight = 3.5f;
+    [Min(0f)] [SerializeField] private float jumpHeight = 3.5f;
     [Tooltip("Seconds after walking off a ledge during which a jump still works")]
     [SerializeField] private float coyoteTime = 0.1f;
     [Tooltip("Seconds before landing that a jump press is remembered")]
     [SerializeField] private float jumpBufferTime = 0.1f;
     [Tooltip("Multiplies Unity's gravity. Higher values feel snappier and less floaty.")]
-    [SerializeField] private float gravityScale = 3f;
+    [Min(0f)] [SerializeField] private float gravityScale = 3f;
     [Tooltip("Fastest the character may fall, in units per second")]
     [SerializeField] private float maxFallSpeed = 20f;
     [Tooltip("Which layers count as ground. Must be set, or jumping never works.")]
@@ -181,7 +181,11 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
         if (_jumpBufferCounter > 0f && _coyoteCounter > 0f)
         {
             // v = sqrt(2 * g * h) gives the launch speed for a target peak height.
-            newY = Mathf.Sqrt(2f * jumpHeight * Mathf.Abs(Physics2D.gravity.y) * gravityScale);
+            // Every term is forced non-negative: a negative gravityScale or jumpHeight
+            // would make the radicand negative, and Mathf.Sqrt would return NaN, which
+            // propagates into linearVelocity and corrupts the Rigidbody2D permanently.
+            float jumpGravity = Mathf.Abs(Physics2D.gravity.y) * Mathf.Abs(gravityScale);
+            newY = Mathf.Sqrt(2f * Mathf.Max(jumpHeight, 0f) * jumpGravity);
             _jumpBufferCounter = 0f;
             _coyoteCounter = 0f;
             onJump?.Invoke();
@@ -247,7 +251,7 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
     public void SetMoveSpeed(float newSpeed) => moveSpeed = newSpeed;
 
     /// <summary>Sets the jump height in world units.</summary>
-    public void SetJumpHeight(float newHeight) => jumpHeight = newHeight;
+    public void SetJumpHeight(float newHeight) => jumpHeight = Mathf.Max(newHeight, 0f);
 
     private void OnDrawGizmosSelected()
     {

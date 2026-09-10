@@ -294,7 +294,7 @@ public class InputInteractionZone : MonoBehaviour
     {
         return EGTKPhysics.PickAtScreenPoint(Mouse.current.position.ReadValue(),
                                              maxRaycastDistance, interactionLayer,
-                                             _is2D) == gameObject;
+                                             _is2D, cam) == gameObject;
     }
 
     private ButtonControl GetMouseButton()

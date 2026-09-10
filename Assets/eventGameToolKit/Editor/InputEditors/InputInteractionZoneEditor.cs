@@ -40,7 +40,7 @@ public class InputInteractionZoneEditor : Editor
 
             var interactActionProp = serializedObject.FindProperty("interactAction");
             EditorGUILayout.PropertyField(interactActionProp, new GUIContent("Interact Action"));
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("fallbackKey"), new GUIContent("Fallback Key"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("fallbackInputKey"), new GUIContent("Fallback Key"));
 
             if (interactActionProp.objectReferenceValue != null)
                 EditorGUILayout.HelpBox("Fallback key is ignored while an Input Action is assigned.", MessageType.None);

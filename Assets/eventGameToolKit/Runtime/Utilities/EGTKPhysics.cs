@@ -135,14 +135,22 @@ public static class EGTKPhysics
     /// Returns null when nothing is hit.
     /// </summary>
     public static GameObject PickAtScreenPoint(Vector2 screenPos, float maxDistance,
-                                               LayerMask mask, bool is2D)
+                                               LayerMask mask, bool is2D, Camera camera = null)
     {
-        Camera cam = Camera.main;
+        // Callers that expose their own camera field pass it in. Defaulting to Camera.main
+        // silently ignored those, so a component pointed at a second camera picked from the
+        // wrong viewpoint, or from nothing at all when there was no MainCamera in the scene.
+        Camera cam = camera != null ? camera : Camera.main;
         if (cam == null) return null;
 
         if (is2D)
         {
-            Vector2 worldPoint = cam.ScreenToWorldPoint(screenPos);
+            // The z component is the distance from the camera to the plane being picked.
+            // Orthographic cameras ignore it, but a perspective camera with z = 0 collapses
+            // the result onto the camera's own position, so 2D picking silently misses.
+            Vector3 screenPoint = new Vector3(screenPos.x, screenPos.y,
+                                              Mathf.Abs(cam.transform.position.z));
+            Vector2 worldPoint = cam.ScreenToWorldPoint(screenPoint);
             Collider2D hit2D = Physics2D.OverlapPoint(worldPoint, mask);
             return hit2D != null ? hit2D.gameObject : null;
         }

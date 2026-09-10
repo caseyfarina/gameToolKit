@@ -422,6 +422,11 @@ public class InputMouseInteraction : MonoBehaviour
         {
             isHovering = false;
             RemoveHoverEffects();
+
+            // Tell listeners the hover ended. Without this a tooltip, sound or animation
+            // wired to onMouseExit stays in its hovered state forever once the object is
+            // disabled while the cursor is over it.
+            onMouseExit?.Invoke();
         }
         wasHitLastFrame = false;
         isMouseDown = false;

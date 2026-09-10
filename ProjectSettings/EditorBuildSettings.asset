@@ -8,6 +8,36 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/eventGameToolKit/ExampleScenes/storeExample.unity
     guid: 9099708692dbe73498f6b39eda3fe2c0
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/Example2D_InputTest.unity
+    guid: 0534e53e8ea5cdc4287893e52a0cb51e
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/Example2D_Platformer.unity
+    guid: c8debdbe03962f949822f76af8ca45c1
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/Example2D_ClickToToggle.unity
+    guid: 8aa0609c8a264974c9ba1df4ee31f438
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/checkPointExample.unity
+    guid: 5ef119a6175d7b64fb5eb68cd66ecef4
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/collectionExample.unity
+    guid: b0d8e7edfb18eb44e96cec6e521e0118
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/enemyPatrolExample.unity
+    guid: 429945f699ac98440be48b77397312e0
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/firstPersonExample.unity
+    guid: 6c3bb1fa8532c97449fe705d24a6508d
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/projectileExample.unity
+    guid: 986c3d5031acc3e4382d9de6ca3e6b3a
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/puzzleExample.unity
+    guid: d1d44fe33b24f8f479e81b50625059b5
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/teleportExample.unity
+    guid: 162718ce33329594580387845a694e13
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 4fadf9b928f6374489a5966173fdcdab, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
