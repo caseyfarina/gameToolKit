@@ -44,6 +44,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/eventGameToolKit/ExampleScenes/Example2D_ActionsTest.unity
     guid: bb5bb679f7df28a458fb5e67eb26813e
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/Example2D_SceneFlowTest.unity
+    guid: 976346c442151e84980f60acd1fe754b
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 4fadf9b928f6374489a5966173fdcdab, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
