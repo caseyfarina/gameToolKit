@@ -41,6 +41,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/eventGameToolKit/ExampleScenes/EGTK_Documentation.unity
     guid: 2b931428bd82384488d43916d1165a75
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/Example2D_ActionsTest.unity
+    guid: bb5bb679f7df28a458fb5e67eb26813e
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 4fadf9b928f6374489a5966173fdcdab, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
