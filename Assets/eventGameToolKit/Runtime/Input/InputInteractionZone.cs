@@ -10,7 +10,8 @@ using DG.Tweening;
 /// Both modes show an optional billboard prompt sprite with hover float and glow animations.
 /// Common use: Doors, NPCs, item pickups, puzzle activations, point-and-click interactions.
 /// </summary>
-[RequireComponent(typeof(Collider))]
+// No [RequireComponent(typeof(Collider))]: it forces a 3D collider, and Unity then
+// refuses to add a Collider2D, making 2D interaction zones impossible.
 [HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 public class InputInteractionZone : MonoBehaviour
 {
@@ -178,11 +179,20 @@ public class InputInteractionZone : MonoBehaviour
 
     private void Start()
     {
+        _is2D = EGTKPhysics.Is2D(gameObject);
+
         if (interactionMode == InteractionMode.Proximity)
         {
+            Collider2D col2D = GetComponent<Collider2D>();
+            if (col2D != null && !col2D.isTrigger)
+                Debug.LogWarning($"[InputInteractionZone] '{gameObject.name}': Collider2D is not set to Is Trigger. Players will not be detected in Proximity mode.", this);
+
             Collider col = GetComponent<Collider>();
-            if (!col.isTrigger)
+            if (col != null && !col.isTrigger)
                 Debug.LogWarning($"[InputInteractionZone] '{gameObject.name}': Collider is not set to Is Trigger. Players will not be detected in Proximity mode.", this);
+
+            if (col == null && col2D == null)
+                Debug.LogWarning($"[InputInteractionZone] '{gameObject.name}': needs a Collider or Collider2D set to Is Trigger for Proximity mode.", this);
         }
 
         if (showPrompt)
@@ -221,20 +231,29 @@ public class InputInteractionZone : MonoBehaviour
         onInteract.Invoke();
     }
 
-    private void OnTriggerEnter(Collider other)
+    // Cached in Start: whether this zone uses 2D physics, resolved from its own collider.
+    private bool _is2D;
+
+    private void OnTriggerEnter(Collider other) => HandleProximityEnter(other.tag);
+    private void OnTriggerEnter2D(Collider2D other) => HandleProximityEnter(other.tag);
+
+    private void OnTriggerExit(Collider other) => HandleProximityExit(other.tag);
+    private void OnTriggerExit2D(Collider2D other) => HandleProximityExit(other.tag);
+
+    private void HandleProximityEnter(string otherTag)
     {
         if (interactionMode != InteractionMode.Proximity) return;
-        if (!other.CompareTag(playerTag)) return;
+        if (otherTag != playerTag) return;
 
         isInteractable = true;
         ShowPrompt();
         onEnter.Invoke();
     }
 
-    private void OnTriggerExit(Collider other)
+    private void HandleProximityExit(string otherTag)
     {
         if (interactionMode != InteractionMode.Proximity) return;
-        if (!other.CompareTag(playerTag)) return;
+        if (otherTag != playerTag) return;
 
         isInteractable = false;
         HidePrompt();
@@ -250,9 +269,7 @@ public class InputInteractionZone : MonoBehaviour
         Camera cam = targetCamera != null ? targetCamera : Camera.main;
         if (cam == null) return;
 
-        Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
-        bool isHit = Physics.Raycast(ray, out _, maxRaycastDistance, interactionLayer, QueryTriggerInteraction.Collide)
-                     && IsMouseOverThisObject(cam);
+        bool isHit = IsMouseOverThisObject(cam);
 
         if (isHit && !wasHoveredLastFrame)
         {
@@ -275,9 +292,9 @@ public class InputInteractionZone : MonoBehaviour
 
     private bool IsMouseOverThisObject(Camera cam)
     {
-        Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
-        return Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactionLayer, QueryTriggerInteraction.Collide)
-               && hit.collider.gameObject == gameObject;
+        return EGTKPhysics.PickAtScreenPoint(Mouse.current.position.ReadValue(),
+                                             maxRaycastDistance, interactionLayer,
+                                             _is2D) == gameObject;
     }
 
     private ButtonControl GetMouseButton()

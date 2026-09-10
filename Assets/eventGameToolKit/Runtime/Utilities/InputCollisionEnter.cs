@@ -7,7 +7,9 @@ using UnityEngine.Events;
 /// Detects 3D collisions with tagged objects, measuring impact strength and applying timing restrictions.
 /// Common use: Impact damage systems, collision-triggered events, breakable objects, or force-based interactions.
 /// </summary>
-[RequireComponent(typeof(Collider))]
+// No [RequireComponent(typeof(Collider))]: it forces a 3D collider, and Unity then
+// refuses to add a Collider2D, making 2D collisions impossible. Start() validates that
+// some collider is present instead.
 [HelpURL("https://caseyfarina.github.io/egtk-docs/")]
 [AddComponentMenu("Teaching/Input/Input Collision Enter")]
 public class InputCollisionEnter : MonoBehaviour
@@ -93,7 +95,7 @@ public class InputCollisionEnter : MonoBehaviour
 
     // Private variables for timing control
     private float lastCollisionTime = -999f;
-    private HashSet<Collider> contactedObjects;
+    private HashSet<GameObject> contactedObjects;
 
     // Velocity statistics for threshold tuning
     private float minVelocitySeen = float.MaxValue;
@@ -114,7 +116,7 @@ public class InputCollisionEnter : MonoBehaviour
         // Initialize HashSet only if using InitialContact mode
         if (timingMode == TimingMode.InitialContact)
         {
-            contactedObjects = new HashSet<Collider>();
+            contactedObjects = new HashSet<GameObject>();
         }
     }
 
@@ -128,41 +130,65 @@ public class InputCollisionEnter : MonoBehaviour
     /// </summary>
     private void ValidateSetup()
     {
-        if (collider == null)
+        // Either dimension is acceptable; the matching collision callback fires for whichever
+        // collider type is attached.
+        Collider2D collider2D = GetComponent<Collider2D>();
+
+        if (collider == null && collider2D == null)
         {
-            Debug.LogError($"InputCollisionEnter on {gameObject.name}: Missing Collider component!", this);
+            Debug.LogError($"InputCollisionEnter on {gameObject.name}: needs a Collider (3D) or Collider2D (2D)!", this);
             return;
         }
 
-        if (collider.isTrigger)
+        bool isTrigger = collider != null ? collider.isTrigger
+                                          : collider2D.isTrigger;
+        if (isTrigger)
         {
             Debug.LogWarning($"InputCollisionEnter on {gameObject.name}: Collider is set as Trigger. " +
                            "For collision detection, uncheck 'Is Trigger'. " +
                            "Use triggers for zone/area detection instead.", this);
         }
 
-        if (rigidBody == null)
+        // A collision needs a body on one side of the pair. Check both dimensions before
+        // warning, or a perfectly valid 2D setup gets told it is broken.
+        bool hasBody = rigidBody != null || GetComponent<Rigidbody2D>() != null;
+        if (!hasBody)
         {
-            // Check if there's a Rigidbody in parent hierarchy
             rigidBody = GetComponentInParent<Rigidbody>();
+            hasBody = rigidBody != null || GetComponentInParent<Rigidbody2D>() != null;
 
-            if (rigidBody == null)
+            if (!hasBody)
             {
                 Debug.LogWarning($"InputCollisionEnter on {gameObject.name}: No Rigidbody found! " +
-                               "Add a Rigidbody component (can be Kinematic) for collision detection.", this);
+                               "Add a Rigidbody or Rigidbody2D (can be Kinematic) for collision detection.", this);
             }
         }
     }
 
+    // Unity dispatches the 3D and 2D collision callbacks independently: an object with a
+    // Collider only ever hears the 3D one, a Collider2D only the 2D one. Both feed the
+    // same handler, so behaviour is identical in either dimension.
     private void OnCollisionEnter(Collision collision)
     {
+        Vector3 point = collision.contacts.Length > 0 ? collision.contacts[0].point : transform.position;
+        HandleCollision(collision.gameObject, collision.relativeVelocity.magnitude,
+                        point, collision.contacts.Length > 0);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        Vector3 point = collision.contactCount > 0 ? (Vector3)collision.GetContact(0).point : transform.position;
+        HandleCollision(collision.gameObject, collision.relativeVelocity.magnitude,
+                        point, collision.contactCount > 0);
+    }
+
+    private void HandleCollision(GameObject other, float impactStrength,
+                                 Vector3 contactPoint, bool hasContact)
+    {
         // Check tag (with invert option)
-        bool tagMatches = collision.gameObject.CompareTag(collisionObjectTag);
+        bool tagMatches = other.CompareTag(collisionObjectTag);
         if (invertTagDetection ? tagMatches : !tagMatches)
             return;
-
-        // Calculate impact strength
-        float impactStrength = collision.relativeVelocity.magnitude;
 
         // Update velocity statistics if debug is enabled
         if (enableDebug && debugVelocityStats)
@@ -173,33 +199,33 @@ public class InputCollisionEnter : MonoBehaviour
         // Check minimum impact strength
         if (impactStrength < minimumImpactStrength)
         {
-            DebugLog($"Collision too weak: {collision.gameObject.name} impact {impactStrength:F2} < required {minimumImpactStrength:F2}");
+            DebugLog($"Collision too weak: {other.name} impact {impactStrength:F2} < required {minimumImpactStrength:F2}");
             return;
         }
 
         // Apply timing mode restrictions
-        if (!CheckTimingRestrictions(collision.collider, impactStrength))
+        if (!CheckTimingRestrictions(other, impactStrength))
             return;
 
         // Show 3D debug text if enabled
-        if (enableDebug && debugShow3DText && collision.contacts.Length > 0)
+        if (enableDebug && debugShow3DText && hasContact)
         {
-            Show3DDebugText(collision.contacts[0].point, impactStrength);
+            Show3DDebugText(contactPoint, impactStrength);
         }
 
         // Log successful collision
-        DebugLog($"Collision detected: {collision.gameObject.name} → {gameObject.name} (Impact: {impactStrength:F2})");
+        DebugLog($"Collision detected: {other.name} → {gameObject.name} (Impact: {impactStrength:F2})");
 
         // Invoke all relevant events
         onCollisionEnter?.Invoke();
         onCollisionEnterWithStrength?.Invoke(impactStrength);
-        onCollisionEnterWithObject?.Invoke(collision.gameObject);
+        onCollisionEnterWithObject?.Invoke(other);
     }
 
     /// <summary>
     /// Checks if collision should trigger based on timing mode
     /// </summary>
-    private bool CheckTimingRestrictions(Collider other, float impactStrength)
+    private bool CheckTimingRestrictions(GameObject other, float impactStrength)
     {
         switch (timingMode)
         {
@@ -216,7 +242,7 @@ public class InputCollisionEnter : MonoBehaviour
             case TimingMode.InitialContact:
                 if (contactedObjects == null)
                 {
-                    contactedObjects = new HashSet<Collider>();
+                    contactedObjects = new HashSet<GameObject>();
                 }
 
                 if (!contactedObjects.Add(other))  // Add returns false if already present
@@ -411,8 +437,8 @@ public class InputCollisionEnter : MonoBehaviour
     {
         if (obj != null && contactedObjects != null)
         {
-            Collider col = obj.GetComponent<Collider>();
-            if (col != null && contactedObjects.Remove(col))
+            // Tracking is by GameObject, so this works for 2D and 3D alike.
+            if (contactedObjects.Remove(obj))
             {
                 DebugLog($"Cleared {obj.name} from contact tracking");
             }
@@ -427,8 +453,7 @@ public class InputCollisionEnter : MonoBehaviour
         if (obj == null || contactedObjects == null || timingMode != TimingMode.InitialContact)
             return false;
 
-        Collider col = obj.GetComponent<Collider>();
-        return col != null && contactedObjects.Contains(col);
+        return contactedObjects.Contains(obj);
     }
 
 #if UNITY_EDITOR
@@ -440,7 +465,7 @@ public class InputCollisionEnter : MonoBehaviour
         // Ensure timing mode and HashSet are synchronized
         if (timingMode == TimingMode.InitialContact && contactedObjects == null && Application.isPlaying)
         {
-            contactedObjects = new HashSet<Collider>();
+            contactedObjects = new HashSet<GameObject>();
         }
         else if (timingMode != TimingMode.InitialContact && contactedObjects != null)
         {
