@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **[Custom Editor Scripts Guide](.claude/docs/custom-editors.md)** - Critical info for modifying Inspector UI
 - **[Development Patterns & Best Practices](.claude/docs/development-patterns.md)** - Physics patterns, system integration, Unity conventions
 - **[Documentation Generator Guide](.claude/docs/documentation-generator.md)** - XML documentation requirements
+- **[Example Scene Workflow](.claude/docs/example-scene-workflow.md)** - How example scenes are built and verified, and what cannot be verified from outside the editor
 - **[Changelog](.claude/docs/changelog.md)** - Recent updates and refactorings
 
 ## Project Overview
