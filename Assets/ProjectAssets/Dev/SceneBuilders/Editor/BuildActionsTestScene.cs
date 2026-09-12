@@ -31,22 +31,7 @@ public static class BuildActionsTestScene
     }
 
     private static TextMeshPro Label(string text, Vector2 pos, float width = 4.6f, float size = 0.62f)
-    {
-        var go = new GameObject("Label");
-        go.transform.position = pos;
-        var tmp = go.AddComponent<TextMeshPro>();
-        tmp.text = text;
-        tmp.alignment = TextAlignmentOptions.Top;
-        tmp.color = Color.white;
-        if (_font != null) tmp.font = _font;
-
-        RectTransform rt = tmp.rectTransform;
-        rt.sizeDelta = new Vector2(width / 0.35f, 3.4f / 0.35f);
-        rt.pivot = new Vector2(0.5f, 1f);
-        go.transform.localScale = Vector3.one * 0.35f;
-        tmp.fontSize = size / 0.35f * 2.4f;
-        return tmp;
-    }
+        => SceneLabel.Create(_font, text, pos, width, size, Color.white);
 
     private static GameObject Indicator(Vector2 pos, Sprite sprite, Color tint)
     {
@@ -243,25 +228,28 @@ public static class BuildActionsTestScene
         Label("6. ActionRandomMotion\nDrifts on its own", new Vector2(1.5f, 0.6f));
 
         // 7. ActionTriggerAnimatorParameter -----------------------------------------
-        var animTarget = Sprite("AnimatedSprite", flag, new Vector2(7.5f, 2.6f));
+        // Station 6's unbreakable "ActionRandomMotion" word overran its box at 2.5x font
+        // and collided with this station's label, so the row-2 gap here was widened from
+        // 4.5 to 6.5 units (row 1's shorter per-station text tolerates the tighter gap).
+        var animTarget = Sprite("AnimatedSprite", flag, new Vector2(9.5f, 2.6f));
         var animator = animTarget.AddComponent<Animator>();
         animator.runtimeAnimatorController = animController;
 
-        var paramGo = Sprite("7_ActionTriggerAnimatorParameter", crate, new Vector2(6f, 2f));
+        var paramGo = Sprite("7_ActionTriggerAnimatorParameter", crate, new Vector2(8f, 2f));
         var setParam = paramGo.AddComponent<ActionTriggerAnimatorParameter>();
         SetProp(setParam, "targetAnimator", p => p.objectReferenceValue = animator);
         SetProp(setParam, "parameterName", p => p.stringValue = "Spin");
         SetProp(setParam, "boolValue", p => p.boolValue = true);
         Wire(Clickable(paramGo).onMouseClick, setParam.TriggerParameter);
         Label("7. ActionTriggerAnimatorParameter\nClick: sets Spin = true",
-              new Vector2(6f, 0.6f), 6f);
+              new Vector2(8f, 0.6f), 6f);
 
         // 8. ActionPlayCharacterEmoteAnimation --------------------------------------
-        var emoteGo = Sprite("8_ActionPlayCharacterEmote", crate, new Vector2(12f, 2f));
+        var emoteGo = Sprite("8_ActionPlayCharacterEmote", crate, new Vector2(15.5f, 2f));
         var emote = emoteGo.AddComponent<ActionPlayCharacterEmoteAnimation>();
         SetProp(emote, "characterAnimator", p => p.objectReferenceValue = animator);
         Label("8. ActionPlayCharacterEmote\nDrives the same Animator\n(set an emote in the Inspector)",
-              new Vector2(12f, 0.6f), 6f);
+              new Vector2(15.5f, 0.6f), 6f);
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ScenePath);

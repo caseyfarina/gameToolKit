@@ -32,22 +32,7 @@ public static class BuildPhysics2DTestScene
     }
 
     private static TextMeshPro Label(string text, Vector2 pos, float width = 5f, float size = 0.62f)
-    {
-        var go = new GameObject("Label");
-        go.transform.position = pos;
-        var tmp = go.AddComponent<TextMeshPro>();
-        tmp.text = text;
-        tmp.alignment = TextAlignmentOptions.Top;
-        tmp.color = Color.white;
-        if (_font != null) tmp.font = _font;
-
-        RectTransform rt = tmp.rectTransform;
-        rt.sizeDelta = new Vector2(width / 0.35f, 3.4f / 0.35f);
-        rt.pivot = new Vector2(0.5f, 1f);
-        go.transform.localScale = Vector3.one * 0.35f;
-        tmp.fontSize = size / 0.35f * 2.4f;
-        return tmp;
-    }
+        => SceneLabel.Create(_font, text, pos, width, size, Color.white);
 
     private static void SetProp(Object target, string name, System.Action<SerializedProperty> set)
     {
@@ -151,7 +136,9 @@ public static class BuildPhysics2DTestScene
 
         for (int i = 0; i < 3; i++)
         {
-            var puff = Sprite("ZoneMarker", coin, new Vector2(8.6f + i * 0.9f, 2.4f), 1);
+            // Kept low, clear of the 3-line label above it — at 2.5x font the label's
+            // third line used to reach down into where these markers sat at y=2.4.
+            var puff = Sprite("ZoneMarker", coin, new Vector2(8.6f + i * 0.9f, 0.6f), 1);
             puff.transform.SetParent(zone.transform);
             puff.GetComponent<SpriteRenderer>().color = new Color(0.6f, 0.9f, 1f, 0.35f);
         }

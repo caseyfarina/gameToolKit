@@ -17,7 +17,9 @@ routine that rejects a valid setup. A missing reference.
 Several such bugs reached students before `SceneSmokeTests` existed. Every component in a
 scene is watched by it; every component that is not, is not.
 
-**Current coverage: 63 of 75 student-facing scripts.** Measure it with the script at the
+**Current coverage: 71 of 73.** There are 75 student-facing scripts; two will never have an
+example scene by decision, so the script below excludes them and 73 is the ceiling. See
+"Deliberately unexemplified" below. Measure it with the script at the
 bottom of this file — never by hand.
 
 ---
@@ -182,6 +184,65 @@ produces real newlines and the match fails. Use `chr(92)+'n'`, or edit line by l
 
 ---
 
+### Font size does not fix legibility — framing does
+
+The first decal scene was a 38x9 wall: a 4.2:1 strip rendered into a 16:9 frame. Fitting its
+width forced the camera back to z=-19, so the board filled only the middle third of the
+frame and captions landed at ~6px of a 720px image. Tripling the font did not help; past a
+point labels only start colliding with each other.
+
+The fix was structural: 2x2 grid instead of a 4-wide row, wall 26x14, camera z -8.5. Same
+content, same font constant, captions ~2.7x larger on screen.
+
+**Design every station board to roughly match the viewport aspect from the start.** If a
+scene reads small, reach for the layout before the font size.
+
+### In perspective scenes, label size depends on DEPTH
+
+`Example3D_PlatformPairing` has lanes at z +4 and z -4 with the camera at z -19, so Lane A
+is ~1.5x further away and identical world-space text renders visibly smaller. `Example3D_Physics`
+has exactly the same issue.
+
+Compensate with an explicit larger `size` argument for the further lane — and keep the two
+in step if either the lane z or the camera moves. Do not try to fix it by moving the camera:
+in a pitched perspective scene, moving the camera changes both the apparent size and the
+screen position of every label non-uniformly.
+
+### Stop nudging; restructure
+
+Three separate attempts to reframe `PlatformPairing` by moving the camera and labels each
+traded one problem for another — labels off the left edge, then colliding with the title,
+then the title clipped off the top — and all three were reverted. The same thing happened
+while re-spacing `Example2D_SceneFlowTest`.
+
+**If two consecutive layout tweaks each create a new collision, the layout is wrong, not the
+positions.** Stop and restructure.
+
+### Labels are shared now — `SceneLabel.cs`
+
+Every builder used to carry its own copy-pasted `Label` helper with the same magic numbers.
+They now all call `SceneLabel.Create`, whose `FontSizeFactor` constant is the single knob for
+label size across every scene. Tune there, nowhere else.
+
+Label colour must contrast with what is actually behind it, which is per-label, not per-scene:
+white on the dark camera background, black against a light surface like the decal wall.
+
+### `capture_game_view` only writes inside the project
+
+`--save_path` must be a project-relative path (`Temp/x.png` lands at `Assets/Temp/x.png`).
+An absolute path outside the project is rejected with a 400. Copy the capture out afterwards
+and delete it from `Assets/`, including any stray `.meta`.
+
+### A green test suite says nothing about whether a scene is readable
+
+The first decal scene passed compile, 14/14 EditMode, 61/61 PlayMode, the smoke test, and the
+coverage check — while having text too small to read, no alpha on its decal textures, and a
+white header on a white wall. All three were caught by a human looking at it.
+
+`SceneSmokeTests` proves a scene loads and runs. It cannot prove a scene is any good, and an
+agent's own visual check has already passed a scene with white-on-white text. **Capture the
+game view and have a person look at it before calling a scene done.**
+
 ## What cannot be verified from here
 
 **Unity freezes play mode when the editor does not have focus.** Driving `editor_play` from
@@ -206,47 +267,56 @@ confident, entirely false bug report once already.
 
 ---
 
-## Remaining work: three scenes
+## Remaining work
 
-12 scripts still have no example scene.
+Two pieces of work close the gap. Neither is a new station-board scene.
 
-### 1. Decal scene (3D) — 4 components
+### 1. `PuzzleSequenceChecker` goes in the EXISTING puzzle scene
 
-`ActionBlinkDecal`, `ActionBlinkDecalOptimized`, `ActionDecalSequence`,
-`ActionDecalSequenceLibrary`
+`Assets/eventGameToolKit/ExampleScenes/puzzleExample.unity` already contains three
+`PuzzleSwitch` instances and is already registered in Build Settings. The checker belongs
+there, not in a new scene — an earlier plan bundled it into a "utility and puzzle" scene
+only because the other leftovers needed quarantining, which was never a reason that applied
+to the checker.
 
-URP decal projectors, so this must be a 3D scene with a surface to project onto. Needs a
-decal material — generate one into `GeneratedAssets` rather than reusing anything from
-ThirdParty. See `DecalAnimationSystem_Documentation.md` for how the sequence components
-expect to be configured.
+**`puzzleExample` is hand-authored — there is no builder for it.** Do not write a
+regenerating builder; it would destroy the hand-placed content. Write a small *idempotent
+migration* script instead: open the scene, check whether a `PuzzleSequenceChecker` already
+exists, add and wire one to the three existing switches if not, save. Re-running it must be
+a no-op.
 
-### 2. 3D physics scene — 4 components
+### 2. `StopMotionPostProcess` gets a scene with the Mixamo robots
 
-`PhysicsForceZone`, `PhysicsBallPlayerController`, `PhysicsEnemyController`,
-`CharacterPushRigidBody`
+`StopMotionPostProcess` has `[RequireComponent(typeof(Animator))]` and is best shown on a
+real character rather than a primitive — stop-motion on a cube reads as a stutter, not as a
+style. The project has the standard Mixamo robots:
 
-Their 2D counterparts are covered; these 3D originals are not. Two are full character
-controllers, so this is closer to a small playable level than a station board. Follow
-`BuildPlatformPairingScene.cs` for 3D setup — primitives, URP/Lit materials, a directional
-light and a raised camera.
+- `Assets/ProjectAssets/Animations/Character/X Bot.fbx`
+- `Assets/ProjectAssets/Art/Y Bot (1).fbx`  (+ `Y Bot (1).controller`)
 
-`CharacterPushRigidBody` is a companion to `CharacterControllerCC`, so it needs that
-controller present to demonstrate.
+**These live outside `Assets/eventGameToolKit/`, so they are outside the robocopy boundary.**
+Referencing them in place would add another missing-asset case to the packaging bug in
+CLAUDE.md § Known Issues. The decision taken (2026-09-11) is to **copy the robot and a
+controller into the package** under `ExampleScenes/GeneratedAssets/`, accepting that this
+redistributes Mixamo assets in a public repo. That is the same *category* of question as the
+Unity-samples issue already logged, with a different licence.
 
-### 3. Utility and puzzle scene — 4 components
+Place an identical un-stepped character beside the stepped one — the effect is only legible
+by comparison.
 
-`applicationFPSLimiting`, `StopMotionPostProcess`, `lockMouseCursorToDisplay`,
-`PuzzleSequenceChecker`
+### Deliberately unexemplified — do NOT "fix" these
 
-These get their own scene because two of them are disruptive: `applicationFPSLimiting`
-locks the whole game's framerate, and `lockMouseCursorToDisplay` confines the cursor.
-Quarantining them means their side effects are expected rather than baffling. Label the
-scene so the low framerate reads as deliberate.
+`applicationFPSLimiting` and `lockMouseCursorToDisplay` will **never** have an example scene.
+Decision taken 2026-09-11:
 
-`StopMotionPostProcess` needs an Animator — `GeneratedAssets/ExampleAnimator.controller`
-already exists. `PuzzleSequenceChecker` needs a few `PuzzleSwitch` components to sequence.
+- `applicationFPSLimiting` was a one-off, and temporally downsampling a student's entire
+  application is not a good default to hand out.
+- `lockMouseCursorToDisplay` confines the cursor, which is hostile in an example and fights
+  the editor.
 
----
+So full coverage is **73 of 75**, not 75. The coverage script below excludes them explicitly
+so the number reflects intent rather than an omission. If you find yourself planning a scene
+for either, re-read this paragraph first.
 
 ## Measuring coverage
 
@@ -265,6 +335,11 @@ for root,d,fs in os.walk('Assets/eventGameToolKit/Runtime'):
 # Internal helpers students never place in a scene
 INTERNAL={'EGTKPhysics','EGTKInput','GameData','StopMotionJob','ISpawnPointProvider',
           'ITeleportableCharacter','DialogueUIController'}
+
+# Student-facing, but deliberately given no example scene. See "Deliberately
+# unexemplified" above before removing anything from this set.
+NO_EXAMPLE_BY_DESIGN={'applicationFPSLimiting','lockMouseCursorToDisplay'}
+INTERNAL = INTERNAL | NO_EXAMPLE_BY_DESIGN
 
 used=set()
 for base in ['Assets/eventGameToolKit/ExampleScenes','Assets/eventGameToolKit/Prefabs',

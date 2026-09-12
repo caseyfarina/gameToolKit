@@ -53,6 +53,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/eventGameToolKit/ExampleScenes/Example3D_PlatformPairing.unity
     guid: 699fbea668581f54cbce7cc6d7ce78ad
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/Example3D_DecalAnimation.unity
+    guid: 5f074096f30334f47ace372a2f476d9d
+  - enabled: 1
+    path: Assets/eventGameToolKit/ExampleScenes/Example3D_Physics.unity
+    guid: 2137bf31f905feb4ea43599d89c39690
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 4fadf9b928f6374489a5966173fdcdab, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -35,26 +35,7 @@ public static class BuildInputTestScene
     /// <summary>A world-space caption under a station.</summary>
     private static TextMeshPro Label(string text, Vector2 pos, float width = 4.2f,
                                      float size = 0.62f)
-    {
-        GameObject go = new GameObject("Label");
-        go.transform.position = pos;
-
-        TextMeshPro tmp = go.AddComponent<TextMeshPro>();
-        tmp.text = text;
-        tmp.fontSize = size;
-        tmp.alignment = TextAlignmentOptions.Top;
-        tmp.color = Color.white;
-        if (_font != null) tmp.font = _font;
-
-        // World-space TMP: keep a small fontSize and scale the object down, which keeps
-        // glyphs crisp at this camera size instead of blurry and tiny.
-        RectTransform rt = tmp.rectTransform;
-        rt.sizeDelta = new Vector2(width / 0.35f, 3.4f / 0.35f);
-        rt.pivot = new Vector2(0.5f, 1f);   // grow downward from the placed position
-        go.transform.localScale = Vector3.one * 0.35f;
-        tmp.fontSize = size / 0.35f * 2.4f;
-        return tmp;
-    }
+        => SceneLabel.Create(_font, text, pos, width, size, Color.white);
 
     // Trigger volumes are invisible, so each gets a faint marker showing where to walk.
     private static void ZoneMarker(GameObject parent, Sprite sprite, Vector2 pos, Color tint)
@@ -201,7 +182,7 @@ public static class BuildInputTestScene
 
         // -- InputCheckpointZone ---------------------------------------------------
         GameObject cz = new GameObject("3_InputCheckpointZone");
-        cz.transform.position = new Vector2(12f, 0.5f);
+        cz.transform.position = new Vector2(13.5f, 0.5f);
         BoxCollider2D czc = cz.AddComponent<BoxCollider2D>();
         czc.isTrigger = true;
         czc.size = new Vector2(2f, 3f);
@@ -209,27 +190,27 @@ public static class BuildInputTestScene
         checkpoint.onCheckpointActivated ??= new UnityEngine.Events.UnityEvent();
         checkpoint.onCheckpointPositionSaved ??= new UnityEngine.Events.UnityEvent<Vector3>();
 
-        GameObject czInd = Indicator(new Vector2(12f, 2.6f), flag);
+        GameObject czInd = Indicator(new Vector2(13.5f, 2.6f), flag);
         czInd.SetActive(false);
         ActionToggle czToggle = cz.AddComponent<ActionToggle>();
         SetToggleTarget(czToggle, czInd);
         WireVoid(checkpoint.onCheckpointActivated, czToggle.Toggle);
         ZoneMarker(cz, crate, Vector2.zero, new Color(0.6f, 1f, 0.6f, 0.30f));
-        Label("3. InputCheckpointZone\nWalk in once", new Vector2(12f, 4.6f));
+        Label("3. InputCheckpointZone\nWalk in once", new Vector2(13.5f, 4.6f));
 
         // -- InputCollisionEnter ---------------------------------------------------
-        GameObject pad = Sprite("4_InputCollisionEnter", crate, new Vector2(16f, 0f), 4);
+        GameObject pad = Sprite("4_InputCollisionEnter", crate, new Vector2(17.5f, 0f), 4);
         pad.AddComponent<BoxCollider2D>();
         Rigidbody2D padBody = pad.AddComponent<Rigidbody2D>();
         padBody.bodyType = RigidbodyType2D.Kinematic;
         InputCollisionEnter collide = pad.AddComponent<InputCollisionEnter>();
         collide.onCollisionEnter ??= new UnityEngine.Events.UnityEvent();
 
-        GameObject collInd = Indicator(new Vector2(16f, 2.6f), coin);
+        GameObject collInd = Indicator(new Vector2(17.5f, 2.6f), coin);
         ActionToggle collToggle = pad.AddComponent<ActionToggle>();
         SetToggleTarget(collToggle, collInd);
         WireVoid(collide.onCollisionEnter, collToggle.Toggle);
-        Label("4. InputCollisionEnter\nJump onto the crate", new Vector2(16f, 4.6f));
+        Label("4. InputCollisionEnter\nJump onto the crate", new Vector2(17.5f, 4.6f));
 
         // =========================================================================
         // MOUSE AND KEY STATIONS (top row) — reachable without walking

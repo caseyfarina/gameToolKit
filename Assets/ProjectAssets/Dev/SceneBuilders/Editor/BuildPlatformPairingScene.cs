@@ -36,24 +36,8 @@ public static class BuildPlatformPairingScene
     private static InputActionAsset _actions;
 
     private static TextMeshPro Label(string text, Vector3 pos, float width = 9f, float size = 0.5f)
-    {
-        var go = new GameObject("Label");
-        go.transform.position = pos;
-        go.transform.rotation = Quaternion.Euler(30f, 0f, 0f);
-
-        var tmp = go.AddComponent<TextMeshPro>();
-        tmp.text = text;
-        tmp.alignment = TextAlignmentOptions.Top;
-        tmp.color = Color.white;
-        if (_font != null) tmp.font = _font;
-
-        RectTransform rt = tmp.rectTransform;
-        rt.sizeDelta = new Vector2(width / 0.3f, 4f / 0.3f);
-        rt.pivot = new Vector2(0.5f, 1f);
-        go.transform.localScale = Vector3.one * 0.3f;
-        tmp.fontSize = size / 0.3f * 2.4f;
-        return tmp;
-    }
+        => SceneLabel.Create(_font, text, pos, width, size, Color.white,
+            rotation: Quaternion.Euler(30f, 0f, 0f));
 
     private static GameObject Box(string name, Vector3 pos, Vector3 scale, Color colour)
     {
@@ -130,7 +114,7 @@ public static class BuildPlatformPairingScene
         // ---- Camera and light -----------------------------------------------------
         var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
         var cam = camGo.AddComponent<Camera>();
-        cam.transform.position = new Vector3(9f, 12f, -14f);
+        cam.transform.position = new Vector3(9f, 13f, -19f);
         cam.transform.rotation = Quaternion.Euler(35f, 0f, 0f);
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = new Color(0.12f, 0.14f, 0.18f);
@@ -143,7 +127,7 @@ public static class BuildPlatformPairingScene
 
         Label("PLATFORM PAIRING TEST  —  press D to walk both characters right.\n" +
               "Each must ride its platform across the gap. If one falls, that pairing is broken.",
-              new Vector3(9f, 7f, 0f), 26f, 0.55f).alignment = TextAlignmentOptions.Center;
+              new Vector3(9f, 9.5f, 0f), 26f, 0.55f).alignment = TextAlignmentOptions.Center;
 
         // =====================================================================
         // LANE A  —  CharacterControllerCC  +  PhysicsPlatformAnimator
@@ -196,7 +180,10 @@ public static class BuildPlatformPairingScene
 
         Label("LANE A\nCharacterControllerCC\n+ PhysicsPlatformAnimator\n\n" +
               "The controller rides the platform itself.\nThe platform moves by transform.",
-              new Vector3(-2f, 4.5f, laneAz), 9f);
+        // Lane A sits ~1.5x further from the camera than Lane B (z +4 vs -4), so the same
+        // world-space size renders noticeably smaller on screen. Size is scaled up to
+        // compensate; keep these two in step if either lane z or the camera moves.
+              new Vector3(-1f, 4.5f, laneAz), 9f, 0.75f);
 
         // =====================================================================
         // LANE B  —  PhysicsCharacterController + PhysicsPlatformStick
@@ -259,7 +246,7 @@ public static class BuildPlatformPairingScene
 
         Label("LANE B\nPhysicsCharacterController\n+ PhysicsPlatformStick\n+ ActionPlatformAnimator\n\n" +
               "PhysicsPlatformStick does the riding.\nThe platform moves a kinematic Rigidbody.",
-              new Vector3(-2f, 4.5f, laneBz), 9f);
+              new Vector3(-1f, 4.5f, laneBz), 9f);
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ScenePath);

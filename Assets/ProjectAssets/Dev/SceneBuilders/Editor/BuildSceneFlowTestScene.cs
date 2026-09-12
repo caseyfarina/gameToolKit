@@ -34,22 +34,7 @@ public static class BuildSceneFlowTestScene
     }
 
     private static TextMeshPro Label(string text, Vector2 pos, float width = 4.8f, float size = 0.62f)
-    {
-        var go = new GameObject("Label");
-        go.transform.position = pos;
-        var tmp = go.AddComponent<TextMeshPro>();
-        tmp.text = text;
-        tmp.alignment = TextAlignmentOptions.Top;
-        tmp.color = Color.white;
-        if (_font != null) tmp.font = _font;
-
-        RectTransform rt = tmp.rectTransform;
-        rt.sizeDelta = new Vector2(width / 0.35f, 3.4f / 0.35f);
-        rt.pivot = new Vector2(0.5f, 1f);
-        go.transform.localScale = Vector3.one * 0.35f;
-        tmp.fontSize = size / 0.35f * 2.4f;
-        return tmp;
-    }
+        => SceneLabel.Create(_font, text, pos, width, size, Color.white);
 
     private static void Wire(UnityEngine.Events.UnityEvent evt, UnityEngine.Events.UnityAction call)
         => UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(evt, call);
@@ -98,16 +83,16 @@ public static class BuildSceneFlowTestScene
         var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
         var cam = camGo.AddComponent<Camera>();
         cam.orthographic = true;
-        cam.orthographicSize = 7f;
+        cam.orthographicSize = 8.0f;
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = new Color(0.12f, 0.16f, 0.20f);
-        camGo.transform.position = new Vector3(9f, 4f, -10f);
+        camGo.transform.position = new Vector3(10.7f, 4f, -10f);
 
         Label("EGTK SCENE FLOW TEST  —  flags, spawn points, respawn, scene loading",
-              new Vector2(9f, 10.6f), 34f, 0.72f).alignment = TextAlignmentOptions.Center;
+              new Vector2(10.7f, 10.6f), 34f, 0.72f).alignment = TextAlignmentOptions.Center;
 
         var level = new GameObject("Level");
-        for (int x = -3; x <= 21; x++)
+        for (int x = -3; x <= 26; x++)
         {
             var t = Sprite($"Ground_{x}", ground, new Vector2(x, -1f), 0);
             t.transform.SetParent(level.transform);
@@ -145,23 +130,23 @@ public static class BuildSceneFlowTestScene
         Label("WASD to move\nSpace to jump", new Vector2(0f, 3.6f), 6f, 0.5f);
 
         // ---- 1. SpawnPoint --------------------------------------------------------
-        var spawnGo = Sprite("1_SpawnPoint", flagSprite, new Vector2(3f, 0f));
+        var spawnGo = Sprite("1_SpawnPoint", flagSprite, new Vector2(4f, 0f));
         var spawnPoint = spawnGo.AddComponent<SpawnPoint>();
         SetProp(spawnPoint, "spawnId", p => p.stringValue = "start");
         SetProp(spawnPoint, "isDefaultSpawnPoint", p => p.boolValue = true);
-        Label("1. SpawnPoint\nWhere respawn sends you", new Vector2(3f, 3.6f));
+        Label("1. SpawnPoint\nWhere respawn sends you", new Vector2(4f, 3.6f));
 
         // ---- 2. GameFlagManager + 3. GameFlagListener -----------------------------
         // Clicking the crate sets a named flag. The listener reacts to it, and because
         // flags live in GameData the state survives a scene restart.
-        var flagSetter = Sprite("2_GameFlagManager", crate, new Vector2(8f, 0f));
+        var flagSetter = Sprite("2_GameFlagManager", crate, new Vector2(9f, 0f));
         var setterClick = Clickable(flagSetter);
         UnityEditor.Events.UnityEventTools.AddStringPersistentListener(
             setterClick.onMouseClick,
             new UnityEngine.Events.UnityAction<string>(flagManager.SetFlag), "door_opened");
-        Label("2. GameFlagManager\nClick: sets \"door_opened\"", new Vector2(8f, 3.6f));
+        Label("2. GameFlagManager\nClick: sets \"door_opened\"", new Vector2(9f, 3.6f));
 
-        var listenerGo = Sprite("3_GameFlagListener", tree, new Vector2(11f, 0.5f));
+        var listenerGo = Sprite("3_GameFlagListener", tree, new Vector2(13.5f, 0.5f));
         var listener = listenerGo.AddComponent<GameFlagListener>();
         SetProp(listener, "flagManager", p => p.objectReferenceValue = flagManager);
         SetProp(listener, "flagName", p => p.stringValue = "door_opened");
@@ -178,10 +163,10 @@ public static class BuildSceneFlowTestScene
         Wire(listener.onFlagBecameSet, listenerToggle.Toggle);
         Wire(listener.onFlagAlreadySet, listenerToggle.Toggle);
         Label("3. GameFlagListener\nTree hides when the flag\nis set, and stays hidden",
-              new Vector2(11.5f, 3.6f));
+              new Vector2(13.5f, 3.6f));
 
         // ---- 4. ActionRespawnPlayer -----------------------------------------------
-        var respawnGo = Sprite("4_ActionRespawnPlayer", coin, new Vector2(15f, 0f));
+        var respawnGo = Sprite("4_ActionRespawnPlayer", coin, new Vector2(18f, 0f));
         var respawn = respawnGo.AddComponent<ActionRespawnPlayer>();
         SetProp(respawn, "playerObject", p => p.objectReferenceValue = player);
         SetProp(respawn, "fallbackSpawnPoint", p => p.objectReferenceValue = spawnGo.transform);
@@ -189,16 +174,16 @@ public static class BuildSceneFlowTestScene
         SetProp(respawn, "respawnDelay", p => p.floatValue = 0.2f);
         Wire(Clickable(respawnGo).onMouseClick, respawn.RespawnImmediate);
         Label("4. ActionRespawnPlayer\nClick: sends the player\nback to the spawn point",
-              new Vector2(15f, 3.6f));
+              new Vector2(18f, 3.6f));
 
         // ---- 5. GameSceneManager --------------------------------------------------
         // Restarting this same scene is the clearest demonstration: the flag survives,
         // proving GameData persistence, while everything else resets.
-        var restartGo = Sprite("5_GameSceneManager", crate, new Vector2(19f, 0f));
+        var restartGo = Sprite("5_GameSceneManager", crate, new Vector2(22.5f, 0f));
         restartGo.GetComponent<SpriteRenderer>().color = new Color(1f, 0.6f, 0.6f);
         Wire(Clickable(restartGo).onMouseClick, sceneManager.RestartCurrentScene);
         Label("5. GameSceneManager\nClick: restarts the scene.\nThe flag survives.",
-              new Vector2(19f, 3.6f));
+              new Vector2(22.5f, 3.6f));
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ScenePath);
