@@ -17,8 +17,10 @@ using UnityEngine.InputSystem;
 ///   Push lane  — a CharacterControllerCC player carrying CharacterPushRigidBody shoves
 ///                three crates of different mass.
 ///
-/// Both players read the same PlayerInput action map (Move / Jump on "Player"), so
-/// driving one drives both — same pattern BuildPlatformPairingScene already uses.
+/// The ball ships active and the push character ships DISABLED. Exactly one PlayerInput may
+/// be active per scene: Unity treats several as local multiplayer and hands each a different
+/// control scheme, so the second silently pairs to a Touchscreen and ignores the keyboard.
+/// Enable Push_Player in the Inspector to try that lane instead.
 ///
 /// Harness-only tooling; only the scene it produces is shipped.
 /// </summary>
@@ -61,9 +63,17 @@ public static class BuildPhysics3DScene
         so.ApplyModifiedPropertiesWithoutUndo();
     }
 
+
+
+    /// <summary>
+    /// The scene's one and only PlayerInput. Exactly one active PlayerInput per scene is the
+    /// pattern every working scene here uses, and it is not optional: PlayerInput is built for
+    /// local multiplayer, so a second one is deliberately handed a DIFFERENT control scheme —
+    /// in practice Touch on a Touchscreen — and silently ignores the keyboard.
+    /// </summary>
     private static void AddPlayerInput(GameObject go)
     {
-        var pi = go.AddComponent<PlayerInput>();
+        var pi = go.GetComponent<PlayerInput>() ?? go.AddComponent<PlayerInput>();
         pi.actions = _actions;
         pi.defaultActionMap = "Player";
         pi.notificationBehavior = PlayerNotifications.SendMessages;
@@ -100,7 +110,7 @@ public static class BuildPhysics3DScene
         lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
         Label("3D PHYSICS PLAYGROUND\n" +
-              "Both players read the same WASD + Space — driving one drives both.",
+              "WASD + Space drives the ball. Enable Push_Player in the Inspector for that lane.",
               new Vector3(10f, 9.5f, 0f), 26f, 0.6f).alignment = TextAlignmentOptions.Center;
 
         // =====================================================================
@@ -129,11 +139,17 @@ public static class BuildPhysics3DScene
         ballBody.linearDamping = 0.15f;
         ballBody.interpolation = RigidbodyInterpolation.Interpolate;
 
+
         AddPlayerInput(ball);
 
         var ballController = ball.AddComponent<PhysicsBallPlayerController>();
         // groundLayer defaults to 0 (nothing) on this component — the documented trap.
         SetProp(ballController, "groundLayer", p => p.intValue = groundMask);
+        // The ground probe is a sphere at (centre - 0.1) of radius groundCheckRadius, so it
+        // reaches only 0.1 + radius below the centre. The default 0.2 never reaches the floor
+        // under a 0.5-radius ball: isGrounded stays false, and HandleMovement returns early
+        // every frame, so the ball never moves and never jumps. Nothing logs anything.
+        SetProp(ballController, "groundCheckRadius", p => p.floatValue = 0.45f);
 
         Label("BALL LANE\nPhysicsBallPlayerController\n\n" +
               "Roll right into the force zone\nto get launched. The enemy\n" +
@@ -210,7 +226,6 @@ public static class BuildPhysics3DScene
         var pushCC = pushPlayer.AddComponent<CharacterController>();
         pushCC.height = 2f;
         pushCC.radius = 0.4f;
-        AddPlayerInput(pushPlayer);
 
         var ccController = pushPlayer.AddComponent<CharacterControllerCC>();
         SetProp(ccController, "groundLayer", p => p.intValue = groundMask);
@@ -249,6 +264,13 @@ public static class BuildPhysics3DScene
             crateBody.mass = crates[i].mass;
             crateBody.interpolation = RigidbodyInterpolation.Interpolate;
         }
+
+
+        // Only one character is active at a time. A second active PlayerInput is handed a
+        // different control scheme by Unity and goes deaf to the keyboard, and driving two
+        // characters from one set of keys reads as a bug rather than a feature. Enable this
+        // object in the Inspector to try the push demo instead.
+        pushPlayer.SetActive(false);
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ScenePath);

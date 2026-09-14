@@ -87,9 +87,17 @@ public static class BuildPlatformPairingScene
         });
     }
 
+
+
+    /// <summary>
+    /// The scene's one and only PlayerInput. Exactly one active PlayerInput per scene is the
+    /// pattern every working scene here uses, and it is not optional: PlayerInput is built for
+    /// local multiplayer, so a second one is deliberately handed a DIFFERENT control scheme —
+    /// in practice Touch on a Touchscreen — and silently ignores the keyboard.
+    /// </summary>
     private static void AddPlayerInput(GameObject go)
     {
-        var pi = go.AddComponent<PlayerInput>();
+        var pi = go.GetComponent<PlayerInput>() ?? go.AddComponent<PlayerInput>();
         pi.actions = _actions;
         pi.defaultActionMap = "Player";
         pi.notificationBehavior = PlayerNotifications.SendMessages;
@@ -125,8 +133,8 @@ public static class BuildPlatformPairingScene
         light.intensity = 1.1f;
         lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
-        Label("PLATFORM PAIRING TEST  —  press D to walk both characters right.\n" +
-              "Each must ride its platform across the gap. If one falls, that pairing is broken.",
+        Label("PLATFORM PAIRING TEST  —  press D to walk the active character right.\n" +
+              "Lane A is active. Enable B_Player in the Inspector to compare the other pairing.",
               new Vector3(9f, 9.5f, 0f), 26f, 0.55f).alignment = TextAlignmentOptions.Center;
 
         // =====================================================================
@@ -171,6 +179,7 @@ public static class BuildPlatformPairingScene
         var ccA = playerA.AddComponent<CharacterController>();
         ccA.height = 2f;
         ccA.radius = 0.4f;
+
         AddPlayerInput(playerA);
 
         var controllerA = playerA.AddComponent<CharacterControllerCC>();
@@ -234,7 +243,6 @@ public static class BuildPlatformPairingScene
         bodyB.freezeRotation = true;
         bodyB.interpolation = RigidbodyInterpolation.Interpolate;
 
-        AddPlayerInput(playerB);
 
         var controllerB = playerB.AddComponent<PhysicsCharacterController>();
         SetProp(controllerB, "groundLayer", p => p.intValue = (1 << groundLayer) | (1 << platformLayer));
@@ -247,6 +255,12 @@ public static class BuildPlatformPairingScene
         Label("LANE B\nPhysicsCharacterController\n+ PhysicsPlatformStick\n+ ActionPlatformAnimator\n\n" +
               "PhysicsPlatformStick does the riding.\nThe platform moves a kinematic Rigidbody.",
               new Vector3(-1f, 4.5f, laneBz), 9f);
+
+
+        // One active PlayerInput per scene. Unity hands a second one a different control
+        // scheme (Touch, on a Touchscreen), which silently ignores the keyboard. Enable this
+        // object in the Inspector to drive Lane B instead of Lane A.
+        playerB.SetActive(false);
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ScenePath);
