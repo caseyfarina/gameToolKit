@@ -99,6 +99,15 @@ public class PuzzleSequenceCheckerEditor : Editor
             EditorGUILayout.EndVertical();
         }
 
+        // Wiring a trigger to NextState() is the natural first try and silently never counts.
+        if (stepCount > 0)
+        {
+            EditorGUILayout.HelpBox(
+                "Only a switch's Activate() counts as a step. Wire your triggers to Activate(), " +
+                "not NextState() or SetState() — those change the switch without this checker seeing it.",
+                MessageType.None);
+        }
+
         EditorGUILayout.Space();
 
         // ── Behaviour ────────────────────────────────

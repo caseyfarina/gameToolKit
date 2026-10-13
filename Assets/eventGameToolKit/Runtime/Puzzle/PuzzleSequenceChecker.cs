@@ -14,7 +14,7 @@ using System.Collections.Generic;
 public class PuzzleSequenceChecker : MonoBehaviour
 {
     [Header("Sequence Configuration")]
-    [Tooltip("The switches in the order they must be activated. The same switch can appear more than once.")]
+    [Tooltip("The switches in the order they must be activated. The same switch can appear more than once. Only the switch's Activate() counts — NextState() and SetState() change the switch without being seen here.")]
     [SerializeField] private PuzzleSwitch[] correctSequence;
 
     [Header("Behaviour")]
