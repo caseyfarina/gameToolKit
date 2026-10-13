@@ -58,7 +58,7 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
     [SerializeField] private bool faceMovementDirection = true;
 
     [Header("Animation")]
-    [Tooltip("Optional Animator driven with Speed, Grounded and VerticalVelocity parameters")]
+    [Tooltip("Optional. Found automatically on this object or a child if left empty. Drives the Animator parameters Speed (Float), Grounded (Bool) and VerticalVelocity (Float); any the Animator Controller lacks are skipped.")]
     [SerializeField] private Animator characterAnimator;
     [Tooltip("Flip the sprite horizontally based on movement direction")]
     [SerializeField] private bool flipSpriteOnDirection = true;
@@ -92,15 +92,27 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
     private int _animIDGrounded;
     private int _animIDVerticalVelocity;
 
+    // Which parameters the assigned Animator Controller actually defines. Setting a
+    // missing parameter logs a warning every frame, so each one is checked once.
+    private bool _hasSpeedParam;
+    private bool _hasGroundedParam;
+    private bool _hasVerticalVelocityParam;
+
     private void Awake()
     {
         _body = GetComponent<Rigidbody2D>();
         _body.freezeRotation = true;
         _sprite = GetComponentInChildren<SpriteRenderer>();
 
+        // Same behaviour as the 3D controllers: if no Animator is assigned, use the
+        // one on this object or its children (where the sprite usually lives).
+        if (characterAnimator == null)
+            characterAnimator = GetComponentInChildren<Animator>();
+
         _animIDSpeed = Animator.StringToHash("Speed");
         _animIDGrounded = Animator.StringToHash("Grounded");
         _animIDVerticalVelocity = Animator.StringToHash("VerticalVelocity");
+        CacheAnimatorParameters();
 
         ApplyStyleToBody();
 
@@ -221,12 +233,45 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
         _wasMoving = isMoving;
     }
 
+    private void CacheAnimatorParameters()
+    {
+        _hasSpeedParam = false;
+        _hasGroundedParam = false;
+        _hasVerticalVelocityParam = false;
+
+        if (characterAnimator == null || characterAnimator.runtimeAnimatorController == null)
+            return;
+
+        foreach (AnimatorControllerParameter param in characterAnimator.parameters)
+        {
+            if (param.nameHash == _animIDSpeed && param.type == AnimatorControllerParameterType.Float)
+                _hasSpeedParam = true;
+            else if (param.nameHash == _animIDGrounded && param.type == AnimatorControllerParameterType.Bool)
+                _hasGroundedParam = true;
+            else if (param.nameHash == _animIDVerticalVelocity && param.type == AnimatorControllerParameterType.Float)
+                _hasVerticalVelocityParam = true;
+        }
+    }
+
     private void UpdateAnimator()
     {
         if (characterAnimator == null) return;
-        characterAnimator.SetFloat(_animIDSpeed, Mathf.Abs(_body.linearVelocity.x));
-        characterAnimator.SetBool(_animIDGrounded, _isGrounded);
-        characterAnimator.SetFloat(_animIDVerticalVelocity, _body.linearVelocity.y);
+
+        Vector2 velocity = _body.linearVelocity;
+        bool platformer = movementStyle == MovementStyle.Platformer;
+
+        // Platformer: horizontal speed only, so falling doesn't play the run animation.
+        // Top-Down: full speed in any direction, since up/down is walking too.
+        float speed = platformer ? Mathf.Abs(velocity.x) : velocity.magnitude;
+
+        // Ground checking only runs in Platformer. A Top-Down character is always
+        // "on the ground", otherwise an Animator with an air state would be stuck in it.
+        bool grounded = platformer ? _isGrounded : true;
+
+        if (_hasSpeedParam) characterAnimator.SetFloat(_animIDSpeed, speed);
+        if (_hasGroundedParam) characterAnimator.SetBool(_animIDGrounded, grounded);
+        if (_hasVerticalVelocityParam)
+            characterAnimator.SetFloat(_animIDVerticalVelocity, platformer ? velocity.y : 0f);
     }
 
     /// <summary>True while the character is standing on ground. Platformer style only.</summary>
