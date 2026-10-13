@@ -62,8 +62,10 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
     [SerializeField] private Animator characterAnimator;
     [Tooltip("Flip the character horizontally based on movement direction")]
     [SerializeField] private bool flipSpriteOnDirection = true;
-    [Tooltip("For characters built from several sprites (body, arms, legs...): the parent object that holds all the parts. It is mirrored left/right as a whole. Leave empty for a single sprite. The art should face right.")]
+    [Tooltip("For characters built from several sprites (body, arms, legs...): the parent object that holds all the parts. It is mirrored left/right as a whole. Leave empty for a single sprite.")]
     [SerializeField] private Transform visualRoot;
+    [Tooltip("Tick this if the character was drawn facing left. Leave unticked if it was drawn facing right.")]
+    [SerializeField] private bool artFacesLeft = false;
 
     [Header("Events")]
     /// <summary>Fires when the character touches the ground after being airborne.</summary>
@@ -235,14 +237,16 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
     {
         if (!flipSpriteOnDirection) return;
         if (Mathf.Abs(horizontal) < 0.01f) return;
-        bool faceLeft = horizontal < 0f;
+        // "Flipped" means mirrored relative to how the art was drawn: moving left flips
+        // right-facing art, and moving right flips left-facing art.
+        bool mirrored = (horizontal < 0f) != artFacesLeft;
 
         if (visualRoot != null)
         {
             // Mirror the whole hierarchy so every part, and its position, flips together.
             // Only the sign changes, so any scale the student set is kept.
             Vector3 scale = visualRoot.localScale;
-            float wanted = Mathf.Abs(scale.x) * (faceLeft ? -1f : 1f);
+            float wanted = Mathf.Abs(scale.x) * (mirrored ? -1f : 1f);
             if (scale.x != wanted)
             {
                 scale.x = wanted;
@@ -253,7 +257,7 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
 
         // No Visual Root: flip every sprite in the hierarchy (fine for a single sprite).
         foreach (SpriteRenderer sprite in _sprites)
-            sprite.flipX = faceLeft;
+            sprite.flipX = mirrored;
     }
 
     private void ReportMovementState(bool isMoving)
