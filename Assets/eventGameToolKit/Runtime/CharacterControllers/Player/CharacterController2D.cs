@@ -60,8 +60,10 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
     [Header("Animation")]
     [Tooltip("Optional. Found automatically on this object or a child if left empty. Drives the Animator parameters Speed (Float), Grounded (Bool) and VerticalVelocity (Float); any the Animator Controller lacks are skipped.")]
     [SerializeField] private Animator characterAnimator;
-    [Tooltip("Flip the sprite horizontally based on movement direction")]
+    [Tooltip("Flip the character horizontally based on movement direction")]
     [SerializeField] private bool flipSpriteOnDirection = true;
+    [Tooltip("For characters built from several sprites (body, arms, legs...): the parent object that holds all the parts. It is mirrored left/right as a whole. Leave empty for a single sprite. The art should face right.")]
+    [SerializeField] private Transform visualRoot;
 
     [Header("Events")]
     /// <summary>Fires when the character touches the ground after being airborne.</summary>
@@ -80,7 +82,7 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
     public UnityEvent<Vector3> onSpawnPointUsed;
 
     private Rigidbody2D _body;
-    private SpriteRenderer _sprite;
+    private SpriteRenderer[] _sprites;
     private Vector2 _moveInput;
     private bool _isGrounded;
     private bool _wasGrounded;
@@ -102,7 +104,17 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
     {
         _body = GetComponent<Rigidbody2D>();
         _body.freezeRotation = true;
-        _sprite = GetComponentInChildren<SpriteRenderer>();
+        _sprites = GetComponentsInChildren<SpriteRenderer>();
+
+        // Flipping a single SpriteRenderer only works for one-piece characters. With
+        // several parts it flips one and leaves the rest, so point students at Visual Root.
+        if (flipSpriteOnDirection && visualRoot == null && _sprites.Length > 1)
+        {
+            Debug.LogWarning($"CharacterController2D on '{gameObject.name}' has {_sprites.Length} " +
+                             "sprites but no Visual Root, so the character will not flip as one " +
+                             "piece. Assign the parent object holding all the parts to Visual Root.",
+                             this);
+        }
 
         // Same behaviour as the 3D controllers: if no Animator is assigned, use the
         // one on this object or its children (where the sprite usually lives).
@@ -221,9 +233,27 @@ public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
 
     private void UpdateFacing(float horizontal)
     {
-        if (!flipSpriteOnDirection || _sprite == null) return;
+        if (!flipSpriteOnDirection) return;
         if (Mathf.Abs(horizontal) < 0.01f) return;
-        _sprite.flipX = horizontal < 0f;
+        bool faceLeft = horizontal < 0f;
+
+        if (visualRoot != null)
+        {
+            // Mirror the whole hierarchy so every part, and its position, flips together.
+            // Only the sign changes, so any scale the student set is kept.
+            Vector3 scale = visualRoot.localScale;
+            float wanted = Mathf.Abs(scale.x) * (faceLeft ? -1f : 1f);
+            if (scale.x != wanted)
+            {
+                scale.x = wanted;
+                visualRoot.localScale = scale;
+            }
+            return;
+        }
+
+        // No Visual Root: flip every sprite in the hierarchy (fine for a single sprite).
+        foreach (SpriteRenderer sprite in _sprites)
+            sprite.flipX = faceLeft;
     }
 
     private void ReportMovementState(bool isMoving)
