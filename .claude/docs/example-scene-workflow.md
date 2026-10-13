@@ -17,7 +17,7 @@ routine that rejects a valid setup. A missing reference.
 Several such bugs reached students before `SceneSmokeTests` existed. Every component in a
 scene is watched by it; every component that is not, is not.
 
-**Current coverage: 71 of 73.** There are 75 student-facing scripts; two will never have an
+**Current coverage: 72 of 73.** There are 75 student-facing scripts; two will never have an
 example scene by decision, so the script below excludes them and 73 is the ceiling. See
 "Deliberately unexemplified" below. Measure it with the script at the
 bottom of this file — never by hand.
@@ -168,6 +168,14 @@ repeats the packaging bug in CLAUDE.md § Known Issues.
 `ExampleScenes/GeneratedAssets/`, owned by the package. Extend it rather than reaching into
 ThirdParty.
 
+### PuzzleSequenceChecker only hears `Activate()`
+
+It subscribes to `PuzzleSwitch.onActivated`, which only `Activate()` fires. `NextState()` and
+`SetState()` change the switch visibly but are invisible to the checker, so a sequence wired to
+pads that call `NextState()` silently never advances. `puzzleExample`'s pads were wired that
+way. With `cycleStates` on, `Activate()` is `NextState()` plus the event, so swapping is safe.
+The checker's Inspector now says this next to the sequence list.
+
 ### eval quirks
 
 - Needs `--timeout 60` or more; the first call pays a Roslyn cold start and a 5s budget
@@ -269,23 +277,21 @@ confident, entirely false bug report once already.
 
 ## Remaining work
 
-Two pieces of work close the gap. Neither is a new station-board scene.
+One piece of work closes the gap.
 
-### 1. `PuzzleSequenceChecker` goes in the EXISTING puzzle scene
+### Done (2026-10-13): `PuzzleSequenceChecker` in the existing puzzle scene
 
-`Assets/eventGameToolKit/ExampleScenes/puzzleExample.unity` already contains three
-`PuzzleSwitch` instances and is already registered in Build Settings. The checker belongs
-there, not in a new scene — an earlier plan bundled it into a "utility and puzzle" scene
-only because the other leftovers needed quarantining, which was never a reason that applied
-to the checker.
+Added to the hand-authored `puzzleExample.unity` by an idempotent migration,
+`SceneBuilders/Editor/MigratePuzzleSequenceScene.cs` (menu: **EGTK > Migrate puzzleExample**).
+It returns early if `MANAGERS/sequenceManager` exists, so re-running is a no-op — verified by
+hashing the scene file before and after a second run.
 
-**`puzzleExample` is hand-authored — there is no builder for it.** Do not write a
-regenerating builder; it would destroy the hand-placed content. Write a small *idempotent
-migration* script instead: open the scene, check whether a `PuzzleSequenceChecker` already
-exists, add and wire one to the three existing switches if not, save. Re-running it must be
-a no-op.
+Stepping on the pads in the numbered order 1-2-3 reveals a bonus orb. One lap in order leaves
+every switch at state 1, so it never interferes with the original glow puzzle, which needs a
+second lap. **The pads had to be repointed from `NextState()` to `Activate()`** — see the trap
+below. To change the migration's output, `git checkout` the scene and run it again.
 
-### 2. `StopMotionPostProcess` gets a scene with the Mixamo robots
+### `StopMotionPostProcess` gets a scene with the Mixamo robots
 
 `StopMotionPostProcess` has `[RequireComponent(typeof(Animator))]` and is best shown on a
 real character rather than a primitive — stop-motion on a cube reads as a stutter, not as a
