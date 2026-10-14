@@ -34,6 +34,7 @@ public class ScenePlayerInputTests
     {
         "Assets/eventGameToolKit/ExampleScenes/Example3D_Physics.unity",
         "Assets/eventGameToolKit/ExampleScenes/Example3D_PlatformPairing.unity",
+        "Assets/eventGameToolKit/ExampleScenes/Example2D_TopDown.unity",
     };
 
     [UnityTest]

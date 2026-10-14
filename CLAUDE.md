@@ -586,6 +586,9 @@ implement it yet. Checkpoint respawn works in 2D anyway, through `SendMessage("T
 
 - `ExampleScenes/Example2D_Platformer.unity` — collectibles wired to `GameCollectionManager`
 - `ExampleScenes/Example2D_ClickToToggle.unity` — click a sprite to toggle another
+- `ExampleScenes/Example2D_TopDown.unity` — Top-Down movement style: coins, a door opened with
+  `InputInteractionZone` + `ActionToggle.AllOff`, a gem behind it. Built by `Build2DTopDownScene.cs`;
+  listed in `ScenePlayerInputTests`
 
 Art is Kenney Pixel Platformer (CC0 public domain) in `ExampleScenes/Art2D/`. Terrain tiles are
 18x18 px and characters 24x24, so each folder has its own Pixels Per Unit to make every sprite

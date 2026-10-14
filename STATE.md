@@ -31,6 +31,10 @@ excludes them explicitly.
 
 ## Recently finished
 
+- **`Example2D_TopDown`** (2026-10-13) — first scene using CharacterController2D's Top-Down
+  style, which until now had only one PlayMode test. Coins → score, a door opened with E
+  (`InputInteractionZone` → `ActionToggle.AllOff`), a gem behind it. Movement itself still
+  needs a human at the Game view.
 - **`PuzzleSequenceChecker` in `puzzleExample`**, via the idempotent
   `MigratePuzzleSequenceScene.cs`. Found and fixed on the way: the scene's pads called
   `NextState()`, which the checker cannot hear; they now call `Activate()`, and the checker's

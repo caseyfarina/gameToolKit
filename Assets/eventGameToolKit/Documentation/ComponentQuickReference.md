@@ -246,6 +246,7 @@ components. **PhysicsPlatformAnimator** works in 2D unchanged. **ActionSpawnProj
 - **Example2D_Platformer** — jumping, collectibles and a score display
 - **Example2D_ClickToToggle** — click a sprite to turn another sprite on and off
 - **Example2D_PhysicsTest** — bumper, force zone and a rideable moving platform
+- **Example2D_TopDown** — Top-Down movement: collect coins, press E to open a door
 
 Both are in `ExampleScenes/`, with Kenney pixel art (public domain) in `ExampleScenes/Art2D/`.
 
