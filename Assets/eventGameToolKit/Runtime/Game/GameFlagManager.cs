@@ -9,7 +9,7 @@ using UnityEngine.Events;
 ///
 /// Common use: one-time pickups, opened doors, triggered cutscenes, unlocked shortcuts.
 /// </summary>
-[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/multi-scene.html#flags")]
 public class GameFlagManager : MonoBehaviour
 {
     [Header("On Restart")]

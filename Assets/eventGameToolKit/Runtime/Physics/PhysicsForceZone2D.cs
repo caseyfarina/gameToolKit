@@ -11,7 +11,7 @@ using UnityEngine.Events;
 /// Common use: wind, updrafts, water currents, conveyor belts, repulsion fields.
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
-[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/2d.html")]
 public class PhysicsForceZone2D : MonoBehaviour
 {
     /// <summary>Whether the direction is fixed in the world or follows this object's rotation.</summary>

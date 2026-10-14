@@ -10,7 +10,7 @@ All components work the same way: wire them together using **UnityEvents** in th
 
 | Component | What it does | Basic use |
 |---|---|---|
-| **InputKeyPress** | Fires an event when a keyboard key is pressed | Trigger anything with a keypress |
+| **InputKeyPress** | Fires an event when its bound key or button is pressed | Trigger anything with a keypress |
 | **InputOnStart** | Fires an event when the scene starts | Auto-run something on scene load |
 | **InputTriggerZone** | Fires events when a tagged object enters/exits a collider | Invisible trigger areas, damage zones, collectibles |
 | **InputCheckpointZone** | A trigger zone that also saves a spawn point | Checkpoints and respawn points |
@@ -19,9 +19,10 @@ All components work the same way: wire them together using **UnityEvents** in th
 | **InputClickDrag** | Makes this object draggable with the mouse | Drag-and-drop puzzles, sliders |
 | **InputClickRotate** | Makes this object rotatable by clicking and dragging | Dials, wheels, rotating puzzles |
 | **InputActionEvent** | Fires events from any Unity Input System action | Custom controller/keyboard bindings |
-| **InputKeyCountdown** | Counts down while a key is held, fires event at zero | Hold-to-open doors, charge mechanics |
+| **InputKeyCountdown** | Counts key presses down to zero, then fires an event | Press-it-five-times doors, mashing to break free |
 | **InputInteractionZone** | Shows a prompt sprite when the player enters; fires an event when they press Interact (E / Triangle) | Any "press to interact" mechanic — doors, NPCs, items, puzzles |
 | **InputCollisionEnter** | Fires an event on physics collision with a tagged object | Bullet hits, physical triggers |
+| **InputQuitGame** | Quits on Escape, or when `QuitGame()` is wired to an event. Stops Play mode in the Editor | Exit buttons, quit menus |
 
 ---
 
@@ -51,6 +52,8 @@ All components work the same way: wire them together using **UnityEvents** in th
 | **ActionDecalSequence** | Plays a frame-by-frame material animation on a URP decal | Animated decals, sprite-sheet effects |
 | **ActionDecalSequenceLibrary** | Switches between multiple decal sequences | Character with multiple animation states |
 | **ActionBlinkDecal** | Automatically blinks a character's eye decal | Any character that needs blinking |
+| **ActionBlinkDecalOptimized** | Blinks by swapping textures on one material instead of whole materials | Many blinking characters at once |
+| **ActionEmissionAnimation** | Animates a material's glow (emission) along a curve | Pulsing pickups, charging effects, alerts |
 | **ActionToggle** | Flips the active state of a list of GameObjects; each object flips independently. AllOn() and AllOff() force a known state. | Show/hide groups, toggle hazards, switch between panels |
 | **ActionDestroyObject** | Destroys one or more GameObjects with an optional delay. Fires onBeforeDestroy first (use for effects). No targets = destroys self. | Click to remove, death cleanup, collectible removal |
 
@@ -71,6 +74,9 @@ All components work the same way: wire them together using **UnityEvents** in th
 | **GameCameraManager** | Switches between Cinemachine cameras by name | Multiple camera angles, cutscenes |
 | **GameUIManager** | Connects health, score, and timer values to UI display elements | HUD wired to existing UI objects |
 | **GameSceneManager** | Loads scenes with transitions and spawn point selection | Multi-level games, hub worlds |
+| **SpawnPoint** | Marks where the player appears when a scene loads | Level entrances, several doors into one scene |
+| **GameFlagManager** | Named true/false flags that survive scene loads. `SetFlag("name")` from any event | Remembering opened doors, collected pickups |
+| **GameFlagListener** | Reacts to a flag: already set when the scene loads, or set during play | Keeping a door open when the player returns |
 | **GameStoreManager** | In-game store with purchasable items, affordability feedback, and pause-on-open. Connect to a GameCollectionManager for currency. | Upgrade shops, unlock screens, item vendors |
 
 ---
@@ -83,6 +89,8 @@ All components work the same way: wire them together using **UnityEvents** in th
 |---|---|---|
 | **CharacterControllerFP** | First-person player controller with mouse look, jump, and sprint | First-person games |
 | **CharacterControllerCC** | Third-person player controller with rotation and jump | Third-person / top-down games |
+| **CharacterController2D** | Sprite player controller, Platformer or Top-Down. See Making a 2D Game below | 2D games |
+| **CharacterPushRigidBody** | Lets a CharacterControllerCC player push Rigidbodies | Pushable crates and barrels |
 | **PhysicsBallPlayerController** | Physics-based ball controller | Rolling ball games |
 | **PhysicsCharacterController** | Rigidbody-based character controller | Physics-heavy platformers |
 | **EnemyControllerCC** | AI enemy that chases the player using NavMesh | Basic enemy AI |
@@ -95,11 +103,13 @@ All components work the same way: wire them together using **UnityEvents** in th
 
 | Component | What it does | Basic use |
 |---|---|---|
-| **PhysicsBumper** | Bounces any Rigidbody that touches it | Pinball bumpers, bounce pads |
-| **PhysicsBumperTag** | Same as above but only affects objects with a specific tag | Targeted bounce zones |
+| **PhysicsBumper** | Bounces Rigidbodies that hit it. Set Bumper Tag to limit which, or leave it empty for all | Pinball bumpers, bounce pads |
+| **PhysicsBumper2D** | The same for sprites with a Rigidbody 2D | 2D bumpers and bounce pads |
 | **PhysicsForceZone** | Applies forces to tagged Rigidbodies inside a trigger area | Wind zones, jump pads, explosion areas |
-| **PhysicsPlatformAnimator** | Moves a platform between waypoints using Rigidbody physics | Moving platforms the player can stand on |
+| **PhysicsForceZone2D** | The same for sprites with a Rigidbody 2D | 2D wind, updrafts, conveyor belts |
+| **PhysicsPlatformAnimator** | Moves a platform between waypoints; character controllers ride it | Moving platforms the player can stand on |
 | **PhysicsPlatformStick** | Keeps the player attached to a moving platform | Required companion to PhysicsPlatformAnimator |
+| **PhysicsPlatformStick2D** | Lets a CharacterController2D ride a moving platform. Goes on the player | 2D moving platforms |
 
 ---
 
@@ -108,9 +118,9 @@ All components work the same way: wire them together using **UnityEvents** in th
 
 | Component | What it does | Basic use |
 |---|---|---|
-| **PuzzleSwitch** | A switch that can be activated and deactivated | Any interactive switch or button |
-| **PuzzleSwitchChecker** | Fires an event when a specific set of switches are all activated | Combination puzzles, all-on solutions |
-| **PuzzleSequenceChecker** | Fires an event when switches are activated in the correct order | Sequence puzzles, ordered combinations |
+| **PuzzleSwitch** | A switch with 2–5 states that changes when activated | Any interactive switch, lever, or dial |
+| **PuzzleSwitchChecker** | Fires an event when every assigned switch is in its required state | Combination puzzles, all-on solutions |
+| **PuzzleSequenceChecker** | Fires an event when switches are activated in the correct order. Wire switches to `Activate()`; `NextState()` does not count | Sequence puzzles, ordered combinations |
 
 ---
 
@@ -120,7 +130,7 @@ All components work the same way: wire them together using **UnityEvents** in th
 |---|---|---|
 | **FadeInFromBlackOnRestart** | Fades the screen in from black every time the scene loads | Scene transitions, respawn fade-in |
 | **lockMouseCursorToDisplay** | Confines the mouse cursor to the game window, toggled with Escape | First-person and windowed games |
-| **ObjectAttractor** | Pulls Rigidbodies toward a target with distance falloff | Gravity wells, magnets, tractor beams |
+| **ObjectAttractor** | Pulls its own Rigidbody (or Rigidbody 2D) toward a target, with optional distance falloff | Gravity wells, magnets, homing |
 
 ---
 
@@ -163,7 +173,8 @@ for the same event.
 Affects **InputKeyPress** and **InputKeyCountdown**.
 
 > **Upgrading an older project?** Key fields were replaced, not renamed, so any key you
-> set previously is gone and needs setting again through the binding UI.
+> set previously is gone. The upgraded component's Activation list is **empty** and does nothing
+> until you add a binding again.
 
 ### Two ways to read input
 
@@ -210,28 +221,31 @@ Collider, and the component figures out the rest.** There is no 2D checkbox to f
 1. Add **Rigidbody 2D** and a **Capsule Collider 2D** to your sprite
 2. Add **Player Input**, set its Actions to `EGTK_InputSystem_Actions`
 3. Add **CharacterController2D** and pick a Movement Style
-4. For Platformer: put your floor objects on a layer, then set **Ground Layer** to it
+4. For Platformer: put your floor objects on a layer, then set **Ground Layer** to it (include your moving platforms' layer too)
+
+For a character made of several sprites, set **Visual Root** to the parent holding the parts
+so it flips as one piece. Tick **Art Faces Left** if the art was drawn facing left.
 
 > **If your character will not jump**, Ground Layer is almost certainly empty or pointing at the
 > wrong layer. The Inspector shows a warning when it is unset.
 
+### Also works in 2D
+
+**PhysicsBumper2D**, **PhysicsForceZone2D** and **PhysicsPlatformStick2D** are separate 2D
+components. **PhysicsPlatformAnimator** works in 2D unchanged. **ActionSpawnProjectile**,
+**ActionRespawnPlayer**, **GameCheckpointManager** and **ObjectAttractor** handle 2D bodies.
+
 ### What is not 2D yet
 
-These are still 3D-only. They will not respond to 2D colliders:
-
-- **PhysicsBumper**, **PhysicsBumperTag**, **PhysicsForceZone**
-- **ActionRespawnPlayer**, **ActionSpawnProjectile**
-- **ActionPlatformAnimator**, **PhysicsPlatformStick**
-- Enemy controllers, and the Decal components
+- Enemy controllers, **CharacterPushRigidBody**, and the Decal components
 - **InputFPMouseInteraction** — first-person only, no 2D version planned
-
-**GameCheckpointManager and ActionTeleportToTransform do not yet move a 2D player.** The
-checkpoint zone fires, but nothing moves. Avoid respawn and teleport in 2D projects for now.
+- **ActionTeleportToTransform** moves a 2D player but is untested with one
 
 ### Example scenes
 
 - **Example2D_Platformer** — jumping, collectibles and a score display
 - **Example2D_ClickToToggle** — click a sprite to turn another sprite on and off
+- **Example2D_PhysicsTest** — bumper, force zone and a rideable moving platform
 
 Both are in `ExampleScenes/`, with Kenney pixel art (public domain) in `ExampleScenes/Art2D/`.
 
@@ -250,4 +264,4 @@ Every interaction in EGTK follows the same structure:
 **Example**: Player walks into a zone → a sound plays
 1. Add `InputTriggerZone` to an empty GameObject with a Trigger Collider
 2. Add `ActionPlaySound` to any GameObject with an AudioSource
-3. In `InputTriggerZone` → `onEnter` → drag in the `ActionPlaySound` object → select `PlaySound()`
+3. In `InputTriggerZone` → `On Trigger Enter Event` → drag in the `ActionPlaySound` object → select `Play()`

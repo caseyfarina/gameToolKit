@@ -13,7 +13,7 @@ using UnityEngine.Events;
 /// fixed key, the same component also accepts a gamepad button or any other control, and
 /// you can add several bindings to one action.
 /// </summary>
-[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/input.html")]
 public class InputKeyPress : MonoBehaviour
 {
 

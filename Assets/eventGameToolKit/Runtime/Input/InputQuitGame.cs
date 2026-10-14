@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 ///
 /// Common use: Exit buttons, quit menus, debug shortcuts.
 /// </summary>
-[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/input.html")]
 public class InputQuitGame : MonoBehaviour
 {
     [Tooltip("Quit when the Escape key is pressed. Turn this off to quit only from events.")]

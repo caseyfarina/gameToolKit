@@ -11,7 +11,7 @@ using UnityEngine.InputSystem;
 /// the layer your floors are on, or the character will never be able to jump.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/2d.html")]
 public class CharacterController2D : MonoBehaviour, ITeleportableCharacter
 {
     /// <summary>Side-on with gravity, or overhead with free movement.</summary>

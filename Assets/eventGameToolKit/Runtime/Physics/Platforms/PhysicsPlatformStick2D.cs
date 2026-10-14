@@ -16,7 +16,7 @@ using UnityEngine.Events;
 ///
 /// The 2D counterpart of PhysicsPlatformStick.
 /// </summary>
-[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/2d.html")]
 public class PhysicsPlatformStick2D : MonoBehaviour
 {
     [Header("Detection")]

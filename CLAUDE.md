@@ -527,11 +527,13 @@ Two callback shapes are involved:
 | `PhysicsBumper` | ✅ | Via separate `PhysicsBumper2D` (tag filtering merged in; `PhysicsBumperTag` no longer exists) |
 | `PhysicsForceZone` | ✅ | Via separate `PhysicsForceZone2D` |
 | `PhysicsEnemyController` | ❌ | No 2D enemy controller exists yet |
-| `ActionRespawnPlayer`, `ActionSpawnProjectile` | ❌ | Not yet converted |
+| `ActionRespawnPlayer`, `ActionSpawnProjectile` | ✅ | Stop motion via `EGTKPhysics.TryStopMotion`; projectiles use a `Rigidbody2D` if present |
 | `PhysicsPlatformStick` | ✅ | Via separate `PhysicsPlatformStick2D` |
 | `ActionPlatformAnimator` | ❌ | Not yet converted |
-| `CharacterPushRigidBody`, `ObjectAttractor` | ❌ | Not yet converted |
-| `GameCheckpointManager`, `ActionTeleportToTransform` | ⚠️ | Still hard-code `CharacterControllerCC`, so **2D respawn and teleport silently do nothing** |
+| `ObjectAttractor` | ✅ | Pulls a `Rigidbody2D` as well as a `Rigidbody` |
+| `CharacterPushRigidBody` | ❌ | Requires Unity's 3D `CharacterController` |
+| `GameCheckpointManager` | ✅ | Restores via `SendMessage("TeleportTo")`, which `CharacterController2D` implements |
+| `ActionTeleportToTransform` | ⚠️ | Special-cases `CharacterControllerCC`; a 2D player falls through to a plain transform move with no `Rigidbody2D` velocity reset. Untested in 2D |
 | Decal components | ❌ | URP decals are 3D-only; no 2D analog exists |
 
 Everything with no physics dependency — managers, timers, flags, audio, key input, most Actions —
@@ -578,7 +580,7 @@ The custom editor iterates every visible property, so new fields appear without 
 
 Implements `ITeleportableCharacter`, so teleporters and checkpoints can find any controller
 without naming a concrete type. `CharacterControllerCC` and `CharacterControllerFP` do **not**
-implement it yet — that is why 2D respawn is still broken.
+implement it yet. Checkpoint respawn works in 2D anyway, through `SendMessage("TeleportTo")`.
 
 ### Example scenes
 

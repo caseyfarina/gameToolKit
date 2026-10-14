@@ -6,7 +6,7 @@ using System.Linq;
 /// Validates multiple PuzzleSwitch states against target configuration with automatic or manual checking modes.
 /// Common use: Lock combination validators, puzzle door systems, safe cracking, or multi-step challenge verification.
 /// </summary>
-[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/examples/puzzle.html")]
 public class PuzzleSwitchChecker : MonoBehaviour
 {
     [System.Serializable]

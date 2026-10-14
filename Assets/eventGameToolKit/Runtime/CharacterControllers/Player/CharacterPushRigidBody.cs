@@ -7,7 +7,7 @@ using UnityEngine.Events;
 /// Common use: Pushing crates, opening doors with physics, interacting with movable objects.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
-[HelpURL("https://caseyfarina.github.io/egtk-docs/character-controllers.html")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/character-controllers.html#pushing")]
 public class CharacterPushRigidBody : MonoBehaviour
 {
     [Header("Push Settings")]
@@ -18,7 +18,7 @@ public class CharacterPushRigidBody : MonoBehaviour
     [Range(0.5f, 10f)]
     [SerializeField] private float pushStrength = 2f;
 
-    [Tooltip("Only push objects on these layers (leave as 'Nothing' to push all layers)")]
+    [Tooltip("Only push objects on these layers. Nothing pushes nothing; Everything pushes all layers.")]
     [SerializeField] private LayerMask pushLayers = ~0; // Default to everything
 
     [Header("Push Direction Control")]

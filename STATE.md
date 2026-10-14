@@ -58,10 +58,10 @@ excludes them explicitly.
 - 3D scene *feel* (ball rolling, enemy chasing, crates pushing) still needs a human at the
   Game view; the dead-control bugs are fixed and tested, but play mode cannot be watched from
   the CLI.
-- **Docs site** (`egtk-docs`) has no 2D content and does not mention the input change.
 - `EnemyController2D` was planned and never written.
-- 2D respawn/teleport silently do nothing: `CharacterControllerCC`/`FP` do not implement
-  `ITeleportableCharacter`, and checkpoint/teleport still hard-code `CharacterControllerCC`.
+- `ActionTeleportToTransform` with a 2D player is untested and does not clear `Rigidbody2D`
+  velocity. Checkpoint respawn reaches `CharacterController2D.TeleportTo` via `SendMessage`, so it
+  should work in 2D — established by reading the code, not by play-testing.
 - Unmerged remote branches, left alone: `origin/feature/multi-scene-support` (harness; the old
   ScriptableObject-variable approach, superseded by `GameData`) and the package repo's
   `claude/fix-canvas-cleanup-WcjQt` (May 2026, `ActionDialogueSequence` preview-canvas

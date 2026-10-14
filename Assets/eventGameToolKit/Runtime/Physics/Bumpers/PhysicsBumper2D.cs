@@ -15,7 +15,7 @@ using UnityEngine.Events;
 /// Common use: Bounce pads, pinball bumpers, launch mechanisms, trampolines.
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
-[HelpURL("https://caseyfarina.github.io/egtk-docs/")]
+[HelpURL("https://caseyfarina.github.io/egtk-docs/2d.html")]
 public class PhysicsBumper2D : MonoBehaviour
 {
     [Header("Bumper Tag")]
