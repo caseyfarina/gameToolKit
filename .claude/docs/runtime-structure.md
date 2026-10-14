@@ -620,8 +620,8 @@ Manager systems for health, score, audio, state, etc.
 
 > **Removed**: `IntVariable.cs` and `FloatVariable.cs` were the previous student-configured
 > persistence design. They were replaced by `GameData` and deleted — they are in git history if
-> needed. The published website no longer lists them, but the **stale in-package copy**
-> `Assets/eventGameToolKit/Documentation/egtk-intro.html` still does.
+> needed. The website no longer lists them. (A stale in-package copy of the site's intro page,
+> `Documentation/egtk-intro.html`, still did; it was deleted 2026-10-13.)
 
 ---
 
