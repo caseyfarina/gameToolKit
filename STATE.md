@@ -8,7 +8,10 @@ updated: 2026-10-13
 ## Now
 
 Building example scenes so every student-facing component is exercised and watched by the
-scene smoke test. **72 of 73 covered** (75 scripts, two excluded by decision — see below).
+scene smoke test. **65 of 73 covered by scenes that actually ship** — the old figure of 72
+counted harness-only scenes. **Read [.claude/docs/example-scene-audit.md](.claude/docs/example-scene-audit.md)
+first:** the 2026-10-13 audit found the shipped player prefab and 8 scenes broken for Package
+Manager installs, enemy damage unwired in two scenes, and a 4-phase plan to fix it all.
 
 Read **[.claude/docs/example-scene-workflow.md](.claude/docs/example-scene-workflow.md)**
 before building another scene — it has the process and the traps, including the framing and

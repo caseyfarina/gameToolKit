@@ -17,7 +17,9 @@ routine that rejects a valid setup. A missing reference.
 Several such bugs reached students before `SceneSmokeTests` existed. Every component in a
 scene is watched by it; every component that is not, is not.
 
-**Current coverage: 72 of 73.** There are 75 student-facing scripts; two will never have an
+**Current coverage: 65 of 73 from shipped scenes** (the script below reports 72 because it also
+counts `ProjectAssets/Scenes` and `Samples~`, which never reach students — see
+[example-scene-audit.md](example-scene-audit.md) D5). There are 75 student-facing scripts; two will never have an
 example scene by decision, so the script below excludes them and 73 is the ceiling. See
 "Deliberately unexemplified" below. Measure it with the script at the
 bottom of this file — never by hand.
